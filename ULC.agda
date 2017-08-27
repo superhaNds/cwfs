@@ -6,10 +6,6 @@ open import Data.Unit    using (tt)
 open import Data.Product using (_,_)
 open import Nary         using (_^_ ; proj ; map^ ; id)
 
-↑_ : (n : Nat) → Fin (suc n) ^ n
-↑ zero  = tt
-↑ suc n = map^ suc n (↑ n) , suc zero
-
 data Term : Nat → Set where
   var : (n : Nat) → Fin n → Term n
   lam : (n : Nat) → Term (suc n) → Term n
@@ -20,6 +16,10 @@ I = lam 0 (var 1 zero)
 
 K : Term 0
 K = lam 0 (lam 1 (var (suc (suc zero)) (suc zero)))
+
+↑_ : (n : Nat) → Fin (suc n) ^ n
+↑ zero  = tt
+↑ suc n = map^ suc n (↑ n) , suc zero
 
 rename : (n : Nat) (t : Term n) (m : Nat) (is : Fin m ^ n) → Term m
 rename n (var _ i)   m is = var m (proj n i is)
