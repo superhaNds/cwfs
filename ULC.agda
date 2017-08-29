@@ -1,10 +1,10 @@
 module ULC where
 
-open import Data.Nat     renaming (ℕ to Nat)
-open import Data.Fin     using (Fin ; zero ; suc)
-open import Data.Unit    using (tt)
+open import Data.Nat renaming (ℕ to Nat)
+open import Data.Fin using (Fin ; zero ; suc)
+open import Data.Unit using (tt)
 open import Data.Product using (_,_)
-open import Nary         using (_^_ ; proj ; map^ ; id)
+open import Nary using (_^_ ; proj ; map^ ; id)
 
 data Term : Nat → Set where
   var : (n : Nat) → Fin n → Term n

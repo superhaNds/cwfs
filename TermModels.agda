@@ -1,11 +1,11 @@
 module TermModels where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Vec
+open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_ ; refl ; sym ; trans ; cong)
 open import Util using (_s∷_) -- snoc
-open import Nary
 
 -- without lam and app (yet)
 data WellScopedTm : Nat → Set where

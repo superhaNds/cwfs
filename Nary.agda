@@ -1,9 +1,9 @@
 module Nary where
 
-open import Data.Nat
-open import Data.Fin
-open import Data.Product
-open import Data.Unit
+open import Data.Nat using (ℕ ; zero ; suc)
+open import Data.Fin using (Fin ; zero ; suc)
+open import Data.Product using (_×_ ; _,_ ; proj₁ ; proj₂)
+open import Data.Unit using (⊤ ; tt)
 
 _^_ : ∀ (A : Set) (n : ℕ) → Set
 _ ^ zero  = ⊤

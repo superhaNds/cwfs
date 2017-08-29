@@ -1,7 +1,7 @@
 module Ucwf where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Vec
+open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
