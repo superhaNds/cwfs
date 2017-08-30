@@ -11,6 +11,9 @@ data Term : Nat → Set where
   lam : (n : Nat) → Term (suc n) → Term n
   app : (n : Nat) → Term n → Term n → Term n
 
+q : ∀ n → Term (suc n)
+q n = var (1 + n) zero
+
 I : Term 0
 I = lam 0 (var 1 zero)
 
