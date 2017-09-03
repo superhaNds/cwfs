@@ -17,36 +17,59 @@ idV (suc n) = (map suc (idV n)) s∷ zero
 subWS : (n : Nat) (t : WellScopedTm n) (m : Nat) (tms : Vec (WellScopedTm m) n) → WellScopedTm m
 subWS n (var _ x) m tms = lookup x tms
 
-mutual 
-  data UcwfTm : Nat → Set where
-    q   : (n : Nat) → UcwfTm (suc n)
-    sub : (m n : Nat) → UcwfTm n → HomCwf m n → UcwfTm m
+idS : ∀ n → Vec (WellScopedTm n) n
+idS zero = []
+idS (suc n) = {!!} s∷ var (suc n) zero
 
-  data HomCwf : Nat → Nat → Set where
-    id‵      : (m : Nat) → HomCwf m m
-    comp     : (m n k : Nat) → HomCwf n k → HomCwf m n → HomCwf m k
-    p        : (n : Nat) → HomCwf (suc n) n
-    <>       : (m : Nat) → HomCwf m 0
-    _,_<_,_> : (m n : Nat) → HomCwf m n → UcwfTm m → HomCwf m (suc n)
+vec∘ : ∀ {m n k} → Vec (WellScopedTm m) n → Vec (WellScopedTm n) k → Vec (WellScopedTm m) k
+vec∘ vmn [] = []
+vec∘ vmn (x ∷ vnk) = vec∘ vmn vnk s∷ subWS _ x _ vmn
 
+ext : ∀ {m n} → Vec (WellScopedTm m) n → WellScopedTm m → Vec (WellScopedTm m) (suc n)
+ext [] t = t ∷ []
+ext (x ∷ xs) t = ext xs t s∷ t
+
+weaken : ∀ {m n} → Vec (WellScopedTm m) n → Vec (WellScopedTm (suc m)) n
+weaken [] = []
+weaken (x ∷ xs) = (weaken xs) s∷ var _ zero
+
+data UcwfTm : Nat → Set
+
+data HomCwf : Nat → Nat → Set
+
+data UcwfTm where
+  q   : (n : Nat) → UcwfTm (suc n)
+  sub : (m n : Nat) → UcwfTm n → HomCwf m n → UcwfTm m
+
+data HomCwf where
+  id‵      : (m : Nat) → HomCwf m m
+  comp     : (m n k : Nat) → HomCwf n k → HomCwf m n → HomCwf m k
+  p        : (n : Nat) → HomCwf (suc n) n
+  <>       : (m : Nat) → HomCwf m 0
+  _,_<_,_> : (m n : Nat) → HomCwf m n → UcwfTm m → HomCwf m (suc n)
+
+toUcwf : ∀ {n} (t : WellScopedTm n) → UcwfTm n
+toWellscoped : ∀ {n} (t : UcwfTm n) → WellScopedTm n
 homToVec : ∀ {m n : Nat} → HomCwf m n → Vec (WellScopedTm m) n
-homToVec (id‵ n) = {!!}
-homToVec (comp m n k hm_nk hm_mn) = let v_nk = homToVec hm_nk
-                                        v_mn = homToVec hm_mn
-                                    in {!!}
+vecToHom : ∀ {m n : Nat} → Vec (WellScopedTm m) n → HomCwf m n
+
+homToVec (id‵ n) = idS n
+homToVec (comp m n k hm_nk hm_mn) =
+  let v_nk = homToVec hm_nk
+      v_mn = homToVec hm_mn
+  in vec∘ v_mn v_nk
 homToVec (p n) = {!!}
 homToVec (<> m) = []
-homToVec (m , n < h , x >) = {!!}
+homToVec (m , n < h , t >) =
+  let wst = toWellscoped t
+      wsv = homToVec h
+  in ext wsv wst
 
-vecToHom : ∀ {m n : Nat} → Vec (WellScopedTm m) n → HomCwf m n
 vecToHom [] = <> _
 vecToHom (x ∷ xs) = {!!}
 
-toWellscoped : ∀ {n} (t : UcwfTm n) → WellScopedTm n
 toWellscoped (q n)                = var (1 + n) zero
 toWellscoped (sub m n ucwftm hom) = subWS n (toWellscoped ucwftm) m (homToVec hom)
 
-toUcwf : ∀ {n} (t : WellScopedTm n) → UcwfTm n
 toUcwf (var _ zero)    = q _
-toUcwf (var _ (suc x)) = {!!}
-
+toUcwf (var _ (suc i)) = {!!}
