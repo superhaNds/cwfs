@@ -1,7 +1,8 @@
 module Iso where
 
-open import Relation.Binary.PropositionalEquality using (_≡_ ; refl ; cong ; trans ; sym)
 open import Function using (id ; _∘_)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_ ; refl ; cong ; trans ; sym)
 
 record _≅_ (A B : Set) : Set₁ where
   field
