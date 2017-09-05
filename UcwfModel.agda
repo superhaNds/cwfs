@@ -1,8 +1,6 @@
 module UcwfModel where
 
-open import Data.Nat
-  renaming (ℕ to Nat)
-  using (zero ; suc)
+open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 
 data UcwfTm : Nat → Set
 data HomCwf : Nat → Nat → Set

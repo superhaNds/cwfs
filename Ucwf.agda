@@ -46,4 +46,4 @@ record λβ-ucwf (Term : Nat → Set) : Set₁ where
     app : (ν : Nat) → Term ν → Term ν → Term ν
     β   : {ν : Nat} {t : Term (suc ν)} {u : Term ν}
             → app ν (lam ν t) u ≡  ν , (suc ν) ▹ t [ ν , ν < id ν , u > ]
-    η   : {ν : Nat} {t : Term (suc ν)} → lam ν (app (suc ν) t (q ν)) ≡ {!!} -- needs Term ν but t ∈ Term (suc ν), weaken it?
+    η   : {ν : Nat} {t : Term ν} → t ≡ lam ν (app (suc ν) ((suc _) , _ ▹ t [ p _ ]) (q ν))
