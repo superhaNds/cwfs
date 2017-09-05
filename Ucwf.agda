@@ -32,10 +32,10 @@ record Ucwf (Term : Nat → Set) : Set₁ where
     q[<γ,α>] : ∀ {μ ν : Nat} {ts t} → ν , (suc μ) ▹ (q μ) [ ν , μ < ts , t > ] ≡ t
     ∘sub     : ∀ {μ ν : Nat} → ∀ {t ts us} →
                  μ , ν ▹ t [ μ , ν , ν ⟨ ts ∘  us ⟩ ]
-                 ≡ μ , ν ▹ (ν , ν ▹ t [ ts ]) [ us ]
+                 ≡ (μ , ν ▹ (ν , ν ▹ t [ ts ]) [ us ])
     <δ,α>∘γ  : ∀ {μ ν : Nat} → ∀ {t ts us} →
                  μ , ν , suc μ ⟨ (ν , μ < ts , t >) ∘ us ⟩
-                 ≡ μ , μ < μ , ν , μ ⟨ ts ∘ us ⟩ , (μ , ν ▹ t [ us ]) >
+                 ≡ (μ , μ < μ , ν , μ ⟨ ts ∘ us ⟩ , (μ , ν ▹ t [ us ]) >)
 
 record λβ-ucwf (Term : Nat → Set) : Set₁ where
   field

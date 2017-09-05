@@ -51,7 +51,7 @@ projSub = map (lift _) ∘ idSub
 
 -- < Δ , τ >
 ext : ∀ {m n} → Vec (WellScopedTm m) n → WellScopedTm m → Vec (WellScopedTm m) (suc n)
-ext ts t = ts s∷ t
+ext ts t = t ∷ ts
 
 -- <>
 empt : ∀ {m} → Vec (WellScopedTm m) zero
