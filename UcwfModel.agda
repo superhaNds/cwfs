@@ -23,7 +23,8 @@ infix 10 _U~_
 data _U~_ : ∀ {n m} → UcwfTm n → UcwfTm m → Set where
  subId : ∀ {n} (u : UcwfTm n) → u U~ sub n n u (id n)
  q[<a,t>] : ∀ {m n ts t} → t U~ sub n (suc m) (q m) (n , m < ts , t >)
- ∘sub : ∀ {m n} → ∀ {t ts us} → sub m n t ((comp m n n ts us)) U~ sub m n (sub n n t ts) us
+ ∘sub : ∀ {m n} → ∀ {t ts us} → sub m n t ((comp m n n ts us))
+         U~ sub m n (sub n n t ts) us
 
 infix 10 _H~_
 data _H~_ : ∀ {n m k p} → HomCwf n m → HomCwf k p → Set where 
@@ -35,6 +36,8 @@ data _H~_ : ∀ {n m k p} → HomCwf n m → HomCwf k p → Set where
   ∘asso : ∀ {m n k p} (ts : HomCwf n k) (us : HomCwf m n) (vs : HomCwf p m) →
             comp p m k (comp m n k ts us) vs
             H~ comp p n k ts (comp p m n us vs)
-  p∘<a∘t> : ∀ {m n} (u : UcwfTm m) (us : HomCwf m n) → us H~ comp m (suc n)  n (p  n) (m , n < us , u >)
-  <a,t>∘s : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m) (us : HomCwf m n) → comp m n (suc m) (n , m < ts , t >) us
+  p∘<a∘t> : ∀ {m n} (u : UcwfTm m) (us : HomCwf m n)
+               → us H~ comp m (suc n)  n (p  n) (m , n < us , u >)
+  <a,t>∘s : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m) (us : HomCwf m n)
+            → comp m n (suc m) (n , m < ts , t >) us
               H~ (m , m < comp m n m ts us , sub m n t us >) 
