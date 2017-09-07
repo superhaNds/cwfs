@@ -1,4 +1,4 @@
-module UcwfModel where
+module Unityped.UcwfModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 
@@ -16,8 +16,8 @@ data HomCwf where
   <>       : (m : Nat) → HomCwf m zero
   _,_<_,_> : (m n : Nat) → HomCwf m n → UcwfTm m → HomCwf m (suc n)
 
-weakening : ∀ {n : Nat} → UcwfTm n → UcwfTm (suc n)
-weakening {n} t = sub (suc n) n t (p n)
+weaken : ∀ {n : Nat} → UcwfTm n → UcwfTm (suc n)
+weaken {n} t = sub (suc n) n t (p n)
 
 infix 10 _U~_
 data _U~_ : ∀ {n m} → UcwfTm n → UcwfTm m → Set where

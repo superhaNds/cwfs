@@ -1,4 +1,4 @@
-module Ucwf where
+module Unityped.Ucwf where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
