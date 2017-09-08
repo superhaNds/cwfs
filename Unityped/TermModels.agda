@@ -43,7 +43,7 @@ toUcwf (var n i) = varUcwf i
 
 wellscoped∘ucwf : ∀ {n} (t : WellScopedTm n) → t ≡ toWellscoped (toUcwf t)
 ucwf∘wellscoped : ∀ {n} (u : UcwfTm n) → u ≡ toUcwf (toWellscoped u)
-ucwf-wells : ∀ {n} (u : UcwfTm n) → u U~ toUcwf (toWellscoped u)
+ucwf-wells : ∀ {n} (u : UcwfTm n) → u ~ₜ toUcwf (toWellscoped u)
 vec∘hom : ∀ {m n} → (v : Vec (WellScopedTm m) n) → v ≡ homToVec (vecToHom v)
 hom∘vec : ∀ {m n} → (h : HomCwf m n) → h ≡ vecToHom (homToVec h)
 
@@ -59,10 +59,11 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     var (suc _) (suc x)
   ∎
 
-ucwf-wells (q n) = reflU~ (q n)
-ucwf-wells (sub n .n u (id .n)) rewrite t[id]=t (toWellscoped u)
-  = transU~ (sub n n u (id n)) u (toUcwf (toWellscoped u))
-    (symU~ u (sub n n u (id n)) (subId u)) (ucwf-wells u)
+ucwf-wells (q n) = refl~ₜ (q n)
+ucwf-wells (sub n .n u (id .n))
+  rewrite t[id]=t (toWellscoped u)
+    = trans~ₜ (sub n n u (id n)) u (toUcwf (toWellscoped u))
+      (sym~ₜ u (sub n n u (id n)) (subId u)) (ucwf-wells u)
 ucwf-wells (sub m n u (comp .m n₁ .n x x₁)) = {!!}
 ucwf-wells (sub .(suc n) n u (p .n)) = {!!}
 ucwf-wells (sub m .0 u (<> .m)) = {!m!}
@@ -75,7 +76,7 @@ ucwf∘wellscoped (sub m _ u (id _))
       toUcwf (toWellscoped u)
     ≡⟨ sym $ ucwf∘wellscoped u ⟩
       u
-    ≡⟨ {!!} ⟩ -- sub on id law proves this
+    ≡⟨ {!!} ⟩ 
       sub m m u (id m)
     ∎
 ucwf∘wellscoped (sub n m u (comp _ k _ hkm hnk)) = {!!}
@@ -90,18 +91,11 @@ vec∘hom (x ∷ xs)
           sym (wellscoped∘ucwf x) = refl
 
 
-hom∘vec (id zero) = {!!} -- id₀ axiom proves this
+hom∘vec (id zero) = {!!} 
 hom∘vec (id (suc m)) = {!!}
 hom∘vec (comp m n k hnk hmn) = {!!}
-hom∘vec (p n) = {!!} -- vecToHom never maps to p, 
+hom∘vec (p n) = {!!} 
 hom∘vec (<> m) = refl
 hom∘vec (m , n < h , x >)
   rewrite sym (hom∘vec h) |
           sym (ucwf∘wellscoped x) = refl
-
-wellscoped≅ucwf : ∀ {n} → WellScopedTm n ≅ UcwfTm n
-wellscoped≅ucwf =
-  record { to = toUcwf
-         ; from = toWellscoped
-         ; inv₁ = wellscoped∘ucwf
-         ; inv₂ = ucwf∘wellscoped }
