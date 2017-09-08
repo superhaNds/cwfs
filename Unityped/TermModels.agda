@@ -20,7 +20,7 @@ homToVec     : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
 vecToHom     : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
 
 homToVec (id n)               = idSub n
-homToVec (comp m n k hnk hmn) = compWS (homToVec hmn) (homToVec hnk)
+homToVec (comp m n k hnk hmn) = compWS (homToVec hnk) (homToVec hmn) 
 homToVec (p n)                = projSub n
 homToVec (<> m)               = empt
 homToVec (m , n < h , t >)    = ext (homToVec h) (toWellscoped t)
@@ -33,7 +33,9 @@ toWellscoped (sub m n t h) = subWS (toWellscoped t) (homToVec h)
 
 varUcwf : ∀ {n} (i : Fin n) → UcwfTm n
 varUcwf zero    = q _
-varUcwf (suc i) = weaken (toUcwf (var _ i))
+varUcwf (suc i) = weaken (2ucwf (var _ i))
+  where 2ucwf : ∀ {n} → WellScopedTm n → UcwfTm n
+        2ucwf (var n i) = varUcwf i
 
 toUcwf (var n i) = varUcwf i
 
@@ -41,6 +43,7 @@ toUcwf (var n i) = varUcwf i
 
 wellscoped∘ucwf : ∀ {n} (t : WellScopedTm n) → t ≡ toWellscoped (toUcwf t)
 ucwf∘wellscoped : ∀ {n} (u : UcwfTm n) → u ≡ toUcwf (toWellscoped u)
+ucwf-wells : ∀ {n} (u : UcwfTm n) → u U~ toUcwf (toWellscoped u)
 vec∘hom : ∀ {m n} → (v : Vec (WellScopedTm m) n) → v ≡ homToVec (vecToHom v)
 hom∘vec : ∀ {m n} → (h : HomCwf m n) → h ≡ vecToHom (homToVec h)
 
@@ -55,6 +58,15 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
   ≡⟨ lookupPLemma _ x ⟩
     var (suc _) (suc x)
   ∎
+
+ucwf-wells (q n) = reflU~ (q n)
+ucwf-wells (sub n .n u (id .n)) rewrite t[id]=t (toWellscoped u)
+  = transU~ (sub n n u (id n)) u (toUcwf (toWellscoped u))
+    (symU~ u (sub n n u (id n)) (subId u)) (ucwf-wells u)
+ucwf-wells (sub m n u (comp .m n₁ .n x x₁)) = {!!}
+ucwf-wells (sub .(suc n) n u (p .n)) = {!!}
+ucwf-wells (sub m .0 u (<> .m)) = {!m!}
+ucwf-wells (sub m .(suc n) u (.m , n < x , x₁ >)) = {!!}
 
 ucwf∘wellscoped (q n) = refl
 ucwf∘wellscoped (sub m _ u (id _))
