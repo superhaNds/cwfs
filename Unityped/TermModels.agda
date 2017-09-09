@@ -39,13 +39,12 @@ varUcwf (suc i) = weaken (2ucwf (var _ i))
 
 toUcwf (var n i) = varUcwf i
 
--- left and right inverses, i.e., isomorphism
+-- Inverses
 
 wellscoped∘ucwf : ∀ {n} (t : WellScopedTm n) → t ≡ toWellscoped (toUcwf t)
-ucwf∘wellscoped : ∀ {n} (u : UcwfTm n) → u ≡ toUcwf (toWellscoped u)
-ucwf-wells : ∀ {n} (u : UcwfTm n) → u ~ₜ toUcwf (toWellscoped u)
 vec∘hom : ∀ {m n} → (v : Vec (WellScopedTm m) n) → v ≡ homToVec (vecToHom v)
-hom∘vec : ∀ {m n} → (h : HomCwf m n) → h ≡ vecToHom (homToVec h)
+ucwf∘wellscoped : ∀ {n} (u : UcwfTm n) → u ~ₜ toUcwf (toWellscoped u)
+hom∘vec : ∀ {n m} (u : HomCwf m n) → u ~ₕ vecToHom (homToVec u)
 
 wellscoped∘ucwf (var _ zero)    = refl
 wellscoped∘ucwf (var _ (suc x)) = sym $
@@ -59,43 +58,32 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     var (suc _) (suc x)
   ∎
 
-ucwf-wells (q n) = refl~ₜ (q n)
-ucwf-wells (sub n .n u (id .n))
+ucwf∘wellscoped (q n) = refl~ₜ
+ucwf∘wellscoped (sub n _ u (id _))
   rewrite t[id]=t (toWellscoped u)
-    = trans~ₜ (sub n n u (id n)) u (toUcwf (toWellscoped u))
-      (sym~ₜ u (sub n n u (id n)) (subId u)) (ucwf-wells u)
-ucwf-wells (sub m n u (comp .m n₁ .n x x₁)) = {!!}
-ucwf-wells (sub .(suc n) n u (p .n)) = {!!}
-ucwf-wells (sub m .0 u (<> .m)) = {!m!}
-ucwf-wells (sub m .(suc n) u (.m , n < x , x₁ >)) = {!!}
-
-ucwf∘wellscoped (q n) = refl
-ucwf∘wellscoped (sub m _ u (id _))
-  rewrite t[id]=t (toWellscoped u) = sym $
-    begin
-      toUcwf (toWellscoped u)
-    ≡⟨ sym $ ucwf∘wellscoped u ⟩
-      u
-    ≡⟨ {!!} ⟩ 
-      sub m m u (id m)
-    ∎
-ucwf∘wellscoped (sub n m u (comp _ k _ hkm hnk)) = {!!}
-ucwf∘wellscoped (sub _ m u (p _)) = {!!}
-ucwf∘wellscoped (sub n .0 u (<> _)) with toWellscoped u
-ucwf∘wellscoped (sub n _ u (<> _)) | var .0 ()
-ucwf∘wellscoped(sub n _ u (.n , k < h , x >)) = {!!}
+    = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
+ucwf∘wellscoped (sub m n u (comp .m n₁ .n x x₁)) = {!!}
+ucwf∘wellscoped (sub .(suc n) n u (p .n)) = {!!}
+ucwf∘wellscoped (sub m .0 u (<> .m)) with toWellscoped u
+ucwf∘wellscoped (sub m _ u (<> .m)) | var .0 ()
+ucwf∘wellscoped (sub m .(suc n) u (.m , n < x , x₁ >)) = {!!}
 
 vec∘hom [] = refl
 vec∘hom (x ∷ xs)
   rewrite sym (vec∘hom xs) |
           sym (wellscoped∘ucwf x) = refl
 
-
-hom∘vec (id zero) = {!!} 
+hom∘vec (id zero) = id₀
 hom∘vec (id (suc m)) = {!!}
-hom∘vec (comp m n k hnk hmn) = {!!}
-hom∘vec (p n) = {!!} 
-hom∘vec (<> m) = refl
-hom∘vec (m , n < h , x >)
-  rewrite sym (hom∘vec h) |
-          sym (ucwf∘wellscoped x) = refl
+hom∘vec (comp m n k u u₁) = {!!}
+hom∘vec (p n) = {!!}
+hom∘vec (<> m) = refl~ₕ
+hom∘vec (m , n < u , x >) = sym~ₕ $
+  beginₕ
+    m , n < vecToHom (homToVec u) , toUcwf (toWellscoped x) >
+  ~ₕ⟨ sym~ₕ $ cong~ₕ (λ a → m , n < a , toUcwf (toWellscoped x) >) (hom∘vec u) ⟩
+    m , n < u , toUcwf (toWellscoped x) >
+  ~ₕ⟨ sym~ₕ $ congt~ₕ (λ a → m , n < u , a >) (ucwf∘wellscoped x) ⟩
+    (m , n < u , x >)
+  □
+
