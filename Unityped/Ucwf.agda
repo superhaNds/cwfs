@@ -21,7 +21,7 @@ record Ucwf (Term : Nat → Set) : Set₁ where
     id₀      : id zero ≡ <> zero
     ∘<>      : ∀ {μ ν : Nat} (ts : Hom μ ν) → (μ , ν , zero ⟨ <> ν ∘ ts ⟩) ≡ <> μ
     id<p,q>  : ∀ {ν : Nat} → id (suc ν) ≡ suc ν , ν < p ν , q ν >
-    ∘lid     : ∀ {μ ν : Nat} (ts : Hom μ ν) → (μ , ν , ν ⟨ (id ν) ∘ {!!} ⟩) ≡ ts
+    ∘lid     : ∀ {μ ν : Nat} (ts : Hom μ ν) → (μ , ν , ν ⟨ (id ν) ∘ ts ⟩) ≡ ts
     ∘rid     : ∀ {μ ν : Nat} (ts : Hom μ ν) → (μ , μ , ν ⟨ ts ∘ (id μ) ⟩) ≡ ts
     ∘asso    : ∀ {μ ν k p : Nat} (ts : Hom ν k) (us : Hom μ ν) (vs : Hom p μ) →
                  p , μ , k ⟨ (μ , ν , k ⟨ ts ∘ us ⟩) ∘ vs ⟩

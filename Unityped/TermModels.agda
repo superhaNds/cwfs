@@ -11,7 +11,7 @@ open import Relation.Binary.PropositionalEquality
 open import Util
 open import Iso
 open import Unityped.UcwfModel
-open ≡-Reasoning
+import Relation.Binary.EqReasoning as EqR
 
 -- Translation functions
 toUcwf       : ∀ {n} → WellScopedTm n → UcwfTm n
@@ -40,7 +40,6 @@ varUcwf (suc i) = weaken (2ucwf (var _ i))
 toUcwf (var n i) = varUcwf i
 
 -- Inverses
-
 wellscoped∘ucwf : ∀ {n} (t : WellScopedTm n) → t ≡ toWellscoped (toUcwf t)
 vec∘hom : ∀ {m n} → (v : Vec (WellScopedTm m) n) → v ≡ homToVec (vecToHom v)
 ucwf∘wellscoped : ∀ {n} (u : UcwfTm n) → u ~ₜ toUcwf (toWellscoped u)
@@ -56,17 +55,35 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     lookup x (projSub _)
   ≡⟨ lookupPLemma _ x ⟩
     var (suc _) (suc x)
-  ∎
+  ∎ where open ≡-Reasoning
 
+-- q case
 ucwf∘wellscoped (q n) = refl~ₜ
+
+-- id case
 ucwf∘wellscoped (sub n _ u (id _))
   rewrite t[id]=t (toWellscoped u)
     = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
-ucwf∘wellscoped (sub m n u (comp .m n₁ .n x x₁)) = {!!}
+
+-- composition case
+ucwf∘wellscoped (sub m n u (comp _ k _ x y)) = begin
+    (sub m n u (comp m k n x y))
+  ≈⟨ refl~ₜ ⟩
+    sub _ _ u (comp _ _ _ x y)
+  ≈⟨ ∘sub u x y ⟩
+    sub _ _ (sub _ _ u x) y
+  ≈⟨ {!!} ⟩
+    {!!}
+    
+  ∎
+  where open EqR (UcwfTmS {m})
+
+-- p case
 ucwf∘wellscoped (sub .(suc n) n u (p .n)) = {!!}
+
 ucwf∘wellscoped (sub m .0 u (<> .m)) with toWellscoped u
 ucwf∘wellscoped (sub m _ u (<> .m)) | var .0 ()
-ucwf∘wellscoped (sub m .(suc n) u (.m , n < x , x₁ >)) = {!!}
+ucwf∘wellscoped (sub m _ u (_ , n < xs , x >)) = {!!}
 
 vec∘hom [] = refl
 vec∘hom (x ∷ xs)
@@ -75,15 +92,15 @@ vec∘hom (x ∷ xs)
 
 hom∘vec (id zero) = id₀
 hom∘vec (id (suc m)) = {!!}
-hom∘vec (comp m n k u u₁) = {!!}
+hom∘vec (comp m n k hnk hmn) = {!!}
 hom∘vec (p n) = {!!}
 hom∘vec (<> m) = refl~ₕ
 hom∘vec (m , n < u , x >) = sym~ₕ $
-  beginₕ
+  begin
     m , n < vecToHom (homToVec u) , toUcwf (toWellscoped x) >
-  ~ₕ⟨ sym~ₕ $ cong~ₕ (λ a → m , n < a , toUcwf (toWellscoped x) >) (hom∘vec u) ⟩
+  ≈⟨ sym~ₕ $ cong~ₕ (λ a → m , n < a , toUcwf (toWellscoped x) >) (hom∘vec u) ⟩
     m , n < u , toUcwf (toWellscoped x) >
-  ~ₕ⟨ sym~ₕ $ congt~ₕ (λ a → m , n < u , a >) (ucwf∘wellscoped x) ⟩
+  ≈⟨ sym~ₕ $ congt~ₕ (λ a → m , n < u , a >) (ucwf∘wellscoped x) ⟩
     (m , n < u , x >)
-  □
+  ∎ where open EqR (HomCwfS {suc n} {m})
 

@@ -1,7 +1,7 @@
 module Unityped.UcwfModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
-open import Relation.Binary using (IsEquivalence)
+open import Relation.Binary using (IsEquivalence ; Setoid)
 
 data UcwfTm : Nat → Set
 data HomCwf : Nat → Nat → Set
@@ -17,30 +17,33 @@ data HomCwf where
   <>       : (m : Nat) → HomCwf m zero
   _,_<_,_> : (m n : Nat) → HomCwf m n → UcwfTm m → HomCwf m (suc n)
 
-weaken : ∀ {n : Nat} → UcwfTm n → UcwfTm (suc n)
-weaken {n} t = sub (suc n) n t (p n)
+weaken : ∀ {n} → UcwfTm n → UcwfTm (suc n)
+weaken t = sub (suc _) _ t (p _)
 
 infix 10 _~ₜ_
-data _~ₜ_ : ∀ {n} (u₁ u₂ : UcwfTm n) → Set where
+infix 10 _~ₕ_
+data _~ₜ_ : ∀ {n} (u₁ u₂ : UcwfTm n) → Set
+data _~ₕ_ : ∀ {n m} (h₁ h₂ :  HomCwf n m) → Set
+-- sub m n u (comp m k n x y))
+-- (sub m k (sub k n u x) y)
+data _~ₜ_  where
  subId : ∀ {n} (u : UcwfTm n) → u ~ₜ sub n n u (id n)
- q[<a,t>] : ∀ {m n ts t} → t ~ₜ sub n (suc m) (q m) (n , m < ts , t >)
- ∘sub : ∀ {m n} → ∀ {t ts us} → sub m n t (comp m n n ts us)
-         ~ₜ sub m n (sub n n t ts) us
+ q[<a,t>] : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m)
+              → t ~ₜ sub n (suc m) (q m) (n , m < ts , t >)
+ ∘sub : ∀ {m n k} (t : UcwfTm n) (ts : HomCwf k n) (us : HomCwf m k)
+          → sub m n t (comp m k n ts us)
+           ~ₜ sub m k (sub k n t ts) us
  sym~ₜ : ∀ {n} {u u′ : UcwfTm n} → u ~ₜ u′ → u′ ~ₜ u
  trans~ₜ : ∀ {m} {t u v : UcwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
  cong~ₜ  : ∀ {m n} (f : UcwfTm m → UcwfTm n) {h u : UcwfTm m} →
              h ~ₜ u → f h ~ₜ f u
+ congh~ₜ : ∀ {m n} (f : HomCwf m n → UcwfTm m) {h v : HomCwf m n}
+             → h ~ₕ v → f h ~ₜ f v
 
 refl~ₜ : ∀ {n} {u : UcwfTm n} → u ~ₜ u
 refl~ₜ = trans~ₜ (subId _) (sym~ₜ (subId _))
 
-~ₜequiv : ∀ {n : Nat} → IsEquivalence (_~ₜ_ {n})
-~ₜequiv = record { refl  = refl~ₜ
-                 ; sym   = sym~ₜ
-                 ; trans = trans~ₜ }
-
-infix 10 _~ₕ_
-data _~ₕ_ : ∀ {n m : Nat} →  HomCwf n m → HomCwf n m → Set where 
+data _~ₕ_ where 
   id₀ : id zero ~ₕ <> zero
   ∘<> : ∀ {m n} (ts : HomCwf m n) → comp m n zero (<> n) ts ~ₕ <> m
   id<p,q> : ∀ {n} → id (suc n) ~ₕ suc n , n < p n , q n >
@@ -56,7 +59,7 @@ data _~ₕ_ : ∀ {n m : Nat} →  HomCwf n m → HomCwf n m → Set where
               ~ₕ (m , m < comp m n m ts us , sub m n t us >) 
   sym~ₕ : ∀ {m n} {h : HomCwf m n} {t : HomCwf m n} → h ~ₕ t → t ~ₕ h
   trans~ₕ : ∀ {m n} {h t v : HomCwf m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
-  cong~ₕ : ∀ {m n k p} (f : (HomCwf m n) → (HomCwf k p)) {h u : HomCwf m n}
+  cong~ₕ : ∀ {m n k p} (f : HomCwf m n → HomCwf k p) {h u : HomCwf m n}
              → h ~ₕ u → f h ~ₕ f u
   congt~ₕ : ∀ {m n} (f : UcwfTm m → HomCwf m n) {t u : UcwfTm m}
              → t ~ₜ u → f t ~ₕ f u
@@ -64,20 +67,24 @@ data _~ₕ_ : ∀ {n m : Nat} →  HomCwf n m → HomCwf n m → Set where
 refl~ₕ : ∀ {n m} {h : HomCwf m n} → h ~ₕ h
 refl~ₕ = trans~ₕ (sym~ₕ (∘lid _)) (∘lid _)
 
+~ₜequiv : ∀ {n} → IsEquivalence (_~ₜ_ {n})
+~ₜequiv = record { refl  = refl~ₜ
+                 ; sym   = sym~ₜ
+                 ; trans = trans~ₜ }
+
+UcwfTmS : ∀ {n} → Setoid _ _
+UcwfTmS {n} =
+  record { Carrier = UcwfTm n
+         ; _≈_ = _~ₜ_
+         ; isEquivalence = ~ₜequiv }
+
 ~ₕequiv : ∀ {n m} → IsEquivalence (_~ₕ_ {n} {m})
 ~ₕequiv = record { refl  = refl~ₕ
                  ; sym   = sym~ₕ
                  ; trans = trans~ₕ }
-
-infix  3 _□
-infixr 2 _~ₕ⟨_⟩_
-infix  1 beginₕ_ 
-
-beginₕ_ : ∀ {n m : Nat} {x y : HomCwf n m} → x ~ₕ y → x ~ₕ y
-beginₕ_ x~y = x~y
-
-_~ₕ⟨_⟩_ : ∀ {n m : Nat} → (x {y z} : HomCwf n m) → x ~ₕ y → y ~ₕ z → x ~ₕ z
-_~ₕ⟨_⟩_ _ x~y y~z = trans~ₕ x~y y~z
-
-_□ : ∀ {n m} → (u : HomCwf m n) → u ~ₕ u
-_□ _ = refl~ₕ
+                 
+HomCwfS : ∀ {n m} → Setoid _ _
+HomCwfS {n} {m} =
+  record { Carrier = HomCwf m n
+         ; _≈_ = _~ₕ_
+         ; isEquivalence = ~ₕequiv }
