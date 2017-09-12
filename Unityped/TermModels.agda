@@ -31,13 +31,8 @@ vecToHom (x ∷ xs) = _ , _ < vecToHom xs , toUcwf x >
 toWellscoped (q n)         = qWS n
 toWellscoped (sub m n t h) = subWS (toWellscoped t) (homToVec h)
 
-varUcwf : ∀ {n} (i : Fin n) → UcwfTm n
-varUcwf zero    = q _
-varUcwf (suc i) = weaken (2ucwf (var _ i))
-  where 2ucwf : ∀ {n} → WellScopedTm n → UcwfTm n
-        2ucwf (var n i) = varUcwf i
-
-toUcwf (var n i) = varUcwf i
+toUcwf (var _ zero)    = q _
+toUcwf (var _ (suc i)) = weaken (toUcwf (var _ i))
 
 -- Inverses
 wellscoped∘ucwf : ∀ {n} (t : WellScopedTm n) → t ≡ toWellscoped (toUcwf t)
@@ -63,26 +58,32 @@ ucwf∘wellscoped (sub n _ u (id _))
   rewrite t[id]=t (toWellscoped u)
     = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
 
-ucwf∘wellscoped (sub m n u (comp _ k _ x y)) = begin
-    (sub m n u (comp m k n x y))
-  ≈⟨ refl~ₜ ⟩
-    sub _ _ u (comp _ _ _ x y)
-  ≈⟨ _~ₜ_.∘sub u x y ⟩
-    sub _ _ (sub _ _ u x) y
-  ≈⟨ {!!} ⟩
-    {!!}
-  ∎
+ucwf∘wellscoped (sub m n u (comp _ k _ x y)) = {!!}
   where open EqR (UcwfTmS {m})
 
-ucwf∘wellscoped (sub .(suc n) n u (p .n)) = sym~ₜ $
+ucwf∘wellscoped (sub .(suc n) n u (p .n)) with toWellscoped u | inspect toWellscoped u
+ucwf∘wellscoped (sub .(suc n) n u (p .n)) | var .n x | [ var=u ] = sym~ₜ $
   begin
-    toUcwf (subWS (toWellscoped u) (projSub n))
-  ≈⟨ {!!} ⟩
-    toUcwf (lift (toWellscoped u))
-  ≈⟨ {!!} ⟩
-    {!!}
+    toUcwf (subWS (var _ x) (projSub _))
+  ≈⟨ help₁ _ x ⟩
+    toUcwf (var (suc n) (suc x))
+  ≈⟨ refl~ₜ ⟩
+    weaken (toUcwf $ var n x)
+  ≈⟨ help₂ n x u var=u ⟩
+    weaken (toUcwf $ toWellscoped u)
+  ≈⟨ sym~ₜ $ cong~ₜ weaken (ucwf∘wellscoped u) ⟩
+    weaken u
+  ≈⟨ refl~ₜ ⟩
+    sub (suc n) n u (p n)
   ∎ where open EqR (UcwfTmS {_})
-
+          open Reveal_·_is_
+          help₁ : ∀ n x → toUcwf (subWS (var n x) (projSub n))
+                    ~ₜ toUcwf (var (suc n) (suc x))
+          help₁ n x rewrite subPLift (var n x) | liftVar n x = refl~ₜ
+          help₂ : ∀ n x u → toWellscoped u ≡ var n x → weaken (toUcwf $ var n x)
+                    ~ₜ weaken (toUcwf $ toWellscoped u)
+          help₂ n x u l rewrite l = refl~ₜ
+                                          
 ucwf∘wellscoped (sub m .0 u (<> .m)) with toWellscoped u
 ucwf∘wellscoped (sub m _ u (<> .m)) | var .0 ()
 
