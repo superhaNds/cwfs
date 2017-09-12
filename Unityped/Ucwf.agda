@@ -27,7 +27,7 @@ record Ucwf (Term : Nat → Set) : Set₁ where
                  p , μ , k ⟨ (μ , ν , k ⟨ ts ∘ us ⟩) ∘ vs ⟩
                  ≡ p , ν , k ⟨ ts ∘ (p , μ , ν ⟨ us ∘ vs ⟩)⟩
     subid    : ∀ {μ ν : Nat} (t : Term ν) → (ν , ν ▹ t [ id ν ]) ≡ t
-    p∘<γ∘α>  : ∀ {μ ν k : Nat} → {t : Term ν} → {ts : Hom ν k} →
+    p∘<γ,α>  : ∀ {μ ν k : Nat} → {t : Term ν} → {ts : Hom ν k} →
                  ν , (suc k) , k ⟨ p k ∘ (ν , k < ts , t >)⟩ ≡ ts
     q[<γ,α>] : ∀ {μ ν : Nat} {ts t} → ν , (suc μ) ▹ (q μ) [ ν , μ < ts , t > ] ≡ t
     ∘sub     : ∀ {μ ν : Nat} → ∀ {t ts us} →

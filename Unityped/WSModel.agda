@@ -5,7 +5,7 @@ open import Data.Vec.Properties
 open import Data.Vec
   using (Vec ; [] ; _∷_ ; map ; lookup ; allFin ; tabulate ; tail ; head)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Function using (_∘_)
+open import Function using (_∘_ ; _$_)
 open import Util
 open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning
@@ -36,12 +36,14 @@ idSub n = tabulate (var n)
 sub : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
 sub (var _ x) ts = lookup x ts
 
+_[_] : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
+t [ ts ] = sub t ts
+
 -- comp of homs 
 comp : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
 comp []   _ = []
 comp (t ∷ ts) us = sub t us ∷ comp ts us
 
---sub t vmn ∷ (comp vmn vnk)
 -- weakening (derived)
 lift : {n : Nat} → WellScopedTm n → WellScopedTm (suc n)
 lift {n} t = rename t (↑ n)
@@ -58,8 +60,9 @@ ext ts t = t ∷ ts
 empt : ∀ {m} → Vec (WellScopedTm m) zero
 empt = []
 
--- Proofs
+-- Proofs of ucwf axioms
 
+------------------------------ Auxiliary lemmas ------------------------------
 liftVar : ∀ n i → lift (var n i) ≡ var (suc n) (suc i)
 liftVar n i = cong (var (suc n)) (lookup∘tabulate suc i)
 
@@ -80,40 +83,43 @@ lookupPLemma n i =
     var (suc n) (suc i)
   ∎
 
+postulate tailIdp : ∀ n → tail (idSub (suc n)) ≡ projSub n
+-- tailIdp zero = refl
+-- tailIdp (suc n) = {!!}
+---------------------------------------------------------------------------
+
 t[id]=t : ∀ {n} → (t : WellScopedTm n) → sub t (idSub n) ≡ t
 t[id]=t (var n x) = lookupIdLemma n x
 
 id0=[] : idSub zero ≡ empt
 id0=[] = refl
 
-postulate tailIdp : ∀ n → tail (idSub (suc n)) ≡ projSub n
--- tailIdp zero = refl
--- tailIdp (suc n) = {!!}
+∘[] : ∀ {m n} (ts : Vec (WellScopedTm m) n) → comp empt ts ≡ empt
+∘[] _ = refl
 
-id<p,q> : ∀ (n : Nat) → idSub (suc n) ≡ q n ∷ (projSub n)
-id<p,q> zero = refl
-id<p,q> (suc n) =
-  begin
-    idSub (suc (suc n))
-  ≡⟨ refl ⟩
-    var _ zero ∷ (tail (idSub _))
-  ≡⟨ refl ⟩
-    q _ ∷ tail (idSub _)
-  ≡⟨ cong (λ x → q _ ∷ x) (tailIdp (suc n)) ⟩
-    q _ ∷ projSub _
-  ∎
+∘sub : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
+          (us : Vec (WellScopedTm m) k) → sub t (comp ts us) ≡ sub (sub t ts) us
+∘sub (var .0 ()) [] us
+∘sub (var _ zero) (v ∷ ts) us = refl
+∘sub (var _ (suc x)) (v ∷ ts) us = ∘sub (var _ x) ts us
 
-v∘rid : ∀ {m n : Nat} → (ts : Vec (WellScopedTm m) n) → comp ts (idSub m)  ≡ ts
-v∘rid [] = refl
-v∘rid (x ∷ ts) rewrite t[id]=t x | v∘rid ts = refl
+q[<a,t>]=t : ∀ {m n} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) m) →
+               sub (q m) (ext ts t) ≡ t
+q[<a,t>]=t t ts = refl
 
 postulate p∘x∷ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → comp (projSub k) (t ∷ ts) ≡ ts
--- p∘x∷ts t [] = refl
--- p∘x∷ts x (t ∷ ts) = 
 
-v∘lid : ∀ {m n : Nat} → (ts : Vec (WellScopedTm m) n) → comp (idSub n) ts ≡ ts
-v∘lid [] = refl
-v∘lid (x ∷ ts) =
+{-p∘<ts,t>=ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k)
+                → comp (projSub k) (t ∷ ts) ≡ ts
+p∘<ts,t>=ts t ts = {!!}-}
+
+<ts,t>∘h : ∀ {m n} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) m)
+   (us : Vec (WellScopedTm m) n) → comp (ext ts t) us ≡ ext (comp ts us) (sub t us)
+<ts,t>∘h _ _ _ = refl
+
+∘lid : ∀ {m n : Nat} → (ts : Vec (WellScopedTm m) n) → comp (idSub n) ts ≡ ts
+∘lid [] = refl
+∘lid (x ∷ ts) =
  begin
     comp (idSub _) (x ∷ ts)
   ≡⟨ refl ⟩
@@ -127,4 +133,25 @@ v∘lid (x ∷ ts) =
   ≡⟨ refl ⟩
     x ∷ ts
   ∎
+
+∘rid : ∀ {m n : Nat} → (ts : Vec (WellScopedTm m) n) → comp ts (idSub m)  ≡ ts
+∘rid [] = refl
+∘rid (x ∷ ts) rewrite t[id]=t x | ∘rid ts = refl
+
+∘asso : ∀ {m n k p} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
+    (vs : Vec (WellScopedTm p) m) → comp (comp ts us) vs ≡ comp ts (comp us vs)
+∘asso [] us vs = refl
+∘asso (x ∷ ts) us vs = sym $
+  begin
+    sub x (comp us vs) ∷ comp ts (comp us vs)
+  ≡⟨ cong (λ d → d ∷ comp ts (comp us vs)) (∘sub x us vs) ⟩
+    sub (sub x us) vs ∷ comp ts (comp us vs)
+  ≡⟨ sym (cong (_∷_ (sub (sub x us) vs)) (∘asso ts us vs)) ⟩
+    sub (sub x us) vs ∷ comp (comp ts us) vs
+  ∎
+  
+id=<p,q> : ∀ (n : Nat) → idSub (suc n) ≡ q n ∷ (projSub n)
+id=<p,q> zero = refl
+id=<p,q> (suc n) = cong (_∷_ (q _)) (tailIdp (suc n))
+
 

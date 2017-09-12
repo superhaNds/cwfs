@@ -22,10 +22,10 @@ weaken t = sub (suc _) _ t (p _)
 
 infix 10 _~ₜ_
 infix 10 _~ₕ_
+
 data _~ₜ_ : ∀ {n} (u₁ u₂ : UcwfTm n) → Set
 data _~ₕ_ : ∀ {n m} (h₁ h₂ :  HomCwf n m) → Set
--- sub m n u (comp m k n x y))
--- (sub m k (sub k n u x) y)
+
 data _~ₜ_  where
  subId : ∀ {n} (u : UcwfTm n) → u ~ₜ sub n n u (id n)
  q[<a,t>] : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m)
@@ -37,8 +37,8 @@ data _~ₜ_  where
  trans~ₜ : ∀ {m} {t u v : UcwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
  cong~ₜ  : ∀ {m n} (f : UcwfTm m → UcwfTm n) {h u : UcwfTm m} →
              h ~ₜ u → f h ~ₜ f u
- congh~ₜ : ∀ {m n} (f : HomCwf m n → UcwfTm m) {h v : HomCwf m n}
-             → h ~ₕ v → f h ~ₜ f v
+ {- congh~ₜ : ∀ {m n} (f : HomCwf m n → UcwfTm m) {h v : HomCwf m n}
+             → h ~ₕ v → f h ~ₜ f v -}
 
 refl~ₜ : ∀ {n} {u : UcwfTm n} → u ~ₜ u
 refl~ₜ = trans~ₜ (subId _) (sym~ₜ (subId _))
@@ -52,7 +52,7 @@ data _~ₕ_ where
   ∘asso : ∀ {m n k p} (ts : HomCwf n k) (us : HomCwf m n) (vs : HomCwf p m) →
             comp p m k (comp m n k ts us) vs
             ~ₕ comp p n k ts (comp p m n us vs)
-  p∘<a∘t> : ∀ {m n} (u : UcwfTm m) (us : HomCwf m n)
+  p∘<a,t> : ∀ {m n} (u : UcwfTm m) (us : HomCwf m n)
                → us ~ₕ comp m (suc n)  n (p  n) (m , n < us , u >)
   <a,t>∘s : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m) (us : HomCwf m n)
             → comp m n (suc m) (n , m < ts , t >) us

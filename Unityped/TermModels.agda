@@ -1,7 +1,7 @@
 module Unityped.TermModels where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
-open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; [_] ; tabulate)
+open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; [_] ; tabulate ; tail)
 open import Data.Vec.Properties using (lookup∘tabulate ; lookup-allFin)
 open import Data.Fin using (Fin ; zero ; suc ; raise ; _+_ ; fromℕ)
 open import Function using (_$_ ; _∘_ ; flip)
@@ -48,8 +48,8 @@ hom∘vec : ∀ {n m} (u : HomCwf m n) → u ~ₕ vecToHom (homToVec u)
 wellscoped∘ucwf (var _ zero)    = refl
 wellscoped∘ucwf (var _ (suc x)) = sym $
   begin
-    subWS (toWellscoped (toUcwf (var _ x))) (projSub _)
-  ≡⟨ sym (cong (flip subWS (projSub _)) (wellscoped∘ucwf (var _ x))) ⟩
+    subWS (toWellscoped $ toUcwf (var _ x)) (projSub _)
+  ≡⟨ sym $ cong (flip subWS (projSub _)) (wellscoped∘ucwf (var _ x)) ⟩
     subWS (var _ x) (projSub _)
   ≡⟨ refl ⟩
     lookup x (projSub _)
@@ -57,32 +57,35 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     var (suc _) (suc x)
   ∎ where open ≡-Reasoning
 
--- q case
 ucwf∘wellscoped (q n) = refl~ₜ
 
--- id case
 ucwf∘wellscoped (sub n _ u (id _))
   rewrite t[id]=t (toWellscoped u)
     = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
 
--- composition case
 ucwf∘wellscoped (sub m n u (comp _ k _ x y)) = begin
     (sub m n u (comp m k n x y))
   ≈⟨ refl~ₜ ⟩
     sub _ _ u (comp _ _ _ x y)
-  ≈⟨ ∘sub u x y ⟩
+  ≈⟨ _~ₜ_.∘sub u x y ⟩
     sub _ _ (sub _ _ u x) y
   ≈⟨ {!!} ⟩
     {!!}
-    
   ∎
   where open EqR (UcwfTmS {m})
 
--- p case
-ucwf∘wellscoped (sub .(suc n) n u (p .n)) = {!!}
+ucwf∘wellscoped (sub .(suc n) n u (p .n)) = sym~ₜ $
+  begin
+    toUcwf (subWS (toWellscoped u) (projSub n))
+  ≈⟨ {!!} ⟩
+    toUcwf (lift (toWellscoped u))
+  ≈⟨ {!!} ⟩
+    {!!}
+  ∎ where open EqR (UcwfTmS {_})
 
 ucwf∘wellscoped (sub m .0 u (<> .m)) with toWellscoped u
 ucwf∘wellscoped (sub m _ u (<> .m)) | var .0 ()
+
 ucwf∘wellscoped (sub m _ u (_ , n < xs , x >)) = {!!}
 
 vec∘hom [] = refl
@@ -90,10 +93,25 @@ vec∘hom (x ∷ xs)
   rewrite sym (vec∘hom xs) |
           sym (wellscoped∘ucwf x) = refl
 
-hom∘vec (id zero) = id₀
-hom∘vec (id (suc m)) = {!!}
+hom∘vec (id zero)    = id₀
+hom∘vec (id (suc m)) = 
+  begin
+    id (suc m)
+  ≈⟨ id<p,q> ⟩
+    _ , _ < p _ , q _ >
+  ≈⟨ cong~ₕ (λ x → _ , _ < x , q _ >) (hom∘vec $ p m) ⟩
+    _ , _ < vecToHom (projSub m) , q _ >
+  ≈⟨ help m ⟩
+    _ , _ < vecToHom $ tail (idSub _) , q _ >
+  ∎ where open EqR (HomCwfS {suc m} {suc m})
+          help : ∀ m → suc m , m < vecToHom (projSub m) , q m >
+                  ~ₕ suc m , m < vecToHom (tail $ idSub _) , q m >
+          help m rewrite tailIdp m = refl~ₕ
+
 hom∘vec (comp m n k hnk hmn) = {!!}
+
 hom∘vec (p n) = {!!}
+
 hom∘vec (<> m) = refl~ₕ
 hom∘vec (m , n < u , x >) = sym~ₕ $
   begin
