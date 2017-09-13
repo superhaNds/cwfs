@@ -52,6 +52,10 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     var (suc _) (suc x)
   ∎ where open ≡-Reasoning
 
+lemma2q : ∀ {n} (u : UcwfTm (suc n)) → toWellscoped u ≡ qWS _
+               → (toUcwf (toWellscoped u)) ~ₜ q _
+lemma2q u pr rewrite pr = refl~ₜ
+
 ucwf∘wellscoped (q n) = refl~ₜ
 
 ucwf∘wellscoped (sub n _ u (id _))
@@ -61,15 +65,12 @@ ucwf∘wellscoped (sub n _ u (id _))
 ucwf∘wellscoped (sub m n u (comp _ k _ x y)) = {!!}
   where open EqR (UcwfTmS {m})
 
-ucwf∘wellscoped (sub .(suc n) n u (p .n)) with toWellscoped u | inspect toWellscoped u
+ucwf∘wellscoped (sub .(suc n) n u (p .n)) with toWellscoped u
+                                             | inspect toWellscoped u
 ucwf∘wellscoped (sub .(suc n) n u (p .n)) | var .n x | [ var=u ] = sym~ₜ $
   begin
     toUcwf (subWS (var _ x) (projSub _))
-  ≈⟨ help₁ _ x ⟩
-    toUcwf (var (suc n) (suc x))
-  ≈⟨ refl~ₜ ⟩
-    weaken (toUcwf $ var n x)
-  ≈⟨ help₂ n x u var=u ⟩
+  ≈⟨ help n x u var=u ⟩
     weaken (toUcwf $ toWellscoped u)
   ≈⟨ sym~ₜ $ cong~ₜ weaken (ucwf∘wellscoped u) ⟩
     weaken u
@@ -77,17 +78,34 @@ ucwf∘wellscoped (sub .(suc n) n u (p .n)) | var .n x | [ var=u ] = sym~ₜ $
     sub (suc n) n u (p n)
   ∎ where open EqR (UcwfTmS {_})
           open Reveal_·_is_
-          help₁ : ∀ n x → toUcwf (subWS (var n x) (projSub n))
-                    ~ₜ toUcwf (var (suc n) (suc x))
-          help₁ n x rewrite subPLift (var n x) | liftVar n x = refl~ₜ
-          help₂ : ∀ n x u → toWellscoped u ≡ var n x → weaken (toUcwf $ var n x)
-                    ~ₜ weaken (toUcwf $ toWellscoped u)
-          help₂ n x u l rewrite l = refl~ₜ
+          help : ∀ n x u → toWellscoped u ≡ var n x →
+                   toUcwf (subWS (var n x) (projSub n))
+                   ~ₜ weaken (toUcwf $ toWellscoped u)
+          help n x u l rewrite subPLift (var n x)
+                              | liftVar n x
+                              | l = refl~ₜ
                                           
 ucwf∘wellscoped (sub m .0 u (<> .m)) with toWellscoped u
 ucwf∘wellscoped (sub m _ u (<> .m)) | var .0 ()
 
-ucwf∘wellscoped (sub m _ u (_ , n < xs , x >)) = {!!}
+ucwf∘wellscoped (sub m _ u (_ , n < xs , x >)) with toWellscoped u
+                                                  | inspect toWellscoped u
+ucwf∘wellscoped (sub m .(suc n) u (.m , n < xs , x′ >))
+  | var .(suc n) zero | [ q=2WSu ] = begin
+     sub m (suc n) u (m , n < xs , x′ >)
+   ≈⟨ cong~ₜ (λ a → sub _ _ a (m , n < xs , x′ >)) (ucwf∘wellscoped u) ⟩
+     sub m (suc n) (toUcwf (toWellscoped u)) (m , n < xs , x′ >)
+   ≈⟨ cong~ₜ (λ a → sub _ _ a (_ , _ < xs , x′ >)) (lemma2q u q=2WSu) ⟩
+     sub m (suc n) (q _) (m , n < xs , x′ >)
+   ≈⟨ sym~ₜ (q[<a,t>] x′ xs) ⟩
+     x′
+   ≈⟨ ucwf∘wellscoped x′ ⟩
+     toUcwf (toWellscoped x′)
+   ∎ where open EqR (UcwfTmS {_})
+           open Reveal_·_is_
+ucwf∘wellscoped (sub m _ u (.m , n < xs , x′ >))
+  | var _ (suc x) | [ var=u ] = {!!}
+  where open Reveal_·_is_
 
 vec∘hom [] = refl
 vec∘hom (x ∷ xs)
@@ -109,8 +127,11 @@ hom∘vec (id (suc m)) =
                   ~ₕ suc m , m < vecToHom (tail $ idSub _) , q m >
           help m rewrite tailIdp m = refl~ₕ
 
-hom∘vec (comp m n k hnk hmn) = {!!}
-
+hom∘vec (comp m n k hnk hmn) with homToVec hnk | inspect homToVec hnk
+hom∘vec (comp m n .0 hnk hmn) | [] | [ eq ] = {!!}
+hom∘vec (comp m n₁ _ hnk hmn) | x ∷ a | [ eq ] = {!!}
+  where open Reveal_·_is_
+  
 hom∘vec (p n) = {!!}
 
 hom∘vec (<> m) = refl~ₕ
@@ -122,4 +143,3 @@ hom∘vec (m , n < u , x >) = sym~ₕ $
   ≈⟨ sym~ₕ $ congt~ₕ (λ a → m , n < u , a >) (ucwf∘wellscoped x) ⟩
     (m , n < u , x >)
   ∎ where open EqR (HomCwfS {suc n} {m})
-
