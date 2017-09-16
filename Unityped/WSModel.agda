@@ -40,7 +40,7 @@ sub (var _ x) ts = lookup x ts
 _[_] : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
 t [ ts ] = sub t ts
 
--- comp of homs 
+-- composition of homs 
 comp : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
 comp []   _ = []
 comp (t ∷ ts) us = sub t us ∷ comp ts us
@@ -61,7 +61,7 @@ ext ts t = t ∷ ts
 empt : ∀ {m} → Vec (WellScopedTm m) zero
 empt = []
 
--- Proofs of ucwf axioms
+-- Proofs 
 
 ------------------------------ Auxiliary lemmas -----------------------------
 liftVar : ∀ n i → lift (var n i) ≡ var (suc n) (suc i)
@@ -74,7 +74,7 @@ lookupPLemma : ∀ n i → lookup i (projSub n) ≡ var (suc n) (suc i)
 lookupPLemma n i =
   begin
     lookup i (projSub n)
-  ≡⟨ refl ⟩
+  ≡⟨⟩
     lookup i (map lift (idSub n))
   ≡⟨ sym (lookupMap n i (idSub n)) ⟩
     lift (lookup i (idSub n))
@@ -131,15 +131,15 @@ compLeftId [] = refl
 compLeftId (x ∷ ts) =
  begin
     comp (idSub _) (x ∷ ts)
-  ≡⟨ refl ⟩
+  ≡⟨⟩
     (sub (head (idSub _)) (x ∷ ts)) ∷ comp (tail (idSub _)) (x ∷ ts)
-  ≡⟨ refl ⟩
+  ≡⟨⟩
      (sub (q _) (x ∷ ts)) ∷ comp (tail (idSub _)) (x ∷ ts)  
   ≡⟨ cong (λ a → (sub (q _) (x ∷ ts)) ∷ comp a (x ∷ ts)) (tailIdp _) ⟩
     (sub (q _) (x ∷ ts)) ∷ comp (projSub _) (x ∷ ts) 
   ≡⟨ cong (λ a → (sub (q _) (x ∷ ts)) ∷ a) (p∘x∷ts x ts) ⟩
     (sub (q _) (x ∷ ts)) ∷ ts
-  ≡⟨ refl ⟩
+  ≡⟨⟩
     x ∷ ts
   ∎
 
