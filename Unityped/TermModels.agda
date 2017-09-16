@@ -15,20 +15,20 @@ import Relation.Binary.EqReasoning as EqR
 -- Translation functions
 toUcwf   : ∀ {n} → WellScopedTm n → UcwfTm n
 toWs     : ∀ {n} → UcwfTm n → WellScopedTm n
-homToVec : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
-vecToHom : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
+toVec : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
+toHom : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
 
-homToVec (id n)      = idSub n
-homToVec (hnk ∘ hmn) = compWS (homToVec hnk) (homToVec hmn) 
-homToVec (p n)       = projSub n
-homToVec <>          = empt
-homToVec < h , t >   = ext (homToVec h) (toWs t)
+toVec (id n)      = idSub n
+toVec (hnk ∘ hmn) = compWS (toVec hnk) (toVec hmn) 
+toVec (p n)       = projSub n
+toVec <>          = empt
+toVec < h , t >   = ext (toVec h) (toWs t)
 
-vecToHom []       = <>
-vecToHom (x ∷ xs) = < vecToHom xs , toUcwf x >
+toHom []       = <>
+toHom (x ∷ xs) = < toHom xs , toUcwf x >
 
 toWs (q n)      = qWS n
-toWs (t `[ h ]) = subWS (toWs t) (homToVec h)
+toWs (t `[ h ]) = subWS (toWs t) (toVec h)
 
 toUcwf (var _ zero)    = q _
 toUcwf (var _ (suc i)) = weaken (toUcwf (var _ i))
@@ -36,8 +36,8 @@ toUcwf (var _ (suc i)) = weaken (toUcwf (var _ i))
 -- Inverses
 wellscoped∘ucwf : ∀ {n}   (t : WellScopedTm n) → t ≡ toWs (toUcwf t)
 ucwf∘wellscoped : ∀ {n}   (u : UcwfTm n) → u ~ₜ toUcwf (toWs u)
-vec∘hom         : ∀ {m n} (v : Vec (WellScopedTm m) n) → v ≡ homToVec (vecToHom v)
-hom∘vec         : ∀ {n m} (u : HomCwf m n) → u ~ₕ vecToHom (homToVec u)
+vec∘hom         : ∀ {m n} (v : Vec (WellScopedTm m) n) → v ≡ toVec (toHom v)
+hom∘vec         : ∀ {n m} (u : HomCwf m n) → u ~ₕ toHom (toVec u)
 
 wellscoped∘ucwf (var _ zero)    = refl
 wellscoped∘ucwf (var _ (suc x)) = sym $
@@ -61,11 +61,17 @@ lemma2Wk u pr rewrite pr = refl~ₜ
 ucwf∘wellscoped (q n) = refl~ₜ
 ucwf∘wellscoped (u `[ id _ ]) rewrite t[id]=t (toWs u)
   = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
-ucwf∘wellscoped (u `[ ts ∘ us ]) with homToVec ts | inspect homToVec ts
-                                         | toWs u | inspect toWs u
+ucwf∘wellscoped (u `[ ts ∘ us ]) with toVec ts | inspect toVec ts
+                                     | toWs u  | inspect toWs u
 ucwf∘wellscoped (u `[ ts ∘ us ]) | [] | _ | var .0 () | _
-ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ zero    | [ =var ] = {!!}
+ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ zero | [ =var ] =
+  begin
+    u `[ ts ∘ us ]
+  ≈⟨ {!!} ⟩
+    toUcwf (subWS x (toVec us))
+  ∎ where open EqR (UcwfTmS {_})
 {-
+-- hom∘vec $ toHom xs ∘ us doesnt pass termination
   u`[ts ∘ us]
 ~ q`[ts ∘ us]
 ~ q`[< toHom xs ∘ us , (toUcwf x)`[us] >]
@@ -73,7 +79,17 @@ ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ zero    | 
 -}
 ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ (suc i) | [ =var ] = {!!}
   where open Reveal_·_is_
-
+        --open EqR (UcwfTmS {_})
+{-
+  u `[ ts ∘ us ]
+~ u `[ (< (toHom xs) , (toUcwf x) > ∘ us) ]
+~ u `[ < toHom xs ∘ us , (toUcwf x) `[ us ] > ]
+~ u `[ < toHom (compWS (toVec (toHom xs)) (toVec us)) , (toUcwf x) `[ us ] > ]
+~ u `[ < toHom (compWS (toVec (toHom xs)) (toVec us)) ,
+        toUcwf (subWS (toWs (toUcwf x)) (toVec us)) > ]
+~ u `[ < toHom (compWS xs (toVec us)) , toUcwf (subWS (toWs (toUcwf x)) (toVec us)) > ]
+~ u `[ < toHom (compWS xs (toVec us)) , toUcwf (subWS x (toVec us)) > ]
+-}
 ucwf∘wellscoped (u `[ p _ ]) with toWs u
                                 | inspect toWs u
 ucwf∘wellscoped (u `[ p _ ]) | var _ x
@@ -122,14 +138,14 @@ ucwf∘wellscoped (u `[ < xs , x′ > ]) | var _ (suc x)
   ≈⟨ sym~ₜ (congh~ₜ ((toUcwf (var _ x)) `[_]) (p∘<a,t> x′ xs)) ⟩
     (toUcwf $ var _ x) `[ xs ]
   ≈⟨ {!!} ⟩ -- recursive call causes termination checker issue
-    toUcwf (subWS (toWs (toUcwf $ var _ x)) (homToVec xs))
+    toUcwf (subWS (toWs (toUcwf $ var _ x)) (toVec xs))
   ≈⟨ help₂ xs x ⟩
-    toUcwf (subWS (var _ x) (homToVec xs))
+    toUcwf (subWS (var _ x) (toVec xs))
   ∎ where open Reveal_·_is_
           open EqR (UcwfTmS {_})
           help₂ : ∀ {n m} (xs : HomCwf m n) (x : Fin n) →
-            toUcwf (subWS (toWs (toUcwf $ var n x)) (homToVec xs))
-             ~ₜ toUcwf (subWS (var n x) (homToVec xs))
+            toUcwf (subWS (toWs (toUcwf $ var n x)) (toVec xs))
+             ~ₜ toUcwf (subWS (var n x) (toVec xs))
           help₂ {n} {_} _ x rewrite sym $ wellscoped∘ucwf (var n x) = refl~ₜ
 
 vec∘hom [] = refl
@@ -137,11 +153,11 @@ vec∘hom (x ∷ xs)
   rewrite sym (vec∘hom xs) |
           sym (wellscoped∘ucwf x) = refl
 
-empty~m : ∀ {n} (h : HomCwf n 0) → homToVec h ≡ [] → vecToHom (homToVec h) ~ₕ <>
+empty~m : ∀ {n} (h : HomCwf n 0) → toVec h ≡ [] → toHom (toVec h) ~ₕ <>
 empty~m h pr rewrite pr = refl~ₕ
 
-ext~<,> : ∀ {m n x xs} (h : HomCwf m (suc n)) → homToVec h ≡ x ∷ xs
-            → vecToHom (homToVec h) ~ₕ < vecToHom xs , toUcwf x >
+ext~<,> : ∀ {m n x xs} (h : HomCwf m (suc n)) → toVec h ≡ x ∷ xs
+            → toHom (toVec h) ~ₕ < toHom xs , toUcwf x >
 ext~<,> _ pr rewrite pr = refl~ₕ           
 
 hom∘vec (id zero)    = id₀
@@ -151,19 +167,19 @@ hom∘vec (id (suc m)) =
   ≈⟨ id<p,q> ⟩
     < p _ , q _ >
   ≈⟨ cong~ₕ <_, q _ > (hom∘vec $ p m) ⟩
-    < vecToHom (projSub m) , q _ >
+    < toHom (projSub m) , q _ >
   ≈⟨ help m ⟩
-    < vecToHom $ tail (idSub _) , q _ >
+    < toHom $ tail (idSub _) , q _ >
   ∎ where open EqR (HomCwfS {suc m} {suc m})
-          help : ∀ m → < vecToHom (projSub m) , q m >
-                         ~ₕ < vecToHom (tail $ idSub _) , q m >
+          help : ∀ m → < toHom (projSub m) , q m >
+                         ~ₕ < toHom (tail $ idSub _) , q m >
           help m rewrite tailIdp m = refl~ₕ
-hom∘vec (hnk ∘ hmn) with homToVec hnk | inspect homToVec hnk
+hom∘vec (hnk ∘ hmn) with toVec hnk | inspect toVec hnk
 hom∘vec (hnk ∘ hmn) | [] | [ =[] ] =
   begin
     hnk ∘ hmn
   ≈⟨ cong~ₕ (flip _∘_ $ hmn) (hom∘vec hnk) ⟩
-    (vecToHom (homToVec hnk)) ∘ hmn
+    (toHom (toVec hnk)) ∘ hmn
   ≈⟨ cong~ₕ (flip _∘_ $ hmn) (empty~m hnk =[]) ⟩
     <> ∘ hmn
   ≈⟨ ∘<> hmn ⟩
@@ -171,18 +187,18 @@ hom∘vec (hnk ∘ hmn) | [] | [ =[] ] =
   ∎ where open EqR (HomCwfS {_} {_})
 hom∘vec (hnk ∘ hmn) | x ∷ xs | [ =x∷xs ] = sym~ₕ $
   begin
-    vecToHom (subWS x (homToVec hmn) ∷ compWS xs (homToVec hmn))
+    toHom (subWS x (toVec hmn) ∷ compWS xs (toVec hmn))
   ≈⟨ help x xs hmn ⟩
-    vecToHom (subWS (toWs (toUcwf x)) (homToVec hmn)
-                ∷ compWS (homToVec (vecToHom xs)) (homToVec hmn))
-  ≈⟨ sym~ₕ $ cong~ₕ (λ z → < z , _ >) (hom∘vec $ (vecToHom xs) ∘ hmn) ⟩
-    < (vecToHom xs) ∘ hmn , toUcwf (subWS (toWs (toUcwf x)) (homToVec hmn)) >
+    toHom (subWS (toWs (toUcwf x)) (toVec hmn)
+                ∷ compWS (toVec (toHom xs)) (toVec hmn))
+  ≈⟨ sym~ₕ $ cong~ₕ (λ z → < z , _ >) (hom∘vec $ (toHom xs) ∘ hmn) ⟩
+    < (toHom xs) ∘ hmn , toUcwf (subWS (toWs (toUcwf x)) (toVec hmn)) >
   ≈⟨ sym~ₕ $ congt~ₕ (λ z → < _ , z >) (ucwf∘wellscoped $ (toUcwf x) `[ hmn ]) ⟩
-    < (vecToHom xs) ∘ hmn , (toUcwf x) `[ hmn ] >
-  ≈⟨ sym~ₕ (<a,t>∘s (toUcwf x) (vecToHom xs) hmn) ⟩
-    < vecToHom xs , toUcwf x > ∘ hmn
+    < (toHom xs) ∘ hmn , (toUcwf x) `[ hmn ] >
+  ≈⟨ sym~ₕ (<a,t>∘s (toUcwf x) (toHom xs) hmn) ⟩
+    < toHom xs , toUcwf x > ∘ hmn
   ≈⟨ sym~ₕ (cong~ₕ (flip _∘_ $ hmn) (ext~<,> hnk =x∷xs)) ⟩
-    vecToHom (homToVec hnk) ∘ hmn
+    toHom (toVec hnk) ∘ hmn
   ≈⟨ sym~ₕ (cong~ₕ (flip _∘_ $ hmn) (hom∘vec hnk)) ⟩
     hnk ∘ hmn
   ∎
@@ -190,16 +206,16 @@ hom∘vec (hnk ∘ hmn) | x ∷ xs | [ =x∷xs ] = sym~ₕ $
         open EqR (HomCwfS {_} {_})
         help : ∀ {n m : Nat} (x : WellScopedTm _) (xs : Vec (WellScopedTm _) n)
                              (hmn : HomCwf m _)
-                 → vecToHom (subWS x (homToVec hmn) ∷ compWS xs (homToVec hmn))
-                    ~ₕ vecToHom (subWS (toWs (toUcwf x)) (homToVec hmn)
-                               ∷ compWS (homToVec (vecToHom xs)) (homToVec hmn))
+                 → toHom (subWS x (toVec hmn) ∷ compWS xs (toVec hmn))
+                    ~ₕ toHom (subWS (toWs (toUcwf x)) (toVec hmn)
+                               ∷ compWS (toVec (toHom xs)) (toVec hmn))
         help {n = n₁} x xs hmn rewrite sym $ wellscoped∘ucwf x
                                      | sym $ vec∘hom xs = refl~ₕ
 hom∘vec (p n) = {!!}
 hom∘vec (<>) = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
   begin
-    < vecToHom (homToVec u) , toUcwf (toWs x) >
+    < toHom (toVec u) , toUcwf (toWs x) >
   ≈⟨ sym~ₕ $ cong~ₕ (<_, toUcwf (toWs x) >) (hom∘vec u) ⟩
     < u , toUcwf (toWs x) >
   ≈⟨ sym~ₕ $ congt~ₕ (< u ,_>) (ucwf∘wellscoped x) ⟩
