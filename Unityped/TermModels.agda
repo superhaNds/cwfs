@@ -15,8 +15,8 @@ import Relation.Binary.EqReasoning as EqR
 -- Translation functions
 toUcwf   : ∀ {n} → WellScopedTm n → UcwfTm n
 toWs     : ∀ {n} → UcwfTm n → WellScopedTm n
-toVec : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
-toHom : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
+toVec    : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
+toHom    : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
 
 toVec (id n)      = idSub n
 toVec (hnk ∘ hmn) = compWS (toVec hnk) (toVec hmn) 
@@ -51,6 +51,11 @@ wellscoped∘ucwf (var _ (suc x)) = sym $
     var (suc _) (suc x)
   ∎ where open ≡-Reasoning
 
+vec∘hom [] = refl
+vec∘hom (x ∷ xs)
+  rewrite sym (vec∘hom xs) |
+          sym (wellscoped∘ucwf x) = refl
+
 lemma2q : ∀ {n} (u : UcwfTm (suc n)) → toWs u ≡ qWS _ → (toUcwf (toWs u)) ~ₜ q _
 lemma2q u pr rewrite pr = refl~ₜ
 
@@ -58,55 +63,69 @@ lemma2Wk : ∀ {n x} (u : UcwfTm (suc n)) → toWs u ≡ var (suc n) (suc x)
                    → toUcwf (toWs u) ~ₜ (toUcwf $ var (suc n) (suc x))
 lemma2Wk u pr rewrite pr = refl~ₜ
 
+empty~m : ∀ {n} (h : HomCwf n 0) → toVec h ≡ [] → toHom (toVec h) ~ₕ <>
+empty~m h pr rewrite pr = refl~ₕ
+
+ext~<,> : ∀ {m n x xs} (h : HomCwf m (suc n)) → toVec h ≡ x ∷ xs
+            → toHom (toVec h) ~ₕ < toHom xs , toUcwf x >
+ext~<,> _ pr rewrite pr = refl~ₕ   
+
 ucwf∘wellscoped (q n) = refl~ₜ
 ucwf∘wellscoped (u `[ id _ ]) rewrite t[id]=t (toWs u)
   = trans~ₜ (sym~ₜ (subId u)) (ucwf∘wellscoped u)
+  
 ucwf∘wellscoped (u `[ ts ∘ us ]) with toVec ts | inspect toVec ts
-                                     | toWs u  | inspect toWs u
-ucwf∘wellscoped (u `[ ts ∘ us ]) | [] | _ | var .0 () | _
+                                    | toWs u   | inspect toWs u
+ucwf∘wellscoped (u `[ ts ∘ us ]) | []     | _         | var .0 ()  | _
 ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ zero | [ =var ] =
   begin
     u `[ ts ∘ us ]
-  ≈⟨ {!!} ⟩
-    toUcwf (subWS x (toVec us))
+  ≈⟨ cong~ₜ (_`[ ts ∘ us ]) (ucwf∘wellscoped u) ⟩
+    (toUcwf (toWs u)) `[ ts ∘ us ]
+  ≈⟨ cong~ₜ (_`[ ts ∘ us ]) (lemma2q u =var) ⟩
+    q _ `[ ts ∘ us ]
+  ≈⟨ congh~ₜ (λ r → q _ `[ r ∘ us ]) {!!} ⟩ --(hom∘vec ts) bruuuh .. δεν ειναι σωστή αναδρομή εδω; έλεος..
+    q _ `[ toHom (toVec ts) ∘ us ]
+  ≈⟨ congh~ₜ (λ r → q _ `[ r ∘ us ]) (ext~<,> ts =x∷xs) ⟩
+    q _ `[ < toHom xs , toUcwf x > ∘ us ]
+  ≈⟨ congh~ₜ (_`[_] (q _)) (<a,t>∘s (toUcwf x) (toHom xs) us) ⟩ 
+    q _ `[ < toHom xs ∘ us , (toUcwf x) `[ us ] > ]
+  ≈⟨ sym~ₜ (q[<a,t>] (toUcwf x `[ us ]) (toHom xs ∘ us)) ⟩
+   toUcwf x `[ us ]
+  ≈⟨ {!!} ⟩ -- recursive call fails termination check
+   toUcwf (subWS (toWs (toUcwf x)) (toVec us))
+  ≈⟨ help ⟩
+   toUcwf (subWS x (toVec us))
   ∎ where open EqR (UcwfTmS {_})
+          help : toUcwf (subWS (toWs (toUcwf x)) (toVec us)) ~ₜ (toUcwf (subWS x (toVec us)))
+          help rewrite sym $ wellscoped∘ucwf x = refl~ₜ
 {-
--- hom∘vec $ toHom xs ∘ us doesnt pass termination
   u`[ts ∘ us]
 ~ q`[ts ∘ us]
+~ q`[toHom (toVec ts) ∘ us]
 ~ q`[< toHom xs ∘ us , (toUcwf x)`[us] >]
 ~ (toUcwf x)`[us]
 -}
 ucwf∘wellscoped (u `[ ts ∘ us ]) | x ∷ xs | [ =x∷xs ] | var _ (suc i) | [ =var ] = {!!}
   where open Reveal_·_is_
         --open EqR (UcwfTmS {_})
-{-
-  u `[ ts ∘ us ]
-~ u `[ (< (toHom xs) , (toUcwf x) > ∘ us) ]
-~ u `[ < toHom xs ∘ us , (toUcwf x) `[ us ] > ]
-~ u `[ < toHom (compWS (toVec (toHom xs)) (toVec us)) , (toUcwf x) `[ us ] > ]
-~ u `[ < toHom (compWS (toVec (toHom xs)) (toVec us)) ,
-        toUcwf (subWS (toWs (toUcwf x)) (toVec us)) > ]
-~ u `[ < toHom (compWS xs (toVec us)) , toUcwf (subWS (toWs (toUcwf x)) (toVec us)) > ]
-~ u `[ < toHom (compWS xs (toVec us)) , toUcwf (subWS x (toVec us)) > ]
--}
+
 ucwf∘wellscoped (u `[ p _ ]) with toWs u
                                 | inspect toWs u
 ucwf∘wellscoped (u `[ p _ ]) | var _ x
                              | [ var=u ] = sym~ₜ $
   begin
     toUcwf (subWS (var _ x) (projSub _))
-  ≈⟨ help _ x u var=u ⟩
+  ≈⟨ help ⟩
     weaken (toUcwf $ toWs u)
   ≈⟨ sym~ₜ $ cong~ₜ weaken (ucwf∘wellscoped u) ⟩
     u `[ p _ ]
   ∎ where open EqR (UcwfTmS {_})
           open Reveal_·_is_
-          help : ∀ n x u → toWs u ≡ var n x → toUcwf (subWS (var n x) (projSub n))
-                                             ~ₜ weaken (toUcwf $ toWs u)
-          help n x u l rewrite subPLift (var n x)
-                              | liftVar n x
-                              | l = refl~ₜ                                     
+          help : toUcwf (subWS (var _ x) (projSub _)) ~ₜ weaken (toUcwf $ toWs u)
+          help rewrite subPLift (var _ x)
+                              | liftVar _ x
+                              | var=u = refl~ₜ                         
 ucwf∘wellscoped (u `[ <> ]) with toWs u
 ucwf∘wellscoped (u `[ <> ]) | var .0 ()
 ucwf∘wellscoped (u `[ < xs , x > ]) with toWs u
@@ -137,7 +156,7 @@ ucwf∘wellscoped (u `[ < xs , x′ > ]) | var _ (suc x)
     (toUcwf $ var _ x) `[ (p _) ∘ < xs , x′ > ]
   ≈⟨ sym~ₜ (congh~ₜ ((toUcwf (var _ x)) `[_]) (p∘<a,t> x′ xs)) ⟩
     (toUcwf $ var _ x) `[ xs ]
-  ≈⟨ {!!} ⟩ -- recursive call causes termination checker issue
+  ≈⟨ {!!} ⟩ -- recursive call causes termination checker issue, but should be structurally recursive (bruuh)
     toUcwf (subWS (toWs (toUcwf $ var _ x)) (toVec xs))
   ≈⟨ help₂ xs x ⟩
     toUcwf (subWS (var _ x) (toVec xs))
@@ -148,19 +167,7 @@ ucwf∘wellscoped (u `[ < xs , x′ > ]) | var _ (suc x)
              ~ₜ toUcwf (subWS (var n x) (toVec xs))
           help₂ {n} {_} _ x rewrite sym $ wellscoped∘ucwf (var n x) = refl~ₜ
 
-vec∘hom [] = refl
-vec∘hom (x ∷ xs)
-  rewrite sym (vec∘hom xs) |
-          sym (wellscoped∘ucwf x) = refl
-
-empty~m : ∀ {n} (h : HomCwf n 0) → toVec h ≡ [] → toHom (toVec h) ~ₕ <>
-empty~m h pr rewrite pr = refl~ₕ
-
-ext~<,> : ∀ {m n x xs} (h : HomCwf m (suc n)) → toVec h ≡ x ∷ xs
-            → toHom (toVec h) ~ₕ < toHom xs , toUcwf x >
-ext~<,> _ pr rewrite pr = refl~ₕ           
-
-hom∘vec (id zero)    = id₀
+hom∘vec (id zero)    = id₀ {0} {0}
 hom∘vec (id (suc m)) = 
   begin
     id (suc m)
