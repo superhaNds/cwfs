@@ -40,8 +40,8 @@ refl~ₜ : ∀ {n} {u : UcwfTm n} → u ~ₜ u
 refl~ₜ = trans~ₜ (subId _) (sym~ₜ (subId _))
 
 data _~ₕ_ where 
-  id₀     : ∀ {m n : Nat} → _~ₕ_ (id 0) <> 
-  ∘<>     : ∀ {m n} (ts : HomCwf m n) → _~ₕ_ (<> ∘ ts) <>
+  id₀     : id 0 ~ₕ <>
+  ∘<>     : ∀ {m n} (ts : HomCwf m n) → (<> ∘ ts) ~ₕ <>
   id<p,q> : ∀ {n} → id (suc n) ~ₕ < p n , q n >
   ∘lid    : ∀ {m n} (ts : HomCwf m n) → (id n) ∘ ts ~ₕ ts
   ∘rid    : ∀ {m n} (ts : HomCwf m n) → ts ∘ (id m) ~ₕ ts
