@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.ModelIsomorphism where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
@@ -152,10 +153,6 @@ hom∘vec (p (suc n)) =
   ≈⟨ {!!} ⟩ 
     < toHom (tail $ projSub (1 + n)) , q n `[ p (1 + n) ] >
   ∎ where open EqR (HomCwfS {_} {_})
-
-{- ≈⟨ cong~ₕ (λ x → < x ∘ p (1 + n) , q n `[ p (1 + n) ] >) (hom∘vec (p n)) ⟩ 
-    < toHom (projSub n) ∘ p (1 + n) , q n `[ p (1 + n) ] >
-  -}
 
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $

@@ -30,19 +30,19 @@ data _~ₜ_ : ∀ {n m} → UcwfTm n → UcwfTm m → Set
 data _~ₕ_ : ∀ {n m} → HomCwf n m → HomCwf n m → Set
 
 data _~ₜ_  where
- subId    : ∀ {n} (u : UcwfTm n) → u ~ₜ u [ (id n) ]
- q[<a,t>] : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m) → t ~ₜ (q m) [ < ts , t > ]
- ∘sub     : ∀ {m n k} (t : UcwfTm n) (ts : HomCwf k n) (us : HomCwf m k)
-              →  t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
- β        : ∀ {n} (t : UcwfTm (suc n)) (u : UcwfTm n)
-              → app n (lam n t) u ~ₜ t [ < id n , u > ]
- η        : ∀ {n} (t : UcwfTm n) → lam n (app (suc n) (t [ p n ]) (q n)) ~ₜ t
- appCm    : ∀ {n m} (t : UcwfTm n) (u : UcwfTm n) (ts : HomCwf m n) → app m (t [ ts ]) (u [ ts ]) ~ₜ app n t u [ ts ]
- lamCm    : ∀ {n m} (t : UcwfTm (suc n)) (ts : HomCwf m n) → lam n t [ ts ] ~ₜ lam m (t [ < ts ∘ p m , q m > ])
- sym~ₜ    : ∀ {n} {u u′ : UcwfTm n} → u ~ₜ u′ → u′ ~ₜ u
- trans~ₜ  : ∀ {m} {t u v : UcwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
- cong~ₜ   : ∀ {m n} (f : UcwfTm m → UcwfTm n) {h u : UcwfTm m} → h ~ₜ u → f h ~ₜ f u
- congh~ₜ  : ∀ {m n k} (f : HomCwf m n → UcwfTm k) {h v : HomCwf m n} → h ~ₕ v → f h ~ₜ f v
+  subId    : ∀ {n} (u : UcwfTm n) → u ~ₜ u [ (id n) ]
+  q[<a,t>] : ∀ {m n} (t : UcwfTm n) (ts : HomCwf n m) → t ~ₜ (q m) [ < ts , t > ]
+  ∘sub     : ∀ {m n k} (t : UcwfTm n) (ts : HomCwf k n) (us : HomCwf m k)
+               →  t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
+  β        : ∀ {n} (t : UcwfTm (suc n)) (u : UcwfTm n)
+               → app n (lam n t) u ~ₜ t [ < id n , u > ]
+  η        : ∀ {n} (t : UcwfTm n) → lam n (app (suc n) (t [ p n ]) (q n)) ~ₜ t
+  appCm    : ∀ {n m} (t : UcwfTm n) (u : UcwfTm n) (ts : HomCwf m n) → app m (t [ ts ]) (u [ ts ]) ~ₜ app n t u [ ts ]
+  lamCm    : ∀ {n m} (t : UcwfTm (suc n)) (ts : HomCwf m n) → lam n t [ ts ] ~ₜ lam m (t [ < ts ∘ p m , q m > ])
+  sym~ₜ    : ∀ {n} {u u′ : UcwfTm n} → u ~ₜ u′ → u′ ~ₜ u
+  trans~ₜ  : ∀ {m} {t u v : UcwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
+  cong~ₜ   : ∀ {m n} (f : UcwfTm m → UcwfTm n) {h u : UcwfTm m} → h ~ₜ u → f h ~ₜ f u
+  congh~ₜ  : ∀ {m n k} (f : HomCwf m n → UcwfTm k) {h v : HomCwf m n} → h ~ₕ v → f h ~ₜ f v
 
 refl~ₜ : ∀ {n} {u : UcwfTm n} → u ~ₜ u
 refl~ₜ = trans~ₜ (subId _) (sym~ₜ (subId _))

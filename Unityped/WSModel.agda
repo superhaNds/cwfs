@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.WSModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
@@ -87,16 +88,23 @@ lookupPLemma n i =
     var (suc n) (suc i)
   ∎
 
-{-subLift : ∀ n x → lift x ≡ sub x (projSub n)
+subVarP : ∀ n i → sub (var n i) (projSub n) ≡ var (suc n) (suc i)
+subVarP zero ()
+subVarP (suc n) zero    = refl
+subVarP (suc n) (suc i) = lookupPLemma (suc n) (suc i)
+
+subLift : ∀ n x → lift x ≡ sub x (projSub n)
 subLift _ (var _ zero)    = refl
 subLift _ (var _ (suc x)) =
   begin
     lift (var _ (suc x))
-  ≡⟨ {!!} ⟩
-    {!!}
+  ≡⟨ liftVar (suc _) (suc x) ⟩
+    var _ (suc (suc x))
+  ≡⟨ sym (subVarP (suc _) (suc x)) ⟩
+    sub (var _ (suc x)) (projSub _)
   ∎
-subLift n (lam .n x) = {!!}
-subLift n (app .n t u) = sym $
+subLift n (lam _ x) = {!subLift _ x!}
+subLift n (app _ t u) = sym $
   begin
     app _ (sub t (projSub n)) (sub u (projSub n))
   ≡⟨ cong (λ x → app _ x _) (sym $ subLift _ t) ⟩
@@ -105,12 +113,10 @@ subLift n (app .n t u) = sym $
     app _ (lift t) (lift u)
   ≡⟨⟩
     lift (app n t u)
-  ∎-}
-
-postulate subLift : ∀ n x → lift x ≡ sub x (projSub n)
+  ∎
 
 liftCompP : ∀ (n m : Nat) (xs : Vec (WellScopedTm n) m) → map lift xs ≡ comp xs (projSub n)
-liftCompP _ _ [] = refl
+liftCompP _ _ []       = refl
 liftCompP n m (x ∷ xs) =
   begin
     map lift (x ∷ xs)
@@ -125,8 +131,6 @@ liftCompP n m (x ∷ xs) =
 
 postulate tailIdp : ∀ n → tail (idSub (suc n)) ≡ projSub n
 -----------------------------------------------------------------------
-
-postulate lamComm : ∀ {n m} (t : WellScopedTm (suc n)) (xs : Vec (WellScopedTm m) n) → sub (lam n t) xs ≡ lam m (sub t (q _ ∷ comp xs (projSub m)))
 
 id=<p,q> : ∀ (n : Nat) → idSub (suc n) ≡ q n ∷ (projSub n)
 id=<p,q> zero    = refl
@@ -160,7 +164,6 @@ compEmpty _ = refl
 postulate lemma₁ : ∀ {n m k} (t : WellScopedTm (suc n)) (ts : Vec (WellScopedTm k) n) (us : Vec (WellScopedTm m) k)
                      → sub (lam n t) (comp ts us) ≡ sub (sub (lam n t) ts) us
                      
-
 compInSub : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
     (us : Vec (WellScopedTm m) k) → sub t (comp ts us) ≡ sub (sub t ts) us
 compInSub (var .0 ())     [] us
@@ -196,11 +199,11 @@ compLeftId : ∀ {m n : Nat} (ts : Vec (WellScopedTm m) n) → comp (idSub n) ts
 compLeftId [] = refl
 compLeftId (x ∷ ts) =
  begin
-     (sub (q _) (x ∷ ts)) ∷ comp (tail (idSub _)) (x ∷ ts)  
+    sub (q _) (x ∷ ts) ∷ comp (tail (idSub _)) (x ∷ ts)  
   ≡⟨ cong (λ a → (sub (q _) (x ∷ ts)) ∷ comp a (x ∷ ts)) (tailIdp _) ⟩
-    (sub (q _) (x ∷ ts)) ∷ comp (projSub _) (x ∷ ts) 
+    sub (q _) (x ∷ ts) ∷ comp (projSub _) (x ∷ ts) 
   ≡⟨ cong (λ a → (sub (q _) (x ∷ ts)) ∷ a) (p∘x∷ts x ts) ⟩
-    (sub (q _) (x ∷ ts)) ∷ ts
+    sub (q _) (x ∷ ts) ∷ ts
   ≡⟨⟩
     x ∷ ts
   ∎
