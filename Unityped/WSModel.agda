@@ -87,9 +87,46 @@ lookupPLemma n i =
     var (suc n) (suc i)
   ∎
 
--- postulate subPLift : ∀ {n} t → (sub t (projSub n)) ≡ lift t
+{-subLift : ∀ n x → lift x ≡ sub x (projSub n)
+subLift _ (var _ zero)    = refl
+subLift _ (var _ (suc x)) =
+  begin
+    lift (var _ (suc x))
+  ≡⟨ {!!} ⟩
+    {!!}
+  ∎
+subLift n (lam .n x) = {!!}
+subLift n (app .n t u) = sym $
+  begin
+    app _ (sub t (projSub n)) (sub u (projSub n))
+  ≡⟨ cong (λ x → app _ x _) (sym $ subLift _ t) ⟩
+    app _ (lift t) (sub u (projSub n))
+  ≡⟨ cong (λ x → app _ _ x) (sym $ subLift _ u) ⟩
+    app _ (lift t) (lift u)
+  ≡⟨⟩
+    lift (app n t u)
+  ∎-}
+
+postulate subLift : ∀ n x → lift x ≡ sub x (projSub n)
+
+liftCompP : ∀ (n m : Nat) (xs : Vec (WellScopedTm n) m) → map lift xs ≡ comp xs (projSub n)
+liftCompP _ _ [] = refl
+liftCompP n m (x ∷ xs) =
+  begin
+    map lift (x ∷ xs)
+  ≡⟨⟩
+    lift x ∷ map lift xs
+  ≡⟨ cong (λ s → s ∷ _) (subLift _ x) ⟩
+    sub x (projSub _) ∷ map lift xs
+  ≡⟨ cong (λ s → _ ∷ s) (liftCompP _ _ xs) ⟩
+    sub x (projSub (n)) ∷ comp xs (projSub (n))
+  ∎
+
+
 postulate tailIdp : ∀ n → tail (idSub (suc n)) ≡ projSub n
----------------------------------------------------------------------------
+-----------------------------------------------------------------------
+
+postulate lamComm : ∀ {n m} (t : WellScopedTm (suc n)) (xs : Vec (WellScopedTm m) n) → sub (lam n t) xs ≡ lam m (sub t (q _ ∷ comp xs (projSub m)))
 
 id=<p,q> : ∀ (n : Nat) → idSub (suc n) ≡ q n ∷ (projSub n)
 id=<p,q> zero    = refl

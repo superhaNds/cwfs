@@ -43,8 +43,11 @@ vec∘hom : ∀ {m n} (v : Vec (WellScopedTm m) n) → v ≡ toVec (toHom v)
 ucwf∘ws : ∀ {n}   (u : UcwfTm n) → u ~ₜ toUcwf (toWs u)
 hom∘vec : ∀ {n m} (u : HomCwf m n) → u ~ₕ toHom (toVec u)
 
+toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm m) n)
+               → toHom (compWS xs ys) ~ₕ (toHom xs) ∘ (toHom ys)
 toUcwfDistSub : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
                   → toUcwf (subWS t xs) ~ₜ toUcwf t `[ toHom xs ]
+
 toUcwfDistSub (var _ ())      []
 toUcwfDistSub (var _ zero)    (x ∷ xs) = q[<a,t>] (toUcwf x) (toHom xs)
 toUcwfDistSub (var _ (suc i)) (x ∷ xs) = sym~ₜ $
@@ -60,7 +63,20 @@ toUcwfDistSub (var _ (suc i)) (x ∷ xs) = sym~ₜ $
   ≈⟨ sym~ₜ $ toUcwfDistSub (var _ i) xs ⟩ 
     (toUcwf $ subWS (var _ i) xs)
   ∎ where open EqR (UcwfTmS {_})
-toUcwfDistSub (lam n t) xs = {!!}
+toUcwfDistSub (lam n t) xs =  
+  begin
+    lam _ (toUcwf (subWS t (qWS _ ∷ map lift xs)))
+  ≈⟨ {!!} ⟩
+    lam _ (toUcwf (subWS t (qWS _ ∷ compWS xs (projSub _))))
+  ≈⟨ cong~ₜ (λ s → lam _ s) (toUcwfDistSub t  (qWS _ ∷ compWS xs (projSub _))) ⟩
+    lam _ (toUcwf t `[ < toHom (compWS xs (projSub _)) , q _ > ])
+  ≈⟨ {!!} ⟩
+    lam _ (toUcwf t `[ < toHom xs ∘ toHom (projSub _) , q _ > ])
+  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩
+    lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ])
+  ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
+    (lam _ (toUcwf t) `[ toHom xs ])
+  ∎ where open EqR (UcwfTmS {_})
 toUcwfDistSub (app n t u) xs =
   begin
     app _ (toUcwf (subWS t xs)) (toUcwf (subWS u xs))
@@ -68,12 +84,10 @@ toUcwfDistSub (app n t u) xs =
     app _ (toUcwf t `[ toHom xs ]) (toUcwf (subWS u xs))
   ≈⟨ cong~ₜ (app _ (toUcwf t `[ toHom xs ])) (toUcwfDistSub u xs) ⟩
     app _ (toUcwf t `[ toHom xs ]) (toUcwf u `[ toHom xs ])
-  ≈⟨ {!!} ⟩
-    app n (toUcwf t) (toUcwf u) `[ toHom xs ]
+  ≈⟨ appCm (toUcwf t) (toUcwf u) (toHom xs) ⟩
+    app _ (toUcwf t) (toUcwf u) `[ toHom xs ]
   ∎ where open EqR (UcwfTmS {_})
 
-toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm m) n)
-               → toHom (compWS xs ys) ~ₕ (toHom xs) ∘ (toHom ys)
 toHomDist∘ []       ys = sym~ₕ (∘<> (toHom ys))
 toHomDist∘ (x ∷ xs) ys = sym~ₕ $
   begin
@@ -135,11 +149,14 @@ hom∘vec (p (suc n)) =
     < p n , q n > ∘ p (1 + n)
   ≈⟨ <a,t>∘s (q n) (p n) (p (suc n)) ⟩
     < p n ∘ p (1 + n) , q n `[ p (1 + n) ] >
-  ≈⟨ cong~ₕ (λ x → < x ∘ p (1 + n) , q n `[ p (1 + n) ] >) (hom∘vec (p n)) ⟩ 
-    < toHom (projSub n) ∘ p (1 + n) , q n `[ p (1 + n) ] >
   ≈⟨ {!!} ⟩ 
     < toHom (tail $ projSub (1 + n)) , q n `[ p (1 + n) ] >
   ∎ where open EqR (HomCwfS {_} {_})
+
+{- ≈⟨ cong~ₕ (λ x → < x ∘ p (1 + n) , q n `[ p (1 + n) ] >) (hom∘vec (p n)) ⟩ 
+    < toHom (projSub n) ∘ p (1 + n) , q n `[ p (1 + n) ] >
+  -}
+
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
   begin
