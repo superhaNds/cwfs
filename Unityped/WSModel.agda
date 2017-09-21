@@ -1,7 +1,7 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.WSModel where
 
-open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
+open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Vec.Properties
 open import Data.Vec
   using (Vec ; [] ; _∷_ ; map ; lookup ; allFin ; tabulate ; tail ; head)
@@ -49,7 +49,7 @@ projSub = map lift ∘ idSub
 -- sub
 sub : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
 sub (var _ i)   ts = lookup i ts
-sub (lam _ t)   ts = lam _ (sub t ((var _ zero) ∷ map lift ts))
+sub (lam _ t)   ts = lam _ (sub t (var _ zero ∷ map lift ts))
 sub (app _ t u) ts = app _ (sub t ts) (sub u ts)
 
 -- composition of homs 
@@ -89,7 +89,7 @@ lookupPLemma n i =
   ∎
 
 subVarP : ∀ n i → sub (var n i) (projSub n) ≡ var (suc n) (suc i)
-subVarP zero ()
+subVarP zero    ()
 subVarP (suc n) zero    = refl
 subVarP (suc n) (suc i) = lookupPLemma (suc n) (suc i)
 
@@ -103,7 +103,7 @@ subLift _ (var _ (suc x)) =
   ≡⟨ sym (subVarP (suc _) (suc x)) ⟩
     sub (var _ (suc x)) (projSub _)
   ∎
-subLift n (lam _ x) = {!subLift _ x!}
+subLift n (lam _ t) = {!!}
 subLift n (app _ t u) = sym $
   begin
     app _ (sub t (projSub n)) (sub u (projSub n))
@@ -169,7 +169,7 @@ compInSub : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
 compInSub (var .0 ())     [] us
 compInSub (var _ zero)    (v ∷ ts) us = refl
 compInSub (var _ (suc x)) (v ∷ ts) us = compInSub (var _ x) ts us
-compInSub (lam n t)       ts       us = lemma₁ t ts us
+compInSub (lam n t)       ts       us = {!!}
 compInSub (app n t u)     ts       us =
   begin
     app _ (sub t (comp ts us)) (sub u (comp ts us))
@@ -184,13 +184,25 @@ subVar0 : ∀ {m n} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) m) →
 subVar0 t ts = refl
 
 postulate p∘x∷ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → comp (projSub k) (t ∷ ts) ≡ ts
-{-
+
 p∘<ts,t>=ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k)
                 → comp (projSub k) (t ∷ ts) ≡ ts
 p∘<ts,t>=ts t [] = refl
-p∘<ts,t>=ts t (x ∷ ts) = sym $
--}
-  
+p∘<ts,t>=ts t (x ∷ xs) = begin
+    comp (projSub _) (t ∷ x ∷ xs)
+  ≡⟨⟩
+    x ∷ comp (tail (projSub (suc _))) (t ∷ x ∷ xs)
+  ≡⟨ cong (λ s → x ∷ comp s (t ∷ x ∷ xs)) (sym (p∘<ts,t>=ts _ (tail (projSub _)))) ⟩
+    x ∷ comp (comp (projSub _) (projSub (1 + _))) (t ∷ x ∷ xs)
+  ≡⟨ {!!} ⟩
+    x ∷ comp (comp (projSub _) (projSub (1 + _))) (t ∷ x ∷ (comp (projSub _) (t ∷ xs)))
+  ≡⟨ {!!} ⟩ 
+    x ∷ xs
+  ∎
+
+tailComp : ∀ n → comp (projSub n) (projSub (1 + n)) ≡ tail (projSub (1 + n))
+tailComp n = p∘<ts,t>=ts _ (tail (projSub (suc n)))
+
 compRightOfHomExt : ∀ {m n} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) m)
    (us : Vec (WellScopedTm m) n) → comp (ext ts t) us ≡ ext (comp ts us) (sub t us)
 compRightOfHomExt _ _ _ = refl

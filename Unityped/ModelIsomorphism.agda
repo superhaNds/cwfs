@@ -9,7 +9,6 @@ open import Function using (_$_ ; flip)
 open import Unityped.WSModel
   renaming (q to qWS ; comp to compWS ; sub to subWS ; id to idWS)
 open import Relation.Binary.PropositionalEquality
-open import Util
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
 import Relation.Binary.EqReasoning as EqR
 
@@ -66,18 +65,21 @@ toUcwfDistSub (var _ (suc i)) (x ∷ xs) = sym~ₜ $
   ∎ where open EqR (UcwfTmS {_})
 toUcwfDistSub (lam n t) xs =  
   begin
-    lam _ (toUcwf (subWS t (qWS _ ∷ map lift xs)))
-  ≈⟨ {!!} ⟩
-    lam _ (toUcwf (subWS t (qWS _ ∷ compWS xs (projSub _))))
-  ≈⟨ cong~ₜ (λ s → lam _ s) (toUcwfDistSub t  (qWS _ ∷ compWS xs (projSub _))) ⟩
+    lam _ (toUcwf $ subWS t (qWS _ ∷ map lift xs))
+  ≈⟨ help ⟩
+    lam _ (toUcwf $ subWS t (qWS _ ∷ compWS xs (projSub _)))
+  ≈⟨ cong~ₜ (lam _) (toUcwfDistSub t  (qWS _ ∷ compWS xs (projSub _))) ⟩
     lam _ (toUcwf t `[ < toHom (compWS xs (projSub _)) , q _ > ])
-  ≈⟨ {!!} ⟩
+  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩
     lam _ (toUcwf t `[ < toHom xs ∘ toHom (projSub _) , q _ > ])
   ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩
     lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ])
   ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
-    (lam _ (toUcwf t) `[ toHom xs ])
+    lam _ (toUcwf t) `[ toHom xs ]
   ∎ where open EqR (UcwfTmS {_})
+          help : lam _ (toUcwf $ subWS t (qWS _ ∷ map lift xs)) ~ₜ
+                  lam _ (toUcwf $ subWS t (qWS _ ∷ compWS xs (projSub _)))
+          help rewrite liftCompP _ _ xs = refl~ₜ
 toUcwfDistSub (app n t u) xs =
   begin
     app _ (toUcwf (subWS t xs)) (toUcwf (subWS u xs))
@@ -141,18 +143,21 @@ hom∘vec (ts ∘ us) = sym~ₕ $
     ts ∘ us
   ∎ where open EqR (HomCwfS {_} {_})
 hom∘vec (p zero) = hom0~<> $ p zero
-hom∘vec (p (suc n)) =
+hom∘vec (p (suc n)) = sym~ₕ $
   begin
-    p (1 + n)
-  ≈⟨ sym~ₕ (∘lid (p (suc n))) ⟩
-    id (1 + n) ∘ p (1 + n)
-  ≈⟨ cong~ₕ (_∘ p (suc n)) id<p,q> ⟩
-    < p n , q n > ∘ p (1 + n)
-  ≈⟨ <a,t>∘s (q n) (p n) (p (suc n)) ⟩
-    < p n ∘ p (1 + n) , q n `[ p (1 + n) ] >
+    < toHom (tail $ projSub (1 + n)) , weaken (q n) >
+  ≈⟨ help ⟩
+    < toHom (compWS (projSub n) (projSub (1 + n))) , weaken $ q n >
+  ≈⟨ cong~ₕ (λ x → < x , weaken $ q n >) (toHomDist∘ (projSub n) (projSub $ 1 + n)) ⟩
+    < toHom (projSub n) ∘ toHom (projSub (1 + n)) , weaken $ q n >
+  ≈⟨ cong~ₕ (λ x → < x ∘ toHom (projSub (1 + n)) , weaken $ q n >) (sym~ₕ ({!!})) ⟩ -- hom∘vec $ p n is marked red even though it's obviously structurally smaller
+    < p n ∘ toHom (projSub (1 + n)) , q n `[ p (1 + n) ] >
   ≈⟨ {!!} ⟩ 
-    < toHom (tail $ projSub (1 + n)) , q n `[ p (1 + n) ] >
+    p (1 + n)
   ∎ where open EqR (HomCwfS {_} {_})
+          help : < toHom (tail $ projSub (suc n)) , weaken (q n) > ~ₕ
+                 < toHom (compWS (projSub n) (projSub (suc n))) , weaken $ q n >
+          help rewrite tailComp n = refl~ₕ
 
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
