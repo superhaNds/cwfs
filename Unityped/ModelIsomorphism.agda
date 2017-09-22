@@ -48,6 +48,68 @@ toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm
 toUcwfDistSub : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
                   → toUcwf (subWS t xs) ~ₜ toUcwf t `[ toHom xs ]
 
+ucwf∘ws (q n)       = refl~ₜ
+ucwf∘ws (u `[ ts ]) = sym~ₜ $
+  trans~ₜ (trans~ₜ (toUcwfDistSub (toWs u) (toVec ts))
+                   (sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u)))
+          (sym~ₜ (congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts)))
+ucwf∘ws (lam n t)   = cong~ₜ (lam n) (ucwf∘ws t)
+ucwf∘ws (app n t u) =
+  trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
+          (cong~ₜ (λ z → app n z (toUcwf $ toWs u)) (ucwf∘ws t))
+
+hom∘vec (id zero)    = id₀
+hom∘vec (id (suc m)) =
+  begin
+    id (suc m)
+  ≈⟨ id<p,q> ⟩
+    < p _ , q _ >
+  ≈⟨ cong~ₕ <_, q _ > (hom∘vec (p m)) ⟩
+    < toHom (projSub m) , q _ >
+  ≈⟨ help m ⟩
+    < toHom $ tail (idSub _) , q _ >
+  ∎ where open EqR (HomCwfS {_} {_})
+          help : ∀ m → < toHom (projSub m) , q m >
+                         ~ₕ < toHom (tail $ idSub _) , q m >
+          help m rewrite tailIdp m = refl~ₕ
+hom∘vec (ts ∘ us) = sym~ₕ $
+  trans~ₕ (trans~ₕ (toHomDist∘ (toVec ts) (toVec us))
+                   (cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts)))
+          (cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us))
+hom∘vec (p zero) = hom0~<> $ p zero
+hom∘vec (p (suc n)) = sym~ₕ $
+  begin
+    < toHom (tail $ projSub (1 + n)) , weaken (q n) >
+  ≈⟨ help ⟩
+    < toHom (compWS (projSub n) (projSub (1 + n))) , weaken $ q n >
+  ≈⟨ cong~ₕ (λ x → < x , weaken $ q n >) (toHomDist∘ (projSub n) (projSub $ 1 + n)) ⟩
+    < toHom (projSub n) ∘ toHom (projSub (1 + n)) , weaken $ q n >
+  ≈⟨ cong~ₕ (λ x → < x ∘ toHom (projSub (1 + n)) , weaken $ q n >) (sym~ₕ ({!!})) ⟩ -- hom∘vec $ p n is marked red even though it's obviously structurally smaller
+    < p n ∘ toHom (projSub (1 + n)) , q n `[ p (1 + n) ] >
+  ≈⟨ {!!} ⟩ 
+    p (1 + n)
+  ∎ where open EqR (HomCwfS {_} {_})
+          help : < toHom (tail $ projSub (suc n)) , weaken (q n) > ~ₕ
+                 < toHom (compWS (projSub n) (projSub (suc n))) , weaken $ q n >
+          help rewrite tailComp n = refl~ₕ
+hom∘vec <> = refl~ₕ
+hom∘vec < u , x > = sym~ₕ $
+  trans~ₕ (sym~ₕ $ cong~ₕ (<_, toUcwf (toWs x) >) (hom∘vec u))
+          (sym~ₕ $ congt~ₕ (< u ,_>) (ucwf∘ws x))
+
+ws∘ucwf (var _ zero)    = refl
+ws∘ucwf (var _ (suc x)) = sym $
+  trans (sym $ cong (flip subWS (projSub _)) (ws∘ucwf (var _ x)))
+        (lookupPLemma _ x)
+ws∘ucwf (lam n t)       = cong (lam n) (ws∘ucwf t)
+ws∘ucwf (app n t u)     = trans (cong (app n t) (ws∘ucwf u))
+                                (cong (λ z → app n z (toWs $ toUcwf u)) (ws∘ucwf t))
+                                
+vec∘hom [] = refl
+vec∘hom (x ∷ xs)
+  rewrite sym (vec∘hom xs) |
+          sym (ws∘ucwf x) = refl
+
 toUcwfDistSub (var _ ())      []
 toUcwfDistSub (var _ zero)    (x ∷ xs) = q[<a,t>] (toUcwf x) (toHom xs)
 toUcwfDistSub (var _ (suc i)) (x ∷ xs) = sym~ₜ $
@@ -79,7 +141,7 @@ toUcwfDistSub (lam n t) xs =
   ∎ where open EqR (UcwfTmS {_})
           help : lam _ (toUcwf $ subWS t (qWS _ ∷ map lift xs)) ~ₜ
                   lam _ (toUcwf $ subWS t (qWS _ ∷ compWS xs (projSub _)))
-          help rewrite liftCompP _ _ xs = refl~ₜ
+          help rewrite liftCompP xs = refl~ₜ
 toUcwfDistSub (app n t u) xs =
   begin
     app _ (toUcwf (subWS t xs)) (toUcwf (subWS u xs))
@@ -102,89 +164,3 @@ toHomDist∘ (x ∷ xs) ys = sym~ₕ $
   ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ toUcwfDistSub x ys) ⟩
     < toHom (compWS xs ys) , toUcwf (subWS x ys) >
   ∎ where open EqR (HomCwfS {_} {_})
-
-ucwf∘ws (q n)       = refl~ₜ
-ucwf∘ws (u `[ ts ]) = sym~ₜ $
-  begin
-     toUcwf (subWS (toWs u) (toVec ts))
-  ≈⟨ toUcwfDistSub (toWs u) (toVec ts) ⟩
-    toUcwf (toWs u) `[ toHom (toVec ts) ]
-  ≈⟨ sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u) ⟩
-    u `[ toHom (toVec ts) ]
-  ≈⟨ sym~ₜ (congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts)) ⟩
-    u `[ ts ]
-  ∎ where open EqR (UcwfTmS {_}) 
-ucwf∘ws (lam n t)   = cong~ₜ (lam n) (ucwf∘ws t)
-ucwf∘ws (app n t u) = trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
-                        (cong~ₜ (λ z → app n z (toUcwf $ toWs u)) (ucwf∘ws t))
-
-hom∘vec (id zero)    = id₀
-hom∘vec (id (suc m)) =
-  begin
-    id (suc m)
-  ≈⟨ id<p,q> ⟩
-    < p _ , q _ >
-  ≈⟨ cong~ₕ <_, q _ > (hom∘vec (p m)) ⟩
-    < toHom (projSub m) , q _ >
-  ≈⟨ help m ⟩
-    < toHom $ tail (idSub _) , q _ >
-  ∎ where open EqR (HomCwfS {_} {_})
-          help : ∀ m → < toHom (projSub m) , q m >
-                         ~ₕ < toHom (tail $ idSub _) , q m >
-          help m rewrite tailIdp m = refl~ₕ
-hom∘vec (ts ∘ us) = sym~ₕ $
-  begin
-    toHom (compWS (toVec ts) (toVec us))
-  ≈⟨ toHomDist∘ (toVec ts) (toVec us) ⟩
-    toHom (toVec ts) ∘ toHom (toVec us)
-  ≈⟨ cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts) ⟩
-    ts ∘ toHom (toVec us)
-  ≈⟨ cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us) ⟩
-    ts ∘ us
-  ∎ where open EqR (HomCwfS {_} {_})
-hom∘vec (p zero) = hom0~<> $ p zero
-hom∘vec (p (suc n)) = sym~ₕ $
-  begin
-    < toHom (tail $ projSub (1 + n)) , weaken (q n) >
-  ≈⟨ help ⟩
-    < toHom (compWS (projSub n) (projSub (1 + n))) , weaken $ q n >
-  ≈⟨ cong~ₕ (λ x → < x , weaken $ q n >) (toHomDist∘ (projSub n) (projSub $ 1 + n)) ⟩
-    < toHom (projSub n) ∘ toHom (projSub (1 + n)) , weaken $ q n >
-  ≈⟨ cong~ₕ (λ x → < x ∘ toHom (projSub (1 + n)) , weaken $ q n >) (sym~ₕ ({!!})) ⟩ -- hom∘vec $ p n is marked red even though it's obviously structurally smaller
-    < p n ∘ toHom (projSub (1 + n)) , q n `[ p (1 + n) ] >
-  ≈⟨ {!!} ⟩ 
-    p (1 + n)
-  ∎ where open EqR (HomCwfS {_} {_})
-          help : < toHom (tail $ projSub (suc n)) , weaken (q n) > ~ₕ
-                 < toHom (compWS (projSub n) (projSub (suc n))) , weaken $ q n >
-          help rewrite tailComp n = refl~ₕ
-
-hom∘vec <> = refl~ₕ
-hom∘vec < u , x > = sym~ₕ $
-  begin
-    < toHom (toVec u) , toUcwf (toWs x) >
-  ≈⟨ sym~ₕ $ cong~ₕ (<_, toUcwf (toWs x) >) (hom∘vec u) ⟩
-    < u , toUcwf (toWs x) >
-  ≈⟨ sym~ₕ $ congt~ₕ (< u ,_>) (ucwf∘ws x) ⟩
-    < u , x >
-  ∎ where open EqR (HomCwfS {_} {_})
-
-ws∘ucwf (var _ zero)    = refl
-ws∘ucwf (var _ (suc x)) = sym $
-  begin
-    subWS (toWs $ toUcwf (var _ x)) (projSub _)
-  ≡⟨ sym $ cong (flip subWS (projSub _)) (ws∘ucwf (var _ x)) ⟩
-    subWS (var _ x) (projSub _)
-  ≡⟨⟩
-    lookup x (projSub _)
-  ≡⟨ lookupPLemma _ x ⟩
-    var (suc _) (suc x)
-  ∎ where open ≡-Reasoning
-ws∘ucwf (lam n t)   = cong (lam n) (ws∘ucwf t)
-ws∘ucwf (app n t u) = trans (cong (app n t) (ws∘ucwf u))
-                        (cong (λ z → app n z (toWs $ toUcwf u)) (ws∘ucwf t))
-
-vec∘hom [] = refl
-vec∘hom (x ∷ xs)
-  rewrite sym (vec∘hom xs) |
-          sym (ws∘ucwf x) = refl
