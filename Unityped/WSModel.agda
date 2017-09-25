@@ -7,7 +7,6 @@ open import Data.Vec
   using (Vec ; [] ; _∷_ ; map ; lookup ; allFin ; tabulate ; tail ; head)
 open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_∘_ ; _$_)
-open import Util
 open import Relation.Binary.PropositionalEquality
 open import Unityped.Ucwf
 open ≡-Reasoning
@@ -42,7 +41,7 @@ lift t = rename t (↑ _)
 
 -- p
 projSub : (n : Nat) → Vec (WellScopedTm (suc n)) n
-projSub = map lift ∘ idSub
+projSub = map lift ∘ idSub -- or tabulate (lift ∘ (var n))
 
 -- sub
 sub : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
@@ -83,12 +82,13 @@ lookupPLemma n i =
     lift (var n i)
   ≡⟨ liftVar n i ⟩
     var (suc n) (suc i)
-  ∎
+  ∎ where lookupMap : ∀ {A B : Set} {f : A → B} (n : Nat) (i : Fin n) (xs : Vec A n)
+                        → f (lookup i xs) ≡ lookup i (map f xs)
+          lookupMap (suc n) zero    (x ∷ xs) = refl
+          lookupMap (suc n) (suc i) (x ∷ xs) = lookupMap n i xs
 
 subVarP : ∀ n i → sub (var n i) (projSub n) ≡ var (suc n) (suc i)
 subVarP = lookupPLemma
-
---postulate lamCom : ∀ {n m} (t : WellScopedTm (suc n)) (xs : Vec (WellScopedTm m) n) → sub (lam n t) xs ≡ lam
 
 subLift : ∀ n x → lift x ≡ sub x (projSub n)
 subLift n (var _ i)   = trans (liftVar _ i) (sym (subVarP _ i))
@@ -99,13 +99,12 @@ subLift n (app _ t u) = trans (cong (λ x → app _ x _) (subLift _ t))
 liftCompP : ∀ {n m : Nat} (xs : Vec (WellScopedTm n) m) → map lift xs ≡ comp xs (projSub n)
 liftCompP []       = refl
 liftCompP (x ∷ xs) = trans (cong (λ s → s ∷ _) (subLift _ x))
-                               (cong (λ s → _ ∷ s) (liftCompP xs))
+                           (cong (λ s → _ ∷ s) (liftCompP xs))
 
 postulate tailIdp : ∀ n → tail (idSub (suc n)) ≡ projSub n
 
 id=<p,q> : ∀ (n : Nat) → idSub (suc n) ≡ q n ∷ (projSub n)
-id=<p,q> zero    = refl
-id=<p,q> (suc n) = cong (_∷_ (q _)) (tailIdp (suc n))
+id=<p,q> n = cong (_∷_ (q _)) (tailIdp n)
 
 t[id]=t : ∀ {n} → (t : WellScopedTm n) → sub t (idSub n) ≡ t
 t[id]=t (var n i) = lookupIdLemma n i
@@ -122,6 +121,11 @@ compEmpty _ = refl
 
 compAssoc : ∀ {m n k p} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
     (vs : Vec (WellScopedTm p) m) → comp (comp ts us) vs ≡ comp ts (comp us vs)
+
+compasp : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m)(suc n))
+  → comp (comp ts (projSub n)) us ≡ comp ts (comp (projSub n) us)
+compasp [] us = refl
+compasp (x ∷ ts) us = {!!}
 
 compInSub : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
     (us : Vec (WellScopedTm m) k) → sub t (comp ts us) ≡ sub (sub t ts) us
@@ -147,7 +151,6 @@ p∘<ts,t>=ts t (x ∷ xs) = {!!}
     x ∷ xs
   ∎-}
 
-compInSub (var .0 ())     []       _
 compInSub (var _ zero)    (v ∷ ts) us = refl
 compInSub (var _ (suc x)) (v ∷ ts) us = compInSub (var _ x) ts us
 compInSub (lam n t)       ts       us = sym $
@@ -163,7 +166,7 @@ compInSub (lam n t)       ts       us = sym $
     lam _ (sub t $ q _ ∷ comp ts (comp (projSub _) (q _ ∷ comp us (projSub _))))
   ≡⟨ cong (λ x → lam _ (sub t $ q _ ∷ comp ts x)) (p∘<ts,t>=ts (q _) (comp us (projSub _))) ⟩  -- 
     lam _ (sub t $ q _ ∷ comp ts (comp us (projSub _)))
-  ≡⟨ cong (λ x → lam _ (sub t $ q _ ∷ x)) {!!} ⟩  -- sym $ compAssoc ts us (projSub _)
+  ≡⟨ cong (λ x → lam _ (sub t $ q _ ∷ x)) (sym {!!}) ⟩  -- compAssoc ts us (projSub _)
     lam _ (sub t $ q _ ∷ comp (comp ts us) (projSub _))
   ≡⟨ cong (λ x → lam _ (sub t $ q _ ∷ x)) (sym (liftCompP (comp ts us))) ⟩ 
     lam _ (sub t $ q _ ∷ map lift (comp ts us))
@@ -190,29 +193,35 @@ compRightId [] = refl
 compRightId (x ∷ ts) rewrite t[id]=t x
                            | compRightId ts = refl
 
-compAssoc [] us vs = refl
+compAssoc []       us vs = refl
 compAssoc (x ∷ ts) us vs = sym $
   trans (cong (λ d → d ∷ comp ts (comp us vs)) (compInSub x us vs))
         (sym (cong (_∷_ (sub (sub x us) vs)) (compAssoc ts us vs)))
 
-wellscopedTermsAsUcwf : Ucwf (WellScopedTm)
-wellscopedTermsAsUcwf = record
-                          { id       = idSub
-                          ; <>       = empt
-                          ; p        = projSub
-                          ; q        = q
-                          ; _∘_      = comp
-                          ; _[_]     = sub
-                          ; <_,_>    = ext
-                          ; id₀      = id0=[]
-                          ; ∘<>      = compEmpty
-                          ; id<p,q>  = id=<p,q> _
-                          ; ∘lid     = compLeftId
-                          ; ∘rid     = compRightId
-                          ; ∘asso    = compAssoc
-                          ; subid    = t[id]=t
-                          ; p∘<γ,α>  = p∘x∷ts
-                          ; q[<γ,α>] = subVar0
-                          ; ∘inSub   = compInSub
-                          ; <δ,α>∘γ  = compRightOfHomExt
-                          }
+wsTermsAsUcwf : Ucwf (WellScopedTm)
+wsTermsAsUcwf = record
+                  { id       = idSub
+                  ; <>       = empt
+                  ; p        = projSub
+                  ; q        = q
+                  ; _∘_      = comp
+                  ; _[_]     = sub
+                  ; <_,_>    = ext
+                  ; id₀      = id0=[]
+                  ; ∘<>      = compEmpty
+                  ; id<p,q>  = id=<p,q> _
+                  ; ∘lid     = compLeftId
+                  ; ∘rid     = compRightId
+                  ; ∘asso    = compAssoc
+                  ; subid    = t[id]=t
+                  ; p∘<γ,α>  = p∘x∷ts
+                  ; q[<γ,α>] = subVar0
+                  ; ∘inSub   = compInSub
+                  ; <δ,α>∘γ  = compRightOfHomExt
+                  }
+
+
+
+ex : ∀ {m n k} (ts : Vec (WellScopedTm (n)) k) (us : Vec (WellScopedTm (m)) ?)
+  → comp (map lift ts) (map lift us) ≡ map lift (comp ts us)
+ex ts us = ?

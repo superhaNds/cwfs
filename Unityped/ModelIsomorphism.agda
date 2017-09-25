@@ -4,10 +4,9 @@ module Unityped.ModelIsomorphism where
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; [_] ; tabulate ; head ; tail)
 open import Data.Vec.Properties using (lookup∘tabulate ; lookup-allFin)
-open import Data.Fin using (Fin ; zero ; suc ; raise ; fromℕ)
+open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
-open import Unityped.WSModel
-  renaming (q to qWS ; comp to compWS ; sub to subWS ; id to idWS)
+open import Unityped.WSModel renaming (q to qWS ; id to idWS)
 open import Relation.Binary.PropositionalEquality
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
 import Relation.Binary.EqReasoning as EqR
@@ -19,7 +18,7 @@ toVec    : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
 toHom    : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
 
 toVec (id n)      = idSub n
-toVec (hnk ∘ hmn) = compWS (toVec hnk) (toVec hmn) 
+toVec (hnk ∘ hmn) = comp (toVec hnk) (toVec hmn) 
 toVec (p n)       = projSub n
 toVec <>          = empt
 toVec < h , t >   = ext (toVec h) (toWs t)
@@ -28,7 +27,7 @@ toHom []       = <>
 toHom (x ∷ xs) = < toHom xs , toUcwf x >
 
 toWs (q n)       = qWS n
-toWs (t `[ h ])  = subWS (toWs t) (toVec h)
+toWs (t `[ h ])  = sub (toWs t) (toVec h)
 toWs (lam n t)   = lam n (toWs t)
 toWs (app n t u) = app n (toWs t) (toWs u)
 
@@ -44,9 +43,17 @@ ucwf∘ws : ∀ {n}   (u : UcwfTm n) → u ~ₜ toUcwf (toWs u)
 hom∘vec : ∀ {n m} (u : HomCwf m n) → u ~ₕ toHom (toVec u)
 
 toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm m) n)
-               → toHom (compWS xs ys) ~ₕ (toHom xs) ∘ (toHom ys)
+               → toHom (comp xs ys) ~ₕ (toHom xs) ∘ (toHom ys)
+               
 toUcwfDistSub : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
-                  → toUcwf (subWS t xs) ~ₜ toUcwf t `[ toHom xs ]
+                  → toUcwf (sub t xs) ~ₜ toUcwf t `[ toHom xs ]
+
+-- Hom (m+n) n
+-- p 0 n = id n
+-- p m+ 1 n = p m n ∘ p m
+-- p n ∘ p m n+1 = p
+
+-- p n ∘ p m n+1 = p m+1 n
 
 ucwf∘ws (q n)       = refl~ₜ
 ucwf∘ws (u `[ ts ]) = sym~ₜ $
@@ -81,16 +88,16 @@ hom∘vec (p (suc n)) = sym~ₕ $
   begin
     < toHom (tail $ projSub (1 + n)) , weaken (q n) >
   ≈⟨ help ⟩
-    < toHom (compWS (projSub n) (projSub (1 + n))) , weaken $ q n >
+    < toHom (comp (projSub n) (projSub (1 + n))) , weaken $ q n >
   ≈⟨ cong~ₕ (λ x → < x , weaken $ q n >) (toHomDist∘ (projSub n) (projSub $ 1 + n)) ⟩
     < toHom (projSub n) ∘ toHom (projSub (1 + n)) , weaken $ q n >
-  ≈⟨ cong~ₕ (λ x → < x ∘ toHom (projSub (1 + n)) , weaken $ q n >) (sym~ₕ ({!!})) ⟩ -- hom∘vec $ p n is marked red even though it's obviously structurally smaller
+  ≈⟨ cong~ₕ (λ x → < x ∘ toHom (projSub (1 + n)) , weaken $ q n >) (sym~ₕ (hom∘vec (p n))) ⟩ 
     < p n ∘ toHom (projSub (1 + n)) , q n `[ p (1 + n) ] >
   ≈⟨ {!!} ⟩ 
     p (1 + n)
   ∎ where open EqR (HomCwfS {_} {_})
           help : < toHom (tail $ projSub (suc n)) , weaken (q n) > ~ₕ
-                 < toHom (compWS (projSub n) (projSub (suc n))) , weaken $ q n >
+                 < toHom (comp (projSub n) (projSub (suc n))) , weaken $ q n >
           help rewrite tailComp n = refl~ₕ
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
@@ -99,7 +106,7 @@ hom∘vec < u , x > = sym~ₕ $
 
 ws∘ucwf (var _ zero)    = refl
 ws∘ucwf (var _ (suc x)) = sym $
-  trans (sym $ cong (flip subWS (projSub _)) (ws∘ucwf (var _ x)))
+  trans (sym $ cong (flip sub (projSub _)) (ws∘ucwf (var _ x)))
         (lookupPLemma _ x)
 ws∘ucwf (lam n t)       = cong (lam n) (ws∘ucwf t)
 ws∘ucwf (app n t u)     = trans (cong (app n t) (ws∘ucwf u))
@@ -110,28 +117,25 @@ vec∘hom (x ∷ xs)
   rewrite sym (vec∘hom xs) |
           sym (ws∘ucwf x) = refl
 
-toUcwfDistSub (var _ ())      []
 toUcwfDistSub (var _ zero)    (x ∷ xs) = q[<a,t>] (toUcwf x) (toHom xs)
 toUcwfDistSub (var _ (suc i)) (x ∷ xs) = sym~ₜ $
   begin
     (toUcwf (var _ i) `[ p _ ]) `[ < toHom xs , toUcwf x > ]
   ≈⟨ sym~ₜ (∘sub (toUcwf (var _ i)) (p _) < toHom xs , toUcwf x >) ⟩
     toUcwf (var _ i) `[ p _ ∘ < toHom xs , toUcwf x > ]
-  ≈⟨ sym~ₜ $
-       congh~ₜ (_`[_] (toUcwf $ var _ i))
-        (p∘<a,t> (toUcwf x) (toHom xs))
-   ⟩
+  ≈⟨ sym~ₜ $ congh~ₜ (_`[_] (toUcwf $ var _ i))
+                     (p∘<a,t> (toUcwf x) (toHom xs)) ⟩
     toUcwf (var _ i) `[ toHom xs ]
   ≈⟨ sym~ₜ $ toUcwfDistSub (var _ i) xs ⟩ 
-    (toUcwf $ subWS (var _ i) xs)
+    (toUcwf $ sub (var _ i) xs)
   ∎ where open EqR (UcwfTmS {_})
 toUcwfDistSub (lam n t) xs =  
   begin
-    lam _ (toUcwf $ subWS t (qWS _ ∷ map lift xs))
+    lam _ (toUcwf $ sub t (qWS _ ∷ map lift xs))
   ≈⟨ help ⟩
-    lam _ (toUcwf $ subWS t (qWS _ ∷ compWS xs (projSub _)))
-  ≈⟨ cong~ₜ (lam _) (toUcwfDistSub t  (qWS _ ∷ compWS xs (projSub _))) ⟩
-    lam _ (toUcwf t `[ < toHom (compWS xs (projSub _)) , q _ > ])
+    lam _ (toUcwf $ sub t (qWS _ ∷ comp xs (projSub _)))
+  ≈⟨ cong~ₜ (lam _) (toUcwfDistSub t  (qWS _ ∷ comp xs (projSub _))) ⟩
+    lam _ (toUcwf t `[ < toHom (comp xs (projSub _)) , q _ > ])
   ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩
     lam _ (toUcwf t `[ < toHom xs ∘ toHom (projSub _) , q _ > ])
   ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩
@@ -139,14 +143,14 @@ toUcwfDistSub (lam n t) xs =
   ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
     lam _ (toUcwf t) `[ toHom xs ]
   ∎ where open EqR (UcwfTmS {_})
-          help : lam _ (toUcwf $ subWS t (qWS _ ∷ map lift xs)) ~ₜ
-                  lam _ (toUcwf $ subWS t (qWS _ ∷ compWS xs (projSub _)))
+          help : lam _ (toUcwf $ sub t (qWS _ ∷ map lift xs)) ~ₜ
+                  lam _ (toUcwf $ sub t (qWS _ ∷ comp xs (projSub _)))
           help rewrite liftCompP xs = refl~ₜ
 toUcwfDistSub (app n t u) xs =
   begin
-    app _ (toUcwf (subWS t xs)) (toUcwf (subWS u xs))
-  ≈⟨ cong~ₜ (λ z → app _ z (toUcwf (subWS u xs))) (toUcwfDistSub t xs) ⟩
-    app _ (toUcwf t `[ toHom xs ]) (toUcwf (subWS u xs))
+    app _ (toUcwf (sub t xs)) (toUcwf (sub u xs))
+  ≈⟨ cong~ₜ (λ z → app _ z (toUcwf (sub u xs))) (toUcwfDistSub t xs) ⟩
+    app _ (toUcwf t `[ toHom xs ]) (toUcwf (sub u xs))
   ≈⟨ cong~ₜ (app _ (toUcwf t `[ toHom xs ])) (toUcwfDistSub u xs) ⟩
     app _ (toUcwf t `[ toHom xs ]) (toUcwf u `[ toHom xs ])
   ≈⟨ appCm (toUcwf t) (toUcwf u) (toHom xs) ⟩
@@ -160,7 +164,7 @@ toHomDist∘ (x ∷ xs) ys = sym~ₕ $
   ≈⟨ <a,t>∘s (toUcwf x) (toHom xs) (toHom ys) ⟩
     < toHom xs ∘ toHom ys , toUcwf x `[ toHom ys ] >
   ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
-    < toHom (compWS xs ys) , toUcwf x `[ toHom ys ] >
+    < toHom (comp xs ys) , toUcwf x `[ toHom ys ] >
   ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ toUcwfDistSub x ys) ⟩
-    < toHom (compWS xs ys) , toUcwf (subWS x ys) >
+    < toHom (comp xs ys) , toUcwf (sub x ys) >
   ∎ where open EqR (HomCwfS {_} {_})
