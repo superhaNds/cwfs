@@ -17,17 +17,17 @@ toWs     : ∀ {n} → UcwfTm n → WellScopedTm n
 toVec    : ∀ {m n} → HomCwf m n → Vec (WellScopedTm m) n
 toHom    : ∀ {m n} → Vec (WellScopedTm m) n → HomCwf m n
 
-toVec (id n)      = idSub n
-toVec (hnk ∘ hmn) = comp (toVec hnk) (toVec hmn) 
-toVec (p n)       = projSub n
-toVec <>          = empt
-toVec < h , t >   = ext (toVec h) (toWs t)
+toVec (id n)     = idSub n
+toVec (ts ∘ us)  = comp (toVec ts) (toVec us) 
+toVec (p n)      = projSub n
+toVec <>         = empt
+toVec < ts , t > = ext (toVec ts) (toWs t)
 
 toHom []       = <>
 toHom (x ∷ xs) = < toHom xs , toUcwf x >
 
 toWs (q n)       = qWS n
-toWs (t `[ h ])  = sub (toWs t) (toVec h)
+toWs (t `[ ts ]) = sub (toWs t) (toVec ts)
 toWs (lam n t)   = lam n (toWs t)
 toWs (app n t u) = app n (toWs t) (toWs u)
 
@@ -48,18 +48,20 @@ toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm
 toUcwfDistSub : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
                   → toUcwf (sub t xs) ~ₜ toUcwf t `[ toHom xs ]
 
--- Hom (m+n) n
--- p 0 n = id n
--- p m+ 1 n = p m n ∘ p m
--- p n ∘ p m n+1 = p
-
 -- p n ∘ p m n+1 = p m+1 n
+-- p' : (m n : Nat) → HomCwf (m + n) n
 
 ucwf∘ws (q n)       = refl~ₜ
 ucwf∘ws (u `[ ts ]) = sym~ₜ $
-  trans~ₜ (trans~ₜ (toUcwfDistSub (toWs u) (toVec ts))
-                   (sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u)))
-          (sym~ₜ (congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts)))
+  begin
+    toUcwf (sub (toWs u) (toVec ts))
+  ≈⟨ toUcwfDistSub (toWs u) (toVec ts) ⟩ 
+    toUcwf (toWs u) `[ toHom (toVec ts) ]
+  ≈⟨ sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u) ⟩
+    u `[ toHom (toVec ts) ]
+  ≈⟨ sym~ₜ $ congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts) ⟩
+    u `[ ts ]
+  ∎ where open EqR (UcwfTmS {_})
 ucwf∘ws (lam n t)   = cong~ₜ (lam n) (ucwf∘ws t)
 ucwf∘ws (app n t u) =
   trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
@@ -157,7 +159,7 @@ toUcwfDistSub (app n t u) xs =
     app _ (toUcwf t) (toUcwf u) `[ toHom xs ]
   ∎ where open EqR (UcwfTmS {_})
 
-toHomDist∘ []       ys = sym~ₕ (∘<> (toHom ys))
+toHomDist∘ []       ys = sym~ₕ $ ∘<> (toHom ys)
 toHomDist∘ (x ∷ xs) ys = sym~ₕ $
   begin
     < toHom xs , toUcwf x > ∘ toHom ys
