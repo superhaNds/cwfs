@@ -34,11 +34,16 @@ record Ucwf (Term : Nat → Set) : Set₁ where
                  → < ts , t > ∘ us ≡ < ts ∘ us , t [ us ] >
 
 record λβ-ucwf (Term : Nat → Set) : Set₁ where
+  private
+    Hom : Nat → Nat → Set
+    Hom μ ν = Vec (Term μ) ν
   field
     ucwf : Ucwf Term
   open Ucwf ucwf public
   field
-    lam : (ν : Nat) → Term (suc ν) → Term ν
-    app : (ν : Nat) → Term ν → Term ν → Term ν
-    β   : {ν : Nat} {t : Term (suc ν)} {u : Term ν} → app ν (lam ν t) u ≡  t [ < id ν , u > ]
-    η   : {ν : Nat} {t : Term ν} → lam ν (app (suc ν) (t [ p ν ]) (q ν)) ≡ t
+    lam   : (ν : Nat) → Term (suc ν) → Term ν
+    app   : (ν : Nat) → Term ν → Term ν → Term ν
+    β     : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → app ν (lam ν t) u ≡  t [ < id ν , u > ]
+    η     : {ν : Nat} (t : Term ν) → lam ν (app (suc ν) (t [ p ν ]) (q ν)) ≡ t
+    appCm : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → app μ (t [ ts ]) (u [ ts ]) ≡ app ν t u [ ts ]
+    lamCm : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → lam ν t [ ts ] ≡ lam μ (t [ < ts ∘ p μ , q μ > ])
