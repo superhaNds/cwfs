@@ -26,7 +26,7 @@ weaken t = t [ p _ ]
 infix 10 _~ₜ_
 infix 10 _~ₕ_
 
-data _~ₜ_ : ∀ {n m} → UcwfTm n → UcwfTm m → Set
+data _~ₜ_ : ∀ {n} → UcwfTm n → UcwfTm n → Set
 data _~ₕ_ : ∀ {n m} → HomCwf n m → HomCwf n m → Set
 
 data _~ₜ_  where
