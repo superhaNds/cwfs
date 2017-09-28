@@ -3,13 +3,9 @@ module Unityped.WSModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Function using (_$_)
 open import Data.Vec
-open import Data.Vec.Properties
-open import Relation.Binary.PropositionalEquality
+open import Function using (_$_)
 open import Relation.Binary using (IsEquivalence ; Setoid)
-open import Unityped.Ucwf
-open ≡-Reasoning
 
 data WellScopedTm : Nat → Set where
   var : (n : Nat) → Fin n → WellScopedTm n
@@ -18,10 +14,6 @@ data WellScopedTm : Nat → Set where
 
 ↑_ : ∀ n → Vec (Fin (suc n)) n
 ↑ _ = tabulate suc
-
-lemma : ∀ n → tail (allFin (1 + n)) ≡ ↑ n
-lemma zero = refl
-lemma (suc n) = refl
 
 rename : ∀ {n m} (t : WellScopedTm n) (is : Vec (Fin m) n) → WellScopedTm m
 rename {_} {m} (var _ i)   is = var m (lookup i is)
@@ -44,7 +36,7 @@ lift t = rename t (↑ _)
 p : (n : Nat) → Vec (WellScopedTm (suc n)) n
 p n = map lift (id n) -- or tabulate (lift ∘ (var n))
 
--- alternative id and p that makes some proofs much easier
+-- alternative id and p
 id′ : ∀ n → Vec (WellScopedTm n) n
 id′ n = map (var n) (allFin n)
 
@@ -92,173 +84,3 @@ WsSetoid : ∀ {n} → Setoid _ _
 WsSetoid {n} = record { Carrier = WellScopedTm n
                       ; _≈_ = _~_
                       ; isEquivalence = ~equiv }
-
--- Proofs 
-
-liftVar : ∀ n i → lift (var n i) ≡ var (suc n) (suc i)
-liftVar n i = cong (var (suc n)) (lookup∘tabulate suc i)
-
-lookupIdLemma : ∀ n i → lookup i (id n) ≡ var n i
-lookupIdLemma n i = lookup∘tabulate (var n) i
-
-lookupIn↑ : ∀ n i → lookup i (↑ n) ≡ suc i
-lookupIn↑ n i = lookup∘tabulate suc i
-
-lookupMap : ∀ {A B : Set} {f : A → B} (n : Nat) (i : Fin n) (xs : Vec A n)
-                        → f (lookup i xs) ≡ lookup i (map f xs)
-lookupMap (suc n) zero    (x ∷ xs) = refl
-lookupMap (suc n) (suc i) (x ∷ xs) = lookupMap n i xs
-
-lookupInP : ∀ n i → lookup i (p′ n) ≡ var (suc n) (suc i)
-lookupInP n i =
-  begin
-    lookup i (map (var (suc n)) (↑ n))
-  ≡⟨ sym (lookupMap n i (↑ n)) ⟩
-    var (suc n) (lookup i (↑ n))
-  ≡⟨ cong (var (suc n)) (lookupIn↑ n i) ⟩
-    var (suc n) (suc i)
-  ∎ 
-
-postulate
-  allEqLookup : ∀ {n} {A : Set} (xs : Vec A n) (ys : Vec A n) →
-                  (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
-
-lookupPLemma : ∀ n i → lookup i (p n) ≡ var (suc n) (suc i)
-lookupPLemma n i =
-  begin
-    lookup i (p n)
-  ≡⟨⟩
-    lookup i (map lift (id n))
-  ≡⟨ sym (lookupMap n i (id n)) ⟩
-    lift (lookup i (id n))
-  ≡⟨ cong lift (lookupIdLemma n i) ⟩
-    lift (var n i)
-  ≡⟨ liftVar n i ⟩
-    var (suc n) (suc i)
-  ∎
-
-lookupInPs : ∀ {n} i → lookup i (p′ n) ≡ lookup i (p n)
-lookupInPs i =
-  begin
-    lookup i (p′ _)
-  ≡⟨ lookupInP _ i ⟩
-    var (suc _) (suc i)
-  ≡⟨ sym (lookupPLemma _ i) ⟩
-    lookup i (p _)
-  ∎
-
-id=id′ : ∀ n → id n ≡ id′ n
-id=id′ n = tabulate-allFin (var n)
-
-p=p' : ∀ n → p n ≡ p′ n
-p=p' n = allEqLookup (p n) (p′ n) (λ i → sym (lookupInPs i))
-
-subVarP : ∀ n i → (var n i) ′[ p n ] ≡ var (suc n) (suc i)
-subVarP = lookupPLemma
-
-subLift : ∀ n x → lift x ≡ x ′[ p n ]
-subLift n (var _ i)   = trans (liftVar _ i) (sym (subVarP _ i))
-subLift n (lam _ t)   = {!!}
-subLift n (app _ t u) = trans (cong (λ x → app _ x _) (subLift _ t))
-                              (cong (λ x → app _ _ x) (subLift _ u))
-
-lift∘p : ∀ {n m : Nat} (xs : Vec (WellScopedTm n) m) → map lift xs ≡ xs ∘ p n
-lift∘p []       = refl
-lift∘p (x ∷ xs) = trans (cong (λ s → s ∷ _) (subLift _ x))
-                        (cong (λ s → _ ∷ s) (lift∘p xs))
-                           
-tailIdp : ∀ n → tail (id (suc n)) ≡ p n
-tailIdp n  = sym $
-  begin
-    p n
-  ≡⟨ p=p' n ⟩
-    p′ n
-  ≡⟨⟩
-    tail (id′ (suc n))
-  ≡⟨ cong tail (sym (id=id′ $ 1 + n)) ⟩ 
-    tail (id (suc n))
-  ∎
-
-id=<p,q> : ∀ (n : Nat) → id (suc n) ≡ q n ∷ p n 
-id=<p,q> n = cong (_∷_ (q _)) (tailIdp n)
-
-t[id]=t : ∀ {n} → (t : WellScopedTm n) → t ′[ id n ] ≡ t
-t[id]=t (var n i) = lookupIdLemma n i
-t[id]=t (lam n t) = trans (cong (λ x → lam _ (t ′[ x ])) (sym $ id=<p,q> _))
-                          (cong (lam n) (t[id]=t t))
-t[id]=t (app n t u) = trans (cong (λ z → app n z (u ′[ id n ])) (t[id]=t t))
-                            (cong (app n t) (t[id]=t u))
-
-id0=[] : id 0 ≡ empt
-id0=[] = refl
-
-∘-empty : ∀ {m n} (ts : Vec (WellScopedTm m) n) → empt ∘ ts ≡ empt
-∘-empty _ = refl
-
-∘-assoc : ∀ {m n k j} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
-    (vs : Vec (WellScopedTm j) m) → (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
-
-compInSub : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
-    (us : Vec (WellScopedTm m) k) → t ′[ ts ∘ us ] ≡ t ′[ ts ] ′[ us ]
-
-p∘x∷ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p k ∘ (t ∷ ts) ≡ ts
-p∘x∷ts {n} {zero} t [] = refl
-p∘x∷ts {n} {suc k} t (x ∷ ts) = {!!}
-
-compInSub (var _ zero)    (v ∷ ts) us = refl
-compInSub (var _ (suc i)) (v ∷ ts) us = compInSub (var _ i) ts us
-compInSub (lam n t)       ts       us = sym $
-  begin
-    _  ≡⟨ cong (lam _) (sym $ compInSub t (q _ ∷ map lift ts) (q _ ∷ map lift us)) ⟩
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ∘ _ ])) (lift∘p ts) ⟩
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ _ ∘ (q _ ∷ x) ])) (lift∘p us) ⟩
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ])) {!!} ⟩ -- ∘-assoc ts (projSub _) (q _ ∷ comp us (projSub _))
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ ts ∘ x ])) (p∘x∷ts (q _) (us ∘ p _)) ⟩  -- 
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ])) (sym {!!}) ⟩ -- ∘-assoc ts us (projSub _)
-    _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ])) (sym (lift∘p (ts ∘ us))) ⟩ 
-    _  ∎
-compInSub (app n t u) ts us =
-  trans (cong (λ z → app _ z (u ′[ ts ∘ us ])) (compInSub t ts us))
-        (cong (app _ (t ′[ ts ] ′[ us ])) (compInSub u ts us))
-
-tailComp : ∀ n → (p n) ∘ (p (1 + n)) ≡ tail (p (1 + n))
-tailComp n = p∘x∷ts _ (tail (p (suc n)))
-
-∘-lid : ∀ {m n : Nat} (ts : Vec (WellScopedTm m) n) → id n ∘ ts ≡ ts
-∘-lid [] = refl
-∘-lid (x ∷ ts) =
-  trans (cong (λ a → (q _ ′[ x ∷ ts ]) ∷ a ∘ (x ∷ ts)) (tailIdp _))
-        (cong (λ a → (q _ ′[ x ∷ ts ]) ∷ a) (p∘x∷ts x ts))
-
-∘-rid : ∀ {m n : Nat} (ts : Vec (WellScopedTm m) n) → ts ∘ id m  ≡ ts
-∘-rid [] = refl
-∘-rid (x ∷ ts) rewrite t[id]=t x
-                           | ∘-rid ts = refl
-
-∘-assoc []       us vs = refl
-∘-assoc (x ∷ ts) us vs = sym $
-  trans (cong (λ d → d ∷ ts ∘ (us ∘ vs)) (compInSub x us vs))
-        (sym (cong (_∷_ (x ′[ us ] ′[ vs ])) (∘-assoc ts us vs)))
-
-wsIsUcwf : Ucwf (WellScopedTm)
-wsIsUcwf = record
-             { id       = id
-             ; <>       = empt
-             ; p        = p
-             ; q        = q
-             ; _∘_      = _∘_
-             ; _[_]     = _′[_]
-             ; <_,_>    = ext
-             ; id₀      = id0=[]
-             ; ∘<>      = ∘-empty
-             ; id<p,q>  = id=<p,q> _
-             ; ∘lid     = ∘-lid
-             ; ∘rid     = ∘-rid
-             ; ∘asso    = ∘-assoc
-             ; subid    = t[id]=t
-             ; p∘<γ,α>  = p∘x∷ts
-             ; q[<γ,α>] = λ _ _ → refl
-             ; ∘inSub   = compInSub
-             ; <δ,α>∘γ  = λ _ _ _ → refl
-             }
-

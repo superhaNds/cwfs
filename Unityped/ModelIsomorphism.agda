@@ -9,6 +9,8 @@ open import Function using (_$_ ; flip)
 open import Unityped.WSModel renaming (_∘_ to comp ; _′[_] to sub ; q to qWS ; id to idWS ; p to pWS)
 open import Relation.Binary.PropositionalEquality
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
+open import Unityped.Wellscoped.WsAsUcwf
+open import Unityped.Wellscoped.Properties
 import Relation.Binary.EqReasoning as EqR
 
 -- Translation functions

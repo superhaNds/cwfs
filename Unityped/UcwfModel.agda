@@ -1,6 +1,6 @@
 module Unityped.UcwfModel where
 
-open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
+open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
 
@@ -66,6 +66,8 @@ data _~ₕ_ where
 
 hom0~<> : ∀ {n} (ts : HomCwf n 0) → ts ~ₕ <>
 
+eta : ∀ {n m} (ts : HomCwf m (1 + n)) → ts ~ₕ < p n ∘ ts , q n [ ts ] >
+
 refl~ₕ : ∀ {n m} {h : HomCwf m n} → h ~ₕ h
 refl~ₕ = trans~ₕ (sym~ₕ (∘lid _)) (∘lid _)
 
@@ -101,3 +103,15 @@ hom0~<> ts =
   ≈⟨ ∘<> ts ⟩ 
     <>
   ∎ where open EqR (HomCwfS {0} {_})
+
+eta ts =
+  begin
+    ts
+  ≈⟨ sym~ₕ (∘lid ts) ⟩
+    id _ ∘ ts
+  ≈⟨ cong~ₕ (λ z → z ∘ ts) id<p,q> ⟩
+    < p _ , q _ > ∘ ts
+  ≈⟨ <a,t>∘s (q _) (p _) ts ⟩
+    < p _ ∘ ts , q _ [ ts ] >
+  ∎ where open EqR (HomCwfS {_} {_})
+    
