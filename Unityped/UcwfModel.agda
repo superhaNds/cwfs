@@ -114,4 +114,3 @@ eta ts =
   ≈⟨ <a,t>∘s (q _) (p _) ts ⟩
     < p _ ∘ ts , q _ [ ts ] >
   ∎ where open EqR (HomCwfS {_} {_})
-    

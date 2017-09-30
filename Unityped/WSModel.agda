@@ -12,7 +12,7 @@ data WellScopedTm : Nat → Set where
   lam : (n : Nat) → WellScopedTm (suc n) → WellScopedTm n
   app : (n : Nat) → WellScopedTm n → WellScopedTm n → WellScopedTm n
 
-↑_ : ∀ n → Vec (Fin (suc n)) n
+↑_ : ∀ n → Vec (Fin (1 + n)) n
 ↑ _ = tabulate suc
 
 up : ∀ n → Vec (Fin (2 + n)) n

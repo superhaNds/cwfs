@@ -4,6 +4,7 @@ open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_)
 open import Data.Vec
+open import Data.Vec.All using (All)
 open import Relation.Binary.PropositionalEquality
 open import Unityped.Ucwf
 open import Unityped.WSModel
@@ -41,22 +42,12 @@ p∘x∷ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) 
 p∘x∷ts {n} {zero} t [] = refl
 p∘x∷ts {n} {suc k} t (x ∷ ts) = pxts t (x ∷ ts)
 
-{- pts :  ∀ {n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p′ k ∘ (t ∷ ts) ≡ ts
-pts t [] = refl
-pts t (x ∷ ts) = sym $
-  begin
-    x ∷ ts
-  ≡⟨ {!pts x ts!} ⟩
-    (p′ _ ∘ (t ∷ x ∷ ts))
-  ∎ -}
-
-tailComp : ∀ n → (p n) ∘ (p (1 + n)) ≡ tail (p (1 + n))
+tailComp : ∀ n → p n ∘ p (1 + n) ≡ tail (p (1 + n))
 tailComp n = p∘x∷ts _ (tail (p (suc n)))
 
 compInSub (var _ zero)    (v ∷ ts) us = refl
 compInSub (var _ (suc i)) (v ∷ ts) us = compInSub (var _ i) ts us
-compInSub (lam n t)       ts       us = sym $
-  begin
+compInSub (lam n t)       ts       us = sym $ begin
     _  ≡⟨ cong (lam _) (sym $ compInSub t (q _ ∷ map lift ts) (q _ ∷ map lift us)) ⟩
     _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ∘ _ ])) (lift∘p ts) ⟩
     _  ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ _ ∘ (q _ ∷ x) ])) (lift∘p us) ⟩

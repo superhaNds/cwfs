@@ -1,11 +1,15 @@
 module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
-open import Data.Fin using (Fin ; zero ; suc)
+open import Data.Fin using (Fin ; zero ; suc ; fromℕ)
 open import Function using (_$_)
 open import Data.Vec
+open import Data.Vec.All renaming ([] to Nil ; _∷_ to cons) using (All) 
 open import Data.Vec.Properties
 open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+open import Data.Empty
+open import Data.Unit
 open import Unityped.WSModel
 open ≡-Reasoning
 
@@ -19,7 +23,7 @@ lookupIn↑ : ∀ n i → lookup i (↑ n) ≡ suc i
 lookupIn↑ n i = lookup∘tabulate suc i
 
 lookupMap : ∀ {A B : Set} {f : A → B} (n : Nat) (i : Fin n) (xs : Vec A n)
-                        → f (lookup i xs) ≡ lookup i (map f xs)
+              → f (lookup i xs) ≡ lookup i (map f xs)
 lookupMap (suc n) zero    (x ∷ xs) = refl
 lookupMap (suc n) (suc i) (x ∷ xs) = lookupMap n i xs
 
@@ -33,9 +37,19 @@ lookupInP n i =
     var (suc n) (suc i)
   ∎ 
 
-postulate
-  allEqLookup : ∀ {n} {A : Set} (xs : Vec A n) (ys : Vec A n) →
-                  (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
+allEqLookup : ∀ {A : Set} {n : Nat} (xs : Vec A n) (ys : Vec A n)
+                → (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
+allEqLookup {n = zero}  []       []       _ = refl
+allEqLookup {n = suc n} (x ∷ xs) (y ∷ ys) φ =
+  begin
+    x ∷ xs
+  ≡⟨⟩
+    lookup zero (x ∷ xs) ∷ xs
+  ≡⟨ cong (_∷ xs) (φ zero) ⟩
+    lookup zero (y ∷ ys) ∷ xs
+  ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (λ i → sym (φ (suc i))))) ⟩
+    y ∷ ys
+  ∎
 
 lookupPLemma : ∀ n i → lookup i (p n) ≡ var (suc n) (suc i)
 lookupPLemma n i =
@@ -94,3 +108,32 @@ tailIdp n  = sym $
   ≡⟨ cong tail (sym (id=id′ $ 1 + n)) ⟩ 
     tail (id (suc n))
   ∎
+
+isVar : ∀ {n} → WellScopedTm n → Set
+isVar (var _ _)   = ⊤
+isVar (lam _ _)   = ⊥
+isVar (app _ _ _) = ⊥
+
+postulate allVarP : ∀ {n} → All isVar (p′ n)
+
+isVar? : ∀ {n} (t : WellScopedTm n) → Dec (isVar t)
+isVar? (var n x)   = yes tt
+isVar? (lam n t)   = no (λ x → x)
+isVar? (app n _ _) = no (λ x → x)
+
+tInd : ∀ {a} {A : Set a} {n} (xs : Vec A (suc n)) →
+        map (λ x → lookup (suc x) xs) (allFin n) ≡ tail xs
+tInd (x ∷ xs) = map-lookup-allFin xs
+
+-- How to convince that (var _ i) is the only available match
+{-
+map-lookup-id : ∀ {n} {i : Fin n} → map (λ { (var _ i) → lookup i (id n) }) (id n) ≡ id n
+map-lookup-id {n} =
+  begin
+    map ((λ { (var _ i) → lookup i (id n) }) (id n)) (id n)
+  ≡⟨ sym (tabulate-∘ ((λ { (var _ i) → lookup i (id n) }) (id n)) (var _)) ⟩ -- 
+    tabulate (λ z → lookup z (id n))
+  ≡⟨ tabulate∘lookup (tabulate (var n)) ⟩
+    id _
+  ∎
+-}
