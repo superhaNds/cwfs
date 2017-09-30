@@ -15,6 +15,9 @@ data WellScopedTm : Nat → Set where
 ↑_ : ∀ n → Vec (Fin (suc n)) n
 ↑ _ = tabulate suc
 
+up : ∀ n → Vec (Fin (2 + n)) n
+up _ = tabulate (λ x → suc (suc x))
+
 rename : ∀ {n m} (t : WellScopedTm n) (is : Vec (Fin m) n) → WellScopedTm m
 rename {_} {m} (var _ i)   is = var m (lookup i is)
 rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is))
@@ -42,6 +45,9 @@ id′ n = map (var n) (allFin n)
 
 p′ : (n : Nat) → Vec (WellScopedTm (suc n)) n
 p′ n = map (var (suc n)) (↑ n)
+
+p² : (n : Nat) → Vec (WellScopedTm (2 + n)) n
+p² n = map (var (2 + n)) (up n)
 
 -- sub
 _′[_] : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m

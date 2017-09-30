@@ -82,7 +82,7 @@ lift∘p : ∀ {n m : Nat} (xs : Vec (WellScopedTm n) m) → map lift xs ≡ xs 
 lift∘p []       = refl
 lift∘p (x ∷ xs) = trans (cong (λ s → s ∷ _) (subLift _ x))
                         (cong (λ s → _ ∷ s) (lift∘p xs))
-                           
+
 tailIdp : ∀ n → tail (id (suc n)) ≡ p n
 tailIdp n  = sym $
   begin

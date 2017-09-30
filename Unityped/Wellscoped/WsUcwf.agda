@@ -1,4 +1,4 @@
-module Unityped.Wellscoped.WsAsUcwf where
+module Unityped.Wellscoped.WsUcwf where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc)
@@ -40,6 +40,15 @@ postulate
 p∘x∷ts : ∀ {n k : Nat} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p k ∘ (t ∷ ts) ≡ ts
 p∘x∷ts {n} {zero} t [] = refl
 p∘x∷ts {n} {suc k} t (x ∷ ts) = pxts t (x ∷ ts)
+
+{- pts :  ∀ {n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p′ k ∘ (t ∷ ts) ≡ ts
+pts t [] = refl
+pts t (x ∷ ts) = sym $
+  begin
+    x ∷ ts
+  ≡⟨ {!pts x ts!} ⟩
+    (p′ _ ∘ (t ∷ x ∷ ts))
+  ∎ -}
 
 tailComp : ∀ n → (p n) ∘ (p (1 + n)) ≡ tail (p (1 + n))
 tailComp n = p∘x∷ts _ (tail (p (suc n)))

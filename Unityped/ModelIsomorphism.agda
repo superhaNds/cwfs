@@ -9,7 +9,7 @@ open import Function using (_$_ ; flip)
 open import Unityped.WSModel renaming (_∘_ to comp ; _′[_] to sub ; q to qWS ; id to idWS ; p to pWS)
 open import Relation.Binary.PropositionalEquality
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
-open import Unityped.Wellscoped.WsAsUcwf
+open import Unityped.Wellscoped.WsUcwf
 open import Unityped.Wellscoped.Properties
 import Relation.Binary.EqReasoning as EqR
 
@@ -137,9 +137,9 @@ subCommutes (lam n t) xs =
     lam _ (toUcwf $ sub t (qWS _ ∷ comp xs (pWS _)))
   ≈⟨ cong~ₜ (lam _) (subCommutes t  (qWS _ ∷ comp xs (pWS _))) ⟩
     lam _ (toUcwf t `[ < toHom (comp xs (pWS _)) , q _ > ])
-  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩
+  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩ -- toHomDist∘ xs (pWS _)
     lam _ (toUcwf t `[ < toHom xs ∘ toHom (pWS _) , q _ > ])
-  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩
+  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩ -- hom∘vec 
     lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ])
   ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
     lam _ (toUcwf t) `[ toHom xs ]
