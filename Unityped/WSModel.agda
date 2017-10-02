@@ -4,7 +4,7 @@ module Unityped.WSModel where
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Vec
-open import Function using (_$_)
+open import Function using (_$_ ; flip)
 open import Relation.Binary using (IsEquivalence ; Setoid)
 
 data WellScopedTm : Nat → Set where
@@ -20,7 +20,7 @@ up _ = tabulate (λ x → suc (suc x))
 
 rename : ∀ {n m} (t : WellScopedTm n) (is : Vec (Fin m) n) → WellScopedTm m
 rename {_} {m} (var _ i)   is = var m (lookup i is)
-rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is))
+rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is)) -- note as tabulation
 rename {n} {m} (app _ t u) is = app m (rename t is) (rename u is)
 
 -- q
@@ -59,6 +59,15 @@ _′[_] (app _ t u) ts = app _ (t ′[ ts ]) (u ′[ ts ])
 _∘_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
 _∘_ []        _ = []
 _∘_ (t ∷ ts) us = t ′[ us ] ∷ ts ∘ us
+
+_∘₁_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘₁_ ts us = map (_′[ us ]) (tabulate (flip lookup ts))
+
+_∘₂_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘₂_ ts us = tabulate (λ i → lookup i ts ′[ us ])
+
+_∘₃_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘₃_ ts us = map (_′[ us ]) ts
 
 -- < Δ , τ >
 ext : ∀ {m n} → Vec (WellScopedTm m) n → WellScopedTm m → Vec (WellScopedTm m) (suc n)

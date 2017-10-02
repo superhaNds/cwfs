@@ -79,19 +79,14 @@ hom∘vec (id (suc m)) =
           help : ∀ m → < toHom (p~ m) , q m >
                          ~ₕ < toHom (tail $ id~ _) , q m >
           help m rewrite tailIdp m = refl~ₕ
+          
 hom∘vec (ts ∘ us) = sym~ₕ $
   trans~ₕ (trans~ₕ (toHomDist∘ (toVec ts) (toVec us))
                    (cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts)))
           (cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us))
+          
 hom∘vec (p zero) = hom0~<> $ p zero
-hom∘vec (p (suc n)) = sym~ₕ $
-  begin
-   toHom (map lift (id~ _))
-  ≈⟨ {!!} ⟩
-   toHom (map (λ t → t ′[ p~ _ ]) (id~ _))
-  ≈⟨ {!!} ⟩
-    p (1 + n)
-  ∎ where open EqR (HomCwfS {_} {_})
+hom∘vec (p (suc n)) = {!!}
 
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
@@ -130,7 +125,7 @@ subCommutes (lam n t) xs =
     lam _ (toUcwf $ t ′[ q~ _ ∷ xs ∘' p~ _ ])
   ≈⟨ cong~ₜ (lam _) (subCommutes t  (q~ _ ∷ xs ∘' p~ _)) ⟩
     lam _ (toUcwf t `[ < toHom (xs ∘' p~ _) , q _ > ])
-  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩ -- toHomDist∘ xs (p~ _)
+  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩            -- toHomDist∘ xs (p~ _)
     lam _ (toUcwf t `[ < toHom xs ∘ toHom (p~ _) , q _ > ])
   ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩ -- hom∘vec 
     lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ])
