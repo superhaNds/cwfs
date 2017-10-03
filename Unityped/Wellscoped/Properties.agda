@@ -2,14 +2,10 @@ module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc ; fromℕ)
-open import Function using (_$_ ; flip)
+open import Function renaming (_∘_ to _⊜_) using (_$_ ; flip)
 open import Data.Vec
-open import Data.Vec.All renaming ([] to Nil ; _∷_ to cons ; tabulate to tabulateAll) using (All) 
 open import Data.Vec.Properties
 open import Relation.Binary.PropositionalEquality
-open import Relation.Nullary
-open import Data.Empty
-open import Data.Unit
 open import Unityped.WSModel
 open ≡-Reasoning
 
@@ -39,7 +35,7 @@ allEqLookup []       []       _ = refl
 allEqLookup (x ∷ xs) (y ∷ ys) φ = begin
   x ∷ xs ≡⟨⟩
   _      ≡⟨ cong (_∷ xs) (φ zero) ⟩
-  _      ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (λ i → sym (φ (suc i))))) ⟩
+  _      ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (sym ⊜ φ ⊜ suc))) ⟩
   y ∷ ys ∎
 
 lookupPLemma : ∀ n i → lookup i (p n) ≡ var (suc n) (suc i)
@@ -85,26 +81,30 @@ tailIdp n  = sym $ begin
   tail (id′ (suc n)) ≡⟨ cong tail (sym (id=id′ $ 1 + n)) ⟩ 
   tail (id (suc n))  ∎
 
-isVar : ∀ {n} → WellScopedTm n → Set
-isVar (var _ _)   = ⊤
-isVar (lam _ _)   = ⊥
-isVar (app _ _ _) = ⊥
+∘=∘₁ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘ us ≡ ts ∘₁ us
+∘=∘₁ [] us       = refl
+∘=∘₁ (x ∷ ts) us = cong (x ′[ us ] ∷_) (∘=∘₁ ts us)
 
-isVar? : ∀ {n} (t : WellScopedTm n) → Dec (isVar t)
-isVar? (var n x)   = yes tt
-isVar? (lam n t)   = no (λ x → x)
-isVar? (app n _ _) = no (λ x → x)
+∘₁=∘₂ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘₁ us ≡ ts ∘₂ us
+∘₁=∘₂ ts us = begin
+  map (_′[ us ]) ts                          ≡⟨ cong (λ x → map _ x) (sym (tabulate∘lookup ts)) ⟩
+  map (_′[ us ]) (tabulate (flip lookup ts)) ≡⟨ sym (tabulate-∘ (_′[ us ]) (flip lookup ts)) ⟩
+  tabulate (λ i → lookup i ts ′[ us ])       ∎
 
-allfin-↑ : ∀ {n} → ↑ n ≡ tail (allFin (1 + n))
-allfin-↑ = refl
+∘=∘₂ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘ us ≡ ts ∘₂ us
+∘=∘₂ ts us = sym $ trans (sym (∘₁=∘₂ ts us)) (sym (∘=∘₁ ts us))
 
 map-lookup-↑ : ∀ {n m} (ts : Vec (WellScopedTm m) (1 + n)) →
                map (flip lookup ts) (↑ n) ≡ tail ts
 map-lookup-↑ (t ∷ ts) = begin
-  map (λ i → lookup i (t ∷ ts)) (tabulate suc) ≡⟨ sym $ tabulate-∘ (λ x → lookup x (t ∷ ts)) suc ⟩
-  tabulate (λ x → lookup x ts)                 ≡⟨ tabulate∘lookup ts ⟩
-  ts                                           ∎
+  map (flip lookup (t ∷ ts)) (↑ _) ≡⟨ sym $ tabulate-∘ (flip lookup (t ∷ ts)) suc ⟩
+  tabulate (flip lookup ts)        ≡⟨ tabulate∘lookup ts ⟩
+  ts                               ∎
 
-postulate
-  p∘tsIslookups : ∀ {m n} (ts : Vec (WellScopedTm m) (1 + n)) →
-                  p′ n ∘ ts ≡ map (λ i → lookup i ts) (↑ n)
+p∘-lookup : ∀ {m n} (ts : Vec (WellScopedTm m) (1 + n)) →
+            p′ n ∘ ts ≡ map (flip lookup ts) (↑ n)
+p∘-lookup ts = begin
+  p′ _ ∘ ts                           ≡⟨ ∘=∘₁ (p′ _) ts ⟩
+  map (_′[ ts ]) (map (var _) (↑ _))  ≡⟨ sym $ map-∘ (_′[ ts ]) (var _) (↑ _) ⟩
+  map (λ i → (var _ i) ′[ ts ]) (↑ _) ≡⟨⟩
+  map (flip lookup ts) (↑ _)          ∎

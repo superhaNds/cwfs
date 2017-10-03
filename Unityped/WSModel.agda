@@ -61,13 +61,10 @@ _∘_ []        _ = []
 _∘_ (t ∷ ts) us = t ′[ us ] ∷ ts ∘ us
 
 _∘₁_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
-_∘₁_ ts us = map (_′[ us ]) (tabulate (flip lookup ts))
+_∘₁_ ts us = map (_′[ us ]) ts
 
 _∘₂_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
 _∘₂_ ts us = tabulate (λ i → lookup i ts ′[ us ])
-
-_∘₃_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
-_∘₃_ ts us = map (_′[ us ]) ts
 
 -- < Δ , τ >
 ext : ∀ {m n} → Vec (WellScopedTm m) n → WellScopedTm m → Vec (WellScopedTm m) (suc n)

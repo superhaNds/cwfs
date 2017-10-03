@@ -50,35 +50,27 @@ subCommutes : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
                 → toUcwf (t ′[ xs ]) ~ₜ toUcwf t `[ toHom xs ]
 
 ucwf∘ws (q n) = refl~ₜ
-ucwf∘ws (u `[ ts ]) = sym~ₜ $
-  begin
-    toUcwf (toWs u ′[ toVec ts ])
-  ≈⟨ subCommutes (toWs u) (toVec ts) ⟩ 
-    toUcwf (toWs u) `[ toHom (toVec ts) ]
-  ≈⟨ sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u) ⟩
-    u `[ toHom (toVec ts) ]
-  ≈⟨ sym~ₜ $ congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts) ⟩
-    u `[ ts ]
-  ∎ where open EqR (UcwfTmS {_})
+ucwf∘ws (u `[ ts ]) = sym~ₜ $ begin
+  toUcwf (toWs u ′[ toVec ts ])         ≈⟨ subCommutes (toWs u) (toVec ts) ⟩ 
+  toUcwf (toWs u) `[ toHom (toVec ts) ] ≈⟨ sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u) ⟩
+  u `[ toHom (toVec ts) ]               ≈⟨ sym~ₜ $ congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts) ⟩
+  u `[ ts ]                             ∎
+  where open EqR (UcwfTmS {_})
 ucwf∘ws (lam n t) = cong~ₜ (lam n) (ucwf∘ws t)
 ucwf∘ws (app n t u) =
   trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
           (cong~ₜ (λ z → app n z (toUcwf $ toWs u)) (ucwf∘ws t))
 
 hom∘vec (id zero)    = id₀
-hom∘vec (id (suc m)) =
-  begin
-    id (suc m)
-  ≈⟨ id<p,q> ⟩
-    < p _ , q _ >
-  ≈⟨ cong~ₕ <_, q _ > (hom∘vec (p m)) ⟩
-    < toHom (p~ m) , q _ >
-  ≈⟨ help m ⟩
-    < toHom $ tail (id~ _) , q _ >
-  ∎ where open EqR (HomCwfS {_} {_})
-          help : ∀ m → < toHom (p~ m) , q m >
-                         ~ₕ < toHom (tail $ id~ _) , q m >
-          help m rewrite tailIdp m = refl~ₕ
+hom∘vec (id (suc m)) = begin
+  id (suc m)             ≈⟨ id<p,q> ⟩
+  < p _ , q _ >          ≈⟨ cong~ₕ <_, q _ > (hom∘vec (p m)) ⟩
+  < toHom (p~ m) , q _ > ≈⟨ help m ⟩
+  _                      ∎
+  where open EqR (HomCwfS {_} {_})
+        help : ∀ m → < toHom (p~ m) , q m >
+                ~ₕ < toHom (tail $ id~ _) , q m >
+        help m rewrite tailIdp m = refl~ₕ
           
 hom∘vec (ts ∘ us) = sym~ₕ $
   trans~ₕ (trans~ₕ (toHomDist∘ (toVec ts) (toVec us))
@@ -107,53 +99,38 @@ vec∘hom (x ∷ xs)
           sym (ws∘ucwf x) = refl
 
 subCommutes (var _ zero)    (x ∷ xs) = q[<a,t>] (toUcwf x) (toHom xs)
-subCommutes (var _ (suc i)) (x ∷ xs) = sym~ₜ $
-  begin
-    (toUcwf (var _ i) `[ p _ ]) `[ < toHom xs , toUcwf x > ]
-  ≈⟨ sym~ₜ (∘sub (toUcwf (var _ i)) (p _) < toHom xs , toUcwf x >) ⟩
-    toUcwf (var _ i) `[ p _ ∘ < toHom xs , toUcwf x > ]
-  ≈⟨ sym~ₜ $ congh~ₜ (_`[_] (toUcwf $ var _ i))
-                     (p∘<a,t> (toUcwf x) (toHom xs)) ⟩
-    toUcwf (var _ i) `[ toHom xs ]
-  ≈⟨ sym~ₜ $ subCommutes (var _ i) xs ⟩ 
-    (toUcwf $ var _ i ′[ xs ])
-  ∎ where open EqR (UcwfTmS {_})
-subCommutes (lam n t) xs =  
-  begin
-    lam _ (toUcwf $ t ′[ q~ _ ∷ map lift xs ])
-  ≈⟨ help ⟩
-    lam _ (toUcwf $ t ′[ q~ _ ∷ xs ∘' p~ _ ])
-  ≈⟨ cong~ₜ (lam _) (subCommutes t  (q~ _ ∷ xs ∘' p~ _)) ⟩
-    lam _ (toUcwf t `[ < toHom (xs ∘' p~ _) , q _ > ])
-  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩            -- toHomDist∘ xs (p~ _)
-    lam _ (toUcwf t `[ < toHom xs ∘ toHom (p~ _) , q _ > ])
-  ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩ -- hom∘vec 
-    lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ])
-  ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
-    lam _ (toUcwf t) `[ toHom xs ]
-  ∎ where open EqR (UcwfTmS {_})
-          help : lam _ (toUcwf $ t ′[ q~ _ ∷ map lift xs ]) ~ₜ
-                  lam _ (toUcwf $  t ′[ q~ _ ∷ xs ∘' p~ _ ])
-          help rewrite lift∘p xs = refl~ₜ
-subCommutes (app n t u) xs =
-  begin
-    app _ (toUcwf (t ′[ xs ])) (toUcwf (u ′[ xs ]))
-  ≈⟨ cong~ₜ (λ z → app _ z (toUcwf (u ′[ xs ]))) (subCommutes t xs) ⟩
-    app _ (toUcwf t `[ toHom xs ]) (toUcwf (u ′[ xs ]))
-  ≈⟨ cong~ₜ (app _ (toUcwf t `[ toHom xs ])) (subCommutes u xs) ⟩
-    app _ (toUcwf t `[ toHom xs ]) (toUcwf u `[ toHom xs ])
-  ≈⟨ appCm (toUcwf t) (toUcwf u) (toHom xs) ⟩
-    app _ (toUcwf t) (toUcwf u) `[ toHom xs ]
-  ∎ where open EqR (UcwfTmS {_})
+subCommutes (var _ (suc i)) (x ∷ xs) = sym~ₜ $ begin
+  (toUcwf (var _ i) `[ p _ ]) `[ < toHom xs , toUcwf x > ]
+    ≈⟨ sym~ₜ (∘sub (toUcwf (var _ i)) (p _) < toHom xs , toUcwf x >) ⟩
+  toUcwf (var _ i) `[ p _ ∘ < toHom xs , toUcwf x > ]
+    ≈⟨ sym~ₜ $ congh~ₜ (_`[_] (toUcwf $ var _ i)) (p∘<a,t> (toUcwf x) (toHom xs)) ⟩
+  toUcwf (var _ i) `[ toHom xs ] ≈⟨ sym~ₜ $ subCommutes (var _ i) xs ⟩ 
+  (toUcwf $ var _ i ′[ xs ])     ∎
+  where open EqR (UcwfTmS {_})
+subCommutes (lam n t) xs = begin
+  lam _ (toUcwf $ t ′[ q~ _ ∷ map lift xs ])     ≈⟨ help ⟩
+  lam _ (toUcwf $ t ′[ q~ _ ∷ xs ∘' p~ _ ])      ≈⟨ cong~ₜ (lam _) (subCommutes t  (q~ _ ∷ xs ∘' p~ _)) ⟩
+  lam _ (toUcwf t `[ < toHom (xs ∘' p~ _) , q _ > ])
+    ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < x , q _ > ])) {!!} ⟩ -- toHomDist∘ xs (p~ _)
+  lam _ (toUcwf t `[ < toHom xs ∘ toHom (p~ _) , q _ > ])
+    ≈⟨ congh~ₜ (λ x → lam _ (toUcwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩ -- hom∘vec p
+  lam _ (toUcwf t `[ < toHom xs ∘ p _ , q _ > ]) ≈⟨ sym~ₜ (lamCm (toUcwf t) (toHom xs)) ⟩ 
+  lam _ (toUcwf t) `[ toHom xs ]                 ∎
+  where open EqR (UcwfTmS {_})
+        help : lam _ (toUcwf $ t ′[ q~ _ ∷ map lift xs ]) ~ₜ
+               lam _ (toUcwf $  t ′[ q~ _ ∷ xs ∘' p~ _ ])
+        help rewrite lift∘p xs = refl~ₜ
+subCommutes (app n t u) xs = begin
+  app _ (toUcwf (t ′[ xs ])) (toUcwf (u ′[ xs ]))         ≈⟨ cong~ₜ (flip (app _) (toUcwf (u ′[ xs ]))) (subCommutes t xs) ⟩
+  app _ (toUcwf t `[ toHom xs ]) (toUcwf (u ′[ xs ]))     ≈⟨ cong~ₜ (app _ (toUcwf t `[ toHom xs ])) (subCommutes u xs) ⟩
+  app _ (toUcwf t `[ toHom xs ]) (toUcwf u `[ toHom xs ]) ≈⟨ appCm (toUcwf t) (toUcwf u) (toHom xs) ⟩
+  app _ (toUcwf t) (toUcwf u) `[ toHom xs ]               ∎
+  where open EqR (UcwfTmS {_})
 
 toHomDist∘ []       ys = sym~ₕ $ ∘<> (toHom ys)
-toHomDist∘ (x ∷ xs) ys = sym~ₕ $
-  begin
-    < toHom xs , toUcwf x > ∘ toHom ys
-  ≈⟨ <a,t>∘s (toUcwf x) (toHom xs) (toHom ys) ⟩
-    < toHom xs ∘ toHom ys , toUcwf x `[ toHom ys ] >
-  ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
-    < toHom (xs ∘' ys) , toUcwf x `[ toHom ys ] >
-  ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩
-    < toHom (xs ∘' ys) , toUcwf (x ′[ ys ]) >
-  ∎ where open EqR (HomCwfS {_} {_})
+toHomDist∘ (x ∷ xs) ys = sym~ₕ $  begin
+  < toHom xs , toUcwf x > ∘ toHom ys               ≈⟨ <a,t>∘s (toUcwf x) (toHom xs) (toHom ys) ⟩
+  < toHom xs ∘ toHom ys , toUcwf x `[ toHom ys ] > ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
+  < toHom (xs ∘' ys) , toUcwf x `[ toHom ys ] >    ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩
+  < toHom (xs ∘' ys) , toUcwf (x ′[ ys ]) >        ∎
+  where open EqR (HomCwfS {_} {_})
