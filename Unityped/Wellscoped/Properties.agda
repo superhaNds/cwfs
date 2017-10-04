@@ -2,7 +2,7 @@ module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc ; fromℕ)
-open import Function renaming (_∘_ to _⊜_) using (_$_ ; flip)
+open import Function renaming (_∘_ to _◯_) using (_$_ ; flip)
 open import Data.Vec
 open import Data.Vec.Properties
 open import Relation.Binary.PropositionalEquality
@@ -29,13 +29,13 @@ lookupInP n i = begin
   var (suc n) (lookup i (↑ n))       ≡⟨ cong (var (suc n)) (lookupIn↑ n i) ⟩
   var (suc n) (suc i)                ∎ 
 
-allEqLookup : ∀ {A : Set} {n : Nat} (xs : Vec A n) (ys : Vec A n)
-                → (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
+allEqLookup : ∀ {A : Set} {n : Nat} (xs : Vec A n) (ys : Vec A n) →
+               (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
 allEqLookup []       []       _ = refl
 allEqLookup (x ∷ xs) (y ∷ ys) φ = begin
   x ∷ xs ≡⟨⟩
   _      ≡⟨ cong (_∷ xs) (φ zero) ⟩
-  _      ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (sym ⊜ φ ⊜ suc))) ⟩
+  _      ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (sym ◯ φ ◯ suc))) ⟩
   y ∷ ys ∎
 
 lookupPLemma : ∀ n i → lookup i (p n) ≡ var (suc n) (suc i)
@@ -56,7 +56,7 @@ id=id′ : ∀ n → id n ≡ id′ n
 id=id′ n = tabulate-allFin (var n)
 
 p=p' : ∀ n → p n ≡ p′ n
-p=p' n = allEqLookup (p n) (p′ n) (λ i → sym (lookupInPs i))
+p=p' n = allEqLookup (p n) (p′ n) (sym ◯ lookupInPs)
 
 subVarP : ∀ n i → (var n i) ′[ p n ] ≡ var (suc n) (suc i)
 subVarP = lookupPLemma
