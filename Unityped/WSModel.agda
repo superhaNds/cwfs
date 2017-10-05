@@ -1,10 +1,9 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.WSModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Vec
-open import Function using (_$_ ; flip)
+open import Function renaming (_∘_ to _◯_) using (_$_ ; flip)
 open import Relation.Binary using (IsEquivalence ; Setoid)
 
 data WellScopedTm : Nat → Set where
@@ -12,8 +11,8 @@ data WellScopedTm : Nat → Set where
   lam : (n : Nat) → WellScopedTm (suc n) → WellScopedTm n
   app : (n : Nat) → WellScopedTm n → WellScopedTm n → WellScopedTm n
 
-↑_ : ∀ n → Vec (Fin (1 + n)) n
-↑ _ = tabulate suc
+1toN_ : ∀ n → Vec (Fin (1 + n)) n
+1toN _ = tabulate suc
 
 up : ∀ n → Vec (Fin (2 + n)) n
 up _ = tabulate (λ x → suc (suc x))
@@ -33,18 +32,24 @@ id n = tabulate (var n)
 
 -- weakening (derived)
 lift : {n : Nat} → WellScopedTm n → WellScopedTm (suc n)
-lift t = rename t (↑ _)
+lift t = rename t (1toN _)
+
+↑ : {n m : Nat} → Vec (WellScopedTm m) n → Vec (WellScopedTm (suc m)) n
+↑ ts = map lift ts
+
+↑² : {n m : Nat} → Vec (WellScopedTm m) n → Vec (WellScopedTm (2 + m)) n
+↑² = ↑ ◯ ↑
 
 -- p
 p : (n : Nat) → Vec (WellScopedTm (suc n)) n
-p n = map lift (id n) -- or tabulate (lift ∘ (var n))
+p = ↑ ◯ id -- or tabulate (lift ∘ (var n))
 
 -- alternative id and p
 id′ : ∀ n → Vec (WellScopedTm n) n
 id′ n = map (var n) (allFin n)
 
 p′ : (n : Nat) → Vec (WellScopedTm (suc n)) n
-p′ n = map (var (suc n)) (↑ n)
+p′ n = map (var (suc n)) (1toN n)
 
 p² : (n : Nat) → Vec (WellScopedTm (2 + n)) n
 p² n = map (var (2 + n)) (up n)
@@ -52,7 +57,7 @@ p² n = map (var (2 + n)) (up n)
 -- sub
 _′[_] : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
 _′[_] (var _ i)   ts = lookup i ts
-_′[_] (lam _ t)   ts = lam _ (t ′[ q _ ∷ map lift ts ])
+_′[_] (lam _ t)   ts = lam _ (t ′[ q _ ∷ ↑ ts ])
 _′[_] (app _ t u) ts = app _ (t ′[ ts ]) (u ′[ ts ])
 
 -- composition of homs 

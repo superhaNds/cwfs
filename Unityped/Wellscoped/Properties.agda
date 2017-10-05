@@ -15,7 +15,7 @@ liftVar n i = cong (var (suc n)) (lookup∘tabulate suc i)
 lookupInId : ∀ n i → lookup i (id n) ≡ var n i
 lookupInId n i = lookup∘tabulate (var n) i
 
-lookupIn↑ : ∀ n i → lookup i (↑ n) ≡ suc i
+lookupIn↑ : ∀ n i → lookup i (1toN n) ≡ suc i
 lookupIn↑ n i = lookup∘tabulate suc i
 
 lookupMap : ∀ {A B : Set} {f : A → B} (n : Nat) (i : Fin n) (xs : Vec A n)
@@ -25,9 +25,12 @@ lookupMap (suc n) (suc i) (x ∷ xs) = lookupMap n i xs
 
 lookupInP : ∀ n i → lookup i (p′ n) ≡ var (suc n) (suc i)
 lookupInP n i = begin
-  lookup i (map (var (suc n)) (↑ n)) ≡⟨ sym (lookupMap n i (↑ n)) ⟩
-  var (suc n) (lookup i (↑ n))       ≡⟨ cong (var (suc n)) (lookupIn↑ n i) ⟩
-  var (suc n) (suc i)                ∎ 
+  lookup i (map (var (suc n)) (1toN n)) ≡⟨ sym (lookupMap n i (1toN n)) ⟩
+  var (suc n) (lookup i (1toN n))       ≡⟨ cong (var (suc n)) (lookupIn↑ n i) ⟩
+  var (suc n) (suc i)                   ∎ 
+
+lookup-up : ∀ n i → lookup i (up n) ≡ suc (suc i)
+lookup-up n i = lookup∘tabulate (λ z → suc (suc z)) i
 
 allEqLookup : ∀ {A : Set} {n : Nat} (xs : Vec A n) (ys : Vec A n) →
                (∀ i → lookup i xs ≡ lookup i ys) → xs ≡ ys
@@ -40,11 +43,11 @@ allEqLookup (x ∷ xs) (y ∷ ys) φ = begin
 
 lookupPLemma : ∀ n i → lookup i (p n) ≡ var (suc n) (suc i)
 lookupPLemma n i = begin
-  lookup i (p n)             ≡⟨⟩
-  lookup i (map lift (id n)) ≡⟨ sym (lookupMap n i (id n)) ⟩
-  lift (lookup i (id n))     ≡⟨ cong lift (lookupInId n i) ⟩
-  lift (var n i)             ≡⟨ liftVar n i ⟩
-  var (suc n) (suc i)        ∎
+  lookup i (p n)         ≡⟨⟩
+  lookup i (↑ (id n))    ≡⟨ sym (lookupMap n i (id n)) ⟩
+  lift (lookup i (id n)) ≡⟨ cong lift (lookupInId n i) ⟩
+  lift (var n i)         ≡⟨ liftVar n i ⟩
+  var (suc n) (suc i)    ∎
 
 lookupInPs : ∀ {n} i → lookup i (p′ n) ≡ lookup i (p n)
 lookupInPs i = begin
@@ -58,6 +61,9 @@ id=id′ n = tabulate-allFin (var n)
 p=p' : ∀ n → p n ≡ p′ n
 p=p' n = allEqLookup (p n) (p′ n) (sym ◯ lookupInPs)
 
+suc1toN : ∀ {n : Nat} → map suc (tabulate suc) ≡ up n
+suc1toN = sym (tabulate-∘ suc suc)
+
 subVarP : ∀ n i → (var n i) ′[ p n ] ≡ var (suc n) (suc i)
 subVarP = lookupPLemma
 
@@ -69,7 +75,7 @@ subLift n (lam _ t)   = tss n t
 subLift n (app _ t u) = trans (cong (λ x → app _ x _) (subLift _ t))
                               (cong (λ x → app _ _ x) (subLift _ u))
 
-lift∘p : ∀ {n m : Nat} (xs : Vec (WellScopedTm n) m) → map lift xs ≡ xs ∘ p n
+lift∘p : ∀ {n m : Nat} (xs : Vec (WellScopedTm n) m) → ↑ xs ≡ xs ∘ p n
 lift∘p []       = refl
 lift∘p (x ∷ xs) = trans (cong (λ s → s ∷ _) (subLift _ x))
                         (cong (λ s → _ ∷ s) (lift∘p xs))
@@ -95,16 +101,16 @@ tailIdp n  = sym $ begin
 ∘=∘₂ ts us = sym $ trans (sym (∘₁=∘₂ ts us)) (sym (∘=∘₁ ts us))
 
 map-lookup-↑ : ∀ {n m} (ts : Vec (WellScopedTm m) (1 + n)) →
-               map (flip lookup ts) (↑ n) ≡ tail ts
+               map (flip lookup ts) (1toN n) ≡ tail ts
 map-lookup-↑ (t ∷ ts) = begin
-  map (flip lookup (t ∷ ts)) (↑ _) ≡⟨ sym $ tabulate-∘ (flip lookup (t ∷ ts)) suc ⟩
-  tabulate (flip lookup ts)        ≡⟨ tabulate∘lookup ts ⟩
-  ts                               ∎
+  map (flip lookup (t ∷ ts)) (1toN _) ≡⟨ sym $ tabulate-∘ (flip lookup (t ∷ ts)) suc ⟩
+  tabulate (flip lookup ts)           ≡⟨ tabulate∘lookup ts ⟩
+  ts                                  ∎
 
 p∘-lookup : ∀ {m n} (ts : Vec (WellScopedTm m) (1 + n)) →
-            p′ n ∘ ts ≡ map (flip lookup ts) (↑ n)
+            p′ n ∘ ts ≡ map (flip lookup ts) (1toN n)
 p∘-lookup ts = begin
-  p′ _ ∘ ts                           ≡⟨ ∘=∘₁ (p′ _) ts ⟩
-  map (_′[ ts ]) (map (var _) (↑ _))  ≡⟨ sym $ map-∘ (_′[ ts ]) (var _) (↑ _) ⟩
-  map (λ i → (var _ i) ′[ ts ]) (↑ _) ≡⟨⟩
-  map (flip lookup ts) (↑ _)          ∎
+  p′ _ ∘ ts                              ≡⟨ ∘=∘₁ (p′ _) ts ⟩
+  map (_′[ ts ]) (map (var _) (1toN _))  ≡⟨ sym $ map-∘ (_′[ ts ]) (var _) (1toN _) ⟩
+  map (λ i → (var _ i) ′[ ts ]) (1toN _) ≡⟨⟩
+  map (flip lookup ts) (1toN _)          ∎

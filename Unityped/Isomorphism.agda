@@ -2,9 +2,10 @@
 module Unityped.Isomorphism where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
-open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; tail)
+open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; tail ; tabulate)
+open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
-open import Function using (_$_ ; flip)
+open import Function renaming (_∘_ to _◯_) using (_$_ ; flip)
 open import Unityped.WSModel renaming (_∘_ to _∘'_ ; q to q~ ; id to id~ ; p to p~)
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
 open import Unityped.Wellscoped.WsUcwf
@@ -61,6 +62,21 @@ ucwf∘ws (app n t u) =
   trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
           (cong~ₜ (λ z → app n z (toUcwf $ toWs u)) (ucwf∘ws t))
 
+p~⦃p~⦄ : ∀ n → p n ~ₕ toHom (p~ n)
+p~⦃p~⦄ zero = hom0~<> (p 0)
+p~⦃p~⦄ (suc n) = begin
+  p (1 + n)                                     ≈⟨ eta $ p (1 + n) ⟩
+  < p n ∘ p (1 + n) , q n `[ p (1 + n) ] >      ≈⟨ refl~ₕ ⟩
+  < p n ∘ p (1 + n) , weaken (q n) >            ≈⟨ cong~ₕ (<_, weaken (q n) >) (hom∘vec $ p n ∘ p (1 + n)) ⟩
+  < toHom (p~ n ∘' p~ (suc n)) , weaken (q n) > ≈⟨ help ⟩
+  < toHom _ , (weaken (q n)) >                  ∎
+  where open EqR (HomCwfS {_} {_})
+        help : < toHom (p~ n ∘' p~ (suc n)) , weaken (q n) > ~ₕ
+               < toHom (↑ (tabulate (var (suc n) ◯ suc))) , (weaken (q n)) >
+        help rewrite sym $ lift∘p (p~ n)
+                   | p=p' n
+                   | sym $ tabulate-∘ (var (suc n)) suc = refl~ₕ
+
 hom∘vec (id zero)    = id₀
 hom∘vec (id (suc m)) = begin
   id (suc m)             ≈⟨ id<p,q> ⟩
@@ -77,14 +93,40 @@ hom∘vec (ts ∘ us) = sym~ₕ $
                    (cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts)))
           (cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us))
           
-hom∘vec (p zero) = hom0~<> $ p zero
-hom∘vec (p (suc n)) = {!!}
+hom∘vec (p zero) = {!!}
+hom∘vec (p (suc zero)) = begin
+  p 1 ≈⟨ eta (p 1) ⟩
+  < p 0 ∘ p 1 , q 0 `[ p 1 ] > ≈⟨ cong~ₕ (λ x → < x ∘ p 1 , q 0 `[ p 1 ] >) (hom0~<> (p 0)) ⟩
+  < <> ∘ p 1 , q 0 `[ p 1 ] >  ≈⟨ cong~ₕ (<_, q zero `[ p (suc zero) ] >)
+                                         (∘<> (p (suc zero))) ⟩
+  < <> , q 0 `[ p 1 ] >        ∎
+  where open EqR (HomCwfS {_} {_})
+hom∘vec (p (suc (suc zero))) = begin
+  p 2                                                      ≈⟨ eta $ p 2 ⟩
+  < p 1 ∘ p (2) , q 1 `[ p 2 ] >                           ≈⟨ cong~ₕ (λ x → < x ∘ p 2 , q 1 `[ p 2 ] >) (eta $ p 1) ⟩
+  < < p 0 ∘ p 1 , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >    ≈⟨ cong~ₕ (λ x → < < x , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >)
+                                                                     (hom0~<> $ p 0 ∘ p 1) ⟩
+  < < <> , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >           ≈⟨ refl~ₕ ⟩
+  < < <> , q 0 `[ p 1 ] > ∘ p 2 , weaken (q 1) >           ≈⟨ cong~ₕ (λ z → < z , q 1 `[ p 2 ] >)
+                                                                     (<a,t>∘s (q 0 `[ p 1 ]) <> (p 2)) ⟩
+  < < <> ∘ p 2 , q 0 `[ p 1 ] `[ p 2 ] > , weaken (q 1) >  ≈⟨ cong~ₕ (λ z → < < z , (q 0 `[ p 1 ]) `[ p 2 ] > , q 1 `[ p 2 ] >)
+                                                                     (∘<> (p 2)) ⟩
+  < < <> , q 0 `[ p 1 ] `[ p 2 ] > , weaken (q 1) >        ≈⟨ refl~ₕ ⟩
+  < < <> , weaken (weaken $ q 0) > , weaken (q 1) >        ∎
+  where open EqR (HomCwfS {_} {_})
+
+hom∘vec (p (suc (suc (suc zero)))) = begin
+  p 3 ≈⟨ {!!} ⟩
+  {!!} ∎
+  where open EqR (HomCwfS {_} {_})
+
+hom∘vec (p (suc (suc n))) = {!!}
 
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
   trans~ₕ (sym~ₕ $ cong~ₕ (<_, toUcwf (toWs x) >) (hom∘vec u))
           (sym~ₕ $ congt~ₕ (< u ,_>) (ucwf∘ws x))
-
+                   
 ws∘ucwf (var _ zero) = refl
 ws∘ucwf (var _ (suc x)) = sym $
   trans (sym $ cong (_′[ p~ _ ]) (ws∘ucwf (var _ x)))
