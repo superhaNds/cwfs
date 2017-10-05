@@ -69,9 +69,38 @@ subVarP = lookupPLemma
 
 postulate tss : ∀ n t →  lift (lam n t) ≡ (lam n t ′[ p n ])
 
+liftSub : ∀ {n m} (t : WellScopedTm n) (us : Vec (WellScopedTm m) n) →
+          lift (t ′[ us ]) ≡ lift t ′[ (q _ ∷ ↑ us) ]
+liftSub (var _ zero) (x ∷ us) = refl
+liftSub (var _ (suc i)) (x ∷ us) = begin
+  lift (var _ (suc i) ′[ x ∷ us ]) ≡⟨⟩
+  lift (lookup (suc i) (x ∷ us))   ≡⟨⟩
+  lift (lookup i us)               ≡⟨ liftSub (var _ i) us ⟩
+  lookup (lookup i (1toN _)) _     ≡⟨ cong (λ z → lookup z _) (lookupIn↑ _ i) ⟩
+  lookup (suc i) (q _ ∷ ↑ us)      ≡⟨⟩
+  lookup i (↑ us)                  ≡⟨ sym $ begin
+    lookup (lookup i (up _)) (q _ ∷ ↑ (x ∷ us)) ≡⟨ cong (λ z → lookup z _) (lookup-up _ i) ⟩
+    lookup (suc (suc i)) (q _ ∷ lift x ∷ ↑ us)  ≡⟨⟩
+    lookup i (↑ us)                             ∎ ⟩
+  _ ∎
+liftSub (lam n t) us = begin
+  lift (lam _ (t ′[ q _ ∷ ↑ us ]))                             ≡⟨⟩
+  lam _ (rename (t ′[ q _ ∷ ↑ us ]) (zero ∷ map suc (1toN _))) ≡⟨ {!!} ⟩
+  lam _ (rename t (zero ∷ map suc (1toN _))
+               ′[ q _ ∷ ↑ (q _ ∷ ↑ us)])                       ∎
+liftSub (app n t u) us = trans (cong (λ x → app _ x _) (liftSub t us))
+                               (cong (λ x → app _ _ x) (liftSub u us))
+
+liftDist : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
+           → ↑ (ts ∘ us) ≡ ↑ ts ∘ (q _ ∷ ↑ us)
+liftDist [] us = refl
+liftDist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
+                             (cong (lift x ′[ q _ ∷ ↑ us ] ∷_)
+                                   (liftDist ts us))
+
 subLift : ∀ n x → lift x ≡ x ′[ p n ]
 subLift n (var _ i)   = trans (liftVar _ i) (sym (subVarP _ i))
-subLift n (lam _ t)   = tss n t
+subLift n (lam _ t)   = {!!}
 subLift n (app _ t u) = trans (cong (λ x → app _ x _) (subLift _ t))
                               (cong (λ x → app _ _ x) (subLift _ u))
 
