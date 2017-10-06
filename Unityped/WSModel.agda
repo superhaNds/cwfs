@@ -15,11 +15,11 @@ data WellScopedTm : Nat → Set where
 1toN _ = tabulate suc
 
 up : ∀ n → Vec (Fin (2 + n)) n
-up _ = tabulate (λ x → suc (suc x))
+up _ = tabulate (λ i → suc (suc i))
 
 rename : ∀ {n m} (t : WellScopedTm n) (is : Vec (Fin m) n) → WellScopedTm m
 rename {_} {m} (var _ i)   is = var m (lookup i is)
-rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is)) -- note as tabulation
+rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is))
 rename {n} {m} (app _ t u) is = app m (rename t is) (rename u is)
 
 -- q
@@ -41,15 +41,15 @@ lift t = rename t (1toN _)
 ↑² = ↑ ◯ ↑
 
 -- p
-p : (n : Nat) → Vec (WellScopedTm (suc n)) n
+p : (n : Nat) → Vec (WellScopedTm (1 + n)) n
 p = ↑ ◯ id -- or tabulate (lift ∘ (var n))
 
 -- alternative id and p
 id′ : ∀ n → Vec (WellScopedTm n) n
 id′ n = map (var n) (allFin n)
 
-p′ : (n : Nat) → Vec (WellScopedTm (suc n)) n
-p′ n = map (var (suc n)) (1toN n)
+p′ : (n : Nat) → Vec (WellScopedTm (1 + n)) n
+p′ n = map (var (1 + n)) (1toN n)
 
 p² : (n : Nat) → Vec (WellScopedTm (2 + n)) n
 p² n = map (var (2 + n)) (up n)

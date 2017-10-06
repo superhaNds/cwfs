@@ -93,7 +93,7 @@ hom∘vec (ts ∘ us) = sym~ₕ $
                    (cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts)))
           (cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us))
           
-hom∘vec (p zero) = {!!}
+hom∘vec (p zero) = hom0~<> (p 0)
 hom∘vec (p (suc zero)) = begin
   p 1 ≈⟨ eta (p 1) ⟩
   < p 0 ∘ p 1 , q 0 `[ p 1 ] > ≈⟨ cong~ₕ (λ x → < x ∘ p 1 , q 0 `[ p 1 ] >) (hom0~<> (p 0)) ⟩
@@ -115,12 +115,21 @@ hom∘vec (p (suc (suc zero))) = begin
   < < <> , weaken (weaken $ q 0) > , weaken (q 1) >        ∎
   where open EqR (HomCwfS {_} {_})
 
-hom∘vec (p (suc (suc (suc zero)))) = begin
-  p 3 ≈⟨ {!!} ⟩
+hom∘vec (p (suc (suc (suc n)))) = begin
+  p (3 + n)  ≈⟨ eta (p (3 + n)) ⟩
+  < p (2 + n) ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
+  < < p (1 + n) ∘ p (2 + n) , q (1 + n) `[ p (2 + n) ] > ∘ p (3 + n)
+    , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
+  < < < p n ∘ p (1 + n) , q n `[ p (1 + n) ] > ∘ p (2 + n) , q (1 + n) `[ p (2 + n) ] >
+     ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
+  < < < (p n ∘ p (1 + n)) ∘ p (2 + n) , q n `[ p (1 + n) ] `[ p (2 + n) ] >
+    , q (1 + n) `[ p (2 + n) ] > ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
+  < < < (((p n ∘ p (1 + n)) ∘ p (2 + n)) ∘ p (3 + n)) , q n `[ p (1 + n) ] `[ p (2 + n) ] `[ p (3 + n) ] >
+  , q (1 + n) `[ p (2 + n) ] `[ p (3 + n) ] > , q (2 + n) `[ p (3 + n) ] > ≈⟨ refl~ₕ ⟩
+  < < < (((p n ∘ p (1 + n)) ∘ p (2 + n)) ∘ p (3 + n)) , weaken $ weaken $ weaken (q n) >
+  , weaken $ weaken $ q (1 + n) > , weaken $ q (2 + n) > ≈⟨ {!!} ⟩
   {!!} ∎
   where open EqR (HomCwfS {_} {_})
-
-hom∘vec (p (suc (suc n))) = {!!}
 
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $

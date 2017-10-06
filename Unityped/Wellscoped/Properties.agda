@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
@@ -91,8 +92,8 @@ liftSub (lam n t) us = begin
 liftSub (app n t u) us = trans (cong (λ x → app _ x _) (liftSub t us))
                                (cong (λ x → app _ _ x) (liftSub u us))
 
-liftDist : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
-           → ↑ (ts ∘ us) ≡ ↑ ts ∘ (q _ ∷ ↑ us)
+liftDist : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) →
+           ↑ (ts ∘ us) ≡ ↑ ts ∘ (q _ ∷ ↑ us)
 liftDist [] us = refl
 liftDist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
                              (cong (lift x ′[ q _ ∷ ↑ us ] ∷_)
@@ -109,7 +110,7 @@ lift∘p []       = refl
 lift∘p (x ∷ xs) = trans (cong (λ s → s ∷ _) (subLift _ x))
                         (cong (λ s → _ ∷ s) (lift∘p xs))
 
-tailIdp : ∀ n → tail (id (suc n)) ≡ p n
+tailIdp : ∀ n → tail (id (1 + n)) ≡ p n
 tailIdp n  = sym $ begin
   p n                ≡⟨ p=p' n ⟩
   p′ n               ≡⟨⟩
@@ -127,7 +128,7 @@ tailIdp n  = sym $ begin
   tabulate (λ i → lookup i ts ′[ us ])       ∎
 
 ∘=∘₂ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘ us ≡ ts ∘₂ us
-∘=∘₂ ts us = sym $ trans (sym (∘₁=∘₂ ts us)) (sym (∘=∘₁ ts us))
+∘=∘₂ ts us = trans (∘=∘₁ ts us) (∘₁=∘₂ ts us)
 
 map-lookup-↑ : ∀ {n m} (ts : Vec (WellScopedTm m) (1 + n)) →
                map (flip lookup ts) (1toN n) ≡ tail ts
@@ -139,7 +140,7 @@ map-lookup-↑ (t ∷ ts) = begin
 p∘-lookup : ∀ {m n} (ts : Vec (WellScopedTm m) (1 + n)) →
             p′ n ∘ ts ≡ map (flip lookup ts) (1toN n)
 p∘-lookup ts = begin
-  p′ _ ∘ ts                              ≡⟨ ∘=∘₁ (p′ _) ts ⟩
-  map (_′[ ts ]) (map (var _) (1toN _))  ≡⟨ sym $ map-∘ (_′[ ts ]) (var _) (1toN _) ⟩
-  map (λ i → (var _ i) ′[ ts ]) (1toN _) ≡⟨⟩
-  map (flip lookup ts) (1toN _)          ∎
+  p′ _ ∘ ts                               ≡⟨ ∘=∘₁ (p′ _) ts ⟩
+  (map (_′[ ts ]) ◯ map (var _)) (1toN _) ≡⟨ sym $ map-∘ (_′[ ts ]) (var _) (1toN _) ⟩
+  map (λ i → (var _ i) ′[ ts ]) (1toN _)  ≡⟨⟩
+  map (flip lookup ts) (1toN _)           ∎

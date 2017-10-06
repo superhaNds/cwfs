@@ -35,10 +35,10 @@ t[∘] : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
 
 p∘x∷ts : ∀ {n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p k ∘ (t ∷ ts) ≡ ts
 p∘x∷ts t ts = begin
-  p  _  ∘ (t ∷ ts)                 ≡⟨ cong (_∘ (t ∷ ts)) (p=p' _) ⟩
-  p′ _  ∘ (t ∷ ts)                 ≡⟨ p∘-lookup (t ∷ ts) ⟩
+  p  _  ∘ (t ∷ ts)                    ≡⟨ cong (_∘ (t ∷ ts)) (p=p' _) ⟩
+  p′ _  ∘ (t ∷ ts)                    ≡⟨ p∘-lookup (t ∷ ts) ⟩
   map (flip lookup (t ∷ ts)) (1toN _) ≡⟨ map-lookup-↑ (t ∷ ts) ⟩
-  ts                               ∎
+  ts                                  ∎
 
 tailComp : ∀ n → p n ∘ p (1 + n) ≡ tail (p (1 + n))
 tailComp n = p∘x∷ts _ (tail (p _))
@@ -75,22 +75,22 @@ t[∘] (app n t u) ts us =
 
 wsIsUcwf : Ucwf (WellScopedTm)
 wsIsUcwf = record
-             { id       = id
-             ; <>       = empt
-             ; p        = p
-             ; q        = q
-             ; _∘_      = _∘_
-             ; _[_]     = _′[_]
-             ; <_,_>    = ext
-             ; id₀      = id0=[]
-             ; ∘<>      = ∘-empty
-             ; id<p,q>  = id=<p,q> _
-             ; ∘lid     = ∘-lid
-             ; ∘rid     = ∘-rid
-             ; ∘asso    = ∘-assoc
-             ; subid    = t[id]=t
-             ; p∘<γ,α>  = p∘x∷ts
-             ; q[<γ,α>] = λ _ _ → refl
-             ; ∘inSub   = t[∘]
-             ; <δ,α>∘γ  = λ _ _ _ → refl
-             }
+             { id    = id
+             ; <>    = empt
+             ; p     = p
+             ; q     = q
+             ; _∘_   = _∘_
+             ; _[_]  = _′[_]
+             ; <_,_> = ext
+             ; id₀   = id0=[]
+             ; ∘<>   = ∘-empty
+             ; varp  = id=<p,q> _ 
+             ; idL   = ∘-lid
+             ; idR   = ∘-rid
+             ; assoc = ∘-assoc
+             ; varId = t[id]=t
+             ; pCons = p∘x∷ts
+             ; qCons = λ _ _ → refl
+             ; clos  = t[∘]
+             ; maps  = λ _ _ _ → refl
+             } 
