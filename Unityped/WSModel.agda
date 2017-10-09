@@ -74,7 +74,7 @@ _∘₁_ ts us = map (_′[ us ]) ts
 _∘₂_ : ∀ {m n k} → VecTerm n k → VecTerm m n → VecTerm m k
 _∘₂_ ts us = tabulate (λ i → lookup i ts ′[ us ])
 
-p^m : (m n : Nat) → Vec (WellScopedTm (m + n)) n
+p^m : (m n : Nat) → VecTerm (m + n) n
 p^m zero    n = id n
 p^m (suc m) n = p^m m n ∘ p (m + n)
 

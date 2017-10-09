@@ -151,7 +151,6 @@ subCommutes (app n t u) xs = begin
 
 toHomDist∘ []       ys = sym~ₕ $ ∘<> (toHom ys)
 toHomDist∘ (x ∷ xs) ys = sym~ₕ $  begin
-<<<<<<< HEAD
   < toHom xs , toCwf x > ∘ toHom ys               ≈⟨ <a,t>∘s (toCwf x) (toHom xs) (toHom ys) ⟩
   < toHom xs ∘ toHom ys , toCwf x `[ toHom ys ] > ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
   < toHom (xs ∘' ys) , toCwf x `[ toHom ys ] >    ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩

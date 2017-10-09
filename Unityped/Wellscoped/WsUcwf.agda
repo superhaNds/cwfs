@@ -49,7 +49,7 @@ t[∘] (lam n t)       ts       us = sym $ begin
   lam _ (t ′[ q _ ∷ ↑ ts ] ′[ q _ ∷ ↑ us ])
     ≡⟨ cong (lam _) (sym $ t[∘] t (q _ ∷ ↑ ts) (q _ ∷ ↑ us)) ⟩
   lam _ (t ′[ q _ ∷ (↑ ts ∘ (q _ ∷ ↑ us)) ])
-    ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ])) (sym $ liftDist ts us) ⟩
+    ≡⟨ cong (λ x → lam _ (t ′[ q _ ∷ x ])) (sym $ ↑Dist ts us) ⟩
   lam _ (t ′[ q _ ∷ ↑ (ts ∘ us) ])
     ∎
 t[∘] (app n t u) ts us =

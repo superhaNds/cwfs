@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-}
 module Unityped.Projections where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)

@@ -101,12 +101,12 @@ liftSub (lam n t) us = lams t us
 liftSub (app n t u) us = trans (cong (λ x → app _ x _) (liftSub t us))
                                (cong (λ x → app _ _ x) (liftSub u us))
 
-liftDist : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) →
+↑Dist : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) →
            ↑ (ts ∘ us) ≡ ↑ ts ∘ (q _ ∷ ↑ us)
-liftDist [] us = refl
-liftDist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
+↑Dist [] us = refl
+↑Dist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
                              (cong (lift x ′[ q _ ∷ ↑ us ] ∷_)
-                                   (liftDist ts us))
+                                   (↑Dist ts us))
 
 subLift : ∀ n x → lift x ≡ x ′[ p n ]
 subLift n (var _ i)   = trans (liftVar _ i) (sym (subVarP _ i))
