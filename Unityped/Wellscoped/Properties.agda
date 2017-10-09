@@ -2,7 +2,7 @@
 module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
-open import Data.Fin using (Fin ; zero ; suc ; fromℕ)
+open import Data.Fin using (Fin ; zero ; suc ; toℕ ; fromℕ ; raise)
 open import Function renaming (_∘_ to _◯_) using (_$_ ; flip)
 open import Data.Vec
 open import Data.Vec.Properties
@@ -68,10 +68,17 @@ suc1toN = sym (tabulate-∘ suc suc)
 subVarP : ∀ n i → (var n i) ′[ p n ] ≡ var (suc n) (suc i)
 subVarP = lookupPLemma
 
+p^m0 : ∀ m → p^m m 0 ≡ []
+p^m0 zero = refl
+p^m0 (suc m) = begin
+  (p^m m 0 ∘ p (m + 0)) ≡⟨ cong (λ x → x ∘ p (m + 0)) (p^m0 m) ⟩
+  [] ∘ p (m + 0) ≡⟨⟩
+  [] ∎
+
 postulate tss : ∀ n t →  lift (lam n t) ≡ (lam n t ′[ p n ])
 
 liftSub : ∀ {n m} (t : WellScopedTm n) (us : Vec (WellScopedTm m) n) →
-          lift (t ′[ us ]) ≡ lift t ′[ (q _ ∷ ↑ us) ]
+          lift (t ′[ us ]) ≡ (lift t) ′[ (q _ ∷ ↑ us) ]
 liftSub (var _ zero) (x ∷ us) = refl
 liftSub (var _ (suc i)) (x ∷ us) = begin
   lift (var _ (suc i) ′[ x ∷ us ]) ≡⟨⟩

@@ -115,22 +115,7 @@ hom∘vec (p (suc (suc zero))) = begin
   < < <> , weaken (weaken $ q 0) > , weaken (q 1) >        ∎
   where open EqR (HomCwfS {_} {_})
 
-hom∘vec (p (suc (suc (suc n)))) = begin
-  p (3 + n)  ≈⟨ eta (p (3 + n)) ⟩
-  < p (2 + n) ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
-  < < p (1 + n) ∘ p (2 + n) , q (1 + n) `[ p (2 + n) ] > ∘ p (3 + n)
-    , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
-  < < < p n ∘ p (1 + n) , q n `[ p (1 + n) ] > ∘ p (2 + n) , q (1 + n) `[ p (2 + n) ] >
-     ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
-  < < < (p n ∘ p (1 + n)) ∘ p (2 + n) , q n `[ p (1 + n) ] `[ p (2 + n) ] >
-    , q (1 + n) `[ p (2 + n) ] > ∘ p (3 + n) , q (2 + n) `[ p (3 + n) ] > ≈⟨ {!!} ⟩
-  < < < (((p n ∘ p (1 + n)) ∘ p (2 + n)) ∘ p (3 + n)) , q n `[ p (1 + n) ] `[ p (2 + n) ] `[ p (3 + n) ] >
-  , q (1 + n) `[ p (2 + n) ] `[ p (3 + n) ] > , q (2 + n) `[ p (3 + n) ] > ≈⟨ refl~ₕ ⟩
-  < < < (((p n ∘ p (1 + n)) ∘ p (2 + n)) ∘ p (3 + n)) , weaken $ weaken $ weaken (q n) >
-  , weaken $ weaken $ q (1 + n) > , weaken $ q (2 + n) > ≈⟨ {!!} ⟩
-  {!!} ∎
-  where open EqR (HomCwfS {_} {_})
-
+hom∘vec (p (suc (suc (suc n)))) = {!!}
 hom∘vec <> = refl~ₕ
 hom∘vec < u , x > = sym~ₕ $
   trans~ₕ (sym~ₕ $ cong~ₕ (<_, toUcwf (toWs x) >) (hom∘vec u))
@@ -181,7 +166,7 @@ subCommutes (app n t u) xs = begin
 toHomDist∘ []       ys = sym~ₕ $ ∘<> (toHom ys)
 toHomDist∘ (x ∷ xs) ys = sym~ₕ $  begin
   < toHom xs , toUcwf x > ∘ toHom ys               ≈⟨ <a,t>∘s (toUcwf x) (toHom xs) (toHom ys) ⟩
-  < toHom xs ∘ toHom ys , toUcwf x `[ toHom ys ] > ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
+  < toHom xs ∘ toHom ys , toUcwf x `[ toHom ys ] > ≈⟨ cong~ₕ (λ z → < z , _ > ) (sym~ₕ $ toHomDist∘ xs ys) ⟩
   < toHom (xs ∘' ys) , toUcwf x `[ toHom ys ] >    ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩
   < toHom (xs ∘' ys) , toUcwf (x ′[ ys ]) >        ∎
   where open EqR (HomCwfS {_} {_})
