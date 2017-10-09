@@ -1,8 +1,10 @@
 module Unityped.UcwfModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
+open import Data.Nat.Properties
 open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.PropositionalEquality as P
 
 data CwfTm : Nat → Set
 data Hom : Nat → Nat → Set
