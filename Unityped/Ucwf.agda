@@ -43,7 +43,7 @@ record λβ-ucwf (Term : Nat → Set) : Set₁ where
   field
     `λ  : {ν : Nat} → Term (suc ν) → Term ν
     _$_ : {ν : Nat} → Term ν → Term ν → Term ν
-    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → (`λ t) $ u ≡  t [ < id ν , u > ]
+    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → `λ t $ u ≡  t [ < id ν , u > ]
     η   : {ν : Nat} (t : Term ν) → `λ ((t [ p ν ]) $ q ν) ≡ t
     app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) $ (u [ ts ]) ≡ (t $ u) [ ts ]
-    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → (`λ t) [ ts ] ≡ `λ (t [ < ts ∘ p μ , q μ > ])
+    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → `λ t [ ts ] ≡ `λ (t [ < ts ∘ p μ , q μ > ])

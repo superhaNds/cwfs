@@ -24,16 +24,16 @@ t[id]=t (app n t u) = trans (cong (flip (app n) (u ′[ id n ])) (t[id]=t t))
 id0=[] : id 0 ≡ empt
 id0=[] = refl
 
-∘-empty : ∀ {m n} (ts : Vec (WellScopedTm m) n) → empt ∘ ts ≡ empt
+∘-empty : ∀ {m n} (ts : VecTerm m n) → empt ∘ ts ≡ empt
 ∘-empty _ = refl
 
-∘-assoc : ∀ {m n k j} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n)
-    (vs : Vec (WellScopedTm j) m) → (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
+∘-assoc : ∀ {m n k j} (ts : VecTerm n k) (us : VecTerm m n)
+    (vs : VecTerm j m) → (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
 
-t[∘] : ∀ {m n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm k) n)
-    (us : Vec (WellScopedTm m) k) → t ′[ ts ∘ us ] ≡ t ′[ ts ] ′[ us ]
+t[∘] : ∀ {m n k} (t : WellScopedTm n) (ts : VecTerm k n)
+    (us : VecTerm m k) → t ′[ ts ∘ us ] ≡ t ′[ ts ] ′[ us ]
 
-p∘x∷ts : ∀ {n k} (t : WellScopedTm n) (ts : Vec (WellScopedTm n) k) → p k ∘ (t ∷ ts) ≡ ts
+p∘x∷ts : ∀ {n k} (t : WellScopedTm n) (ts : VecTerm n k) → p k ∘ (t ∷ ts) ≡ ts
 p∘x∷ts t ts = begin
   p  _  ∘ (t ∷ ts)                    ≡⟨ cong (_∘ (t ∷ ts)) (p=p' _) ⟩
   p′ _  ∘ (t ∷ ts)                    ≡⟨ p∘-lookup (t ∷ ts) ⟩
@@ -62,13 +62,13 @@ t[∘] (app n t u) ts us =
   x ′[ us ] ′[ vs ] ∷ ts ∘ (us ∘ vs) ≡⟨ sym (cong (_∷_ (x ′[ us ] ′[ vs ])) (∘-assoc ts us vs)) ⟩
   x ′[ us ] ′[ vs ] ∷ (ts ∘ us) ∘ vs ∎
 
-∘-lid : ∀ {m n} (ts : Vec (WellScopedTm m) n) → id n ∘ ts ≡ ts
+∘-lid : ∀ {m n} (ts : VecTerm m n) → id n ∘ ts ≡ ts
 ∘-lid [] = refl
 ∘-lid (x ∷ ts) =
   trans (cong (λ a → (q _ ′[ x ∷ ts ]) ∷ a ∘ (x ∷ ts)) (tailIdp _))
         (cong (λ a → (q _ ′[ x ∷ ts ]) ∷ a) (p∘x∷ts x ts))
 
-∘-rid : ∀ {m n} (ts : Vec (WellScopedTm m) n) → ts ∘ id m  ≡ ts
+∘-rid : ∀ {m n} (ts : VecTerm m n) → ts ∘ id m  ≡ ts
 ∘-rid [] = refl
 ∘-rid (x ∷ ts) rewrite t[id]=t x
                      | ∘-rid ts = refl

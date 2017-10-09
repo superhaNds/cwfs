@@ -22,61 +22,64 @@ rename {_} {m} (var _ i)   is = var m (lookup i is)
 rename {n} {m} (lam _ t)   is = lam m (rename t (zero ∷ map suc is))
 rename {n} {m} (app _ t u) is = app m (rename t is) (rename u is)
 
+VecTerm : Nat → Nat → Set
+VecTerm n m = Vec (WellScopedTm n) m
+
 -- q
 q : (n : Nat) → WellScopedTm (suc n)
 q n = var (suc n) zero
 
 -- id
-id : (n : Nat) → Vec (WellScopedTm n) n
+id : (n : Nat) → VecTerm n n
 id n = tabulate (var n)
 
 -- weakening (derived)
 lift : {n : Nat} → WellScopedTm n → WellScopedTm (suc n)
 lift t = rename t (1toN _)
 
-↑ : {n m : Nat} → Vec (WellScopedTm m) n → Vec (WellScopedTm (suc m)) n
+↑ : {n m : Nat} → VecTerm m n → VecTerm (suc m) n
 ↑ ts = map lift ts
 
-↑² : {n m : Nat} → Vec (WellScopedTm m) n → Vec (WellScopedTm (2 + m)) n
+↑² : {n m : Nat} → VecTerm m n → VecTerm (2 + m) n
 ↑² = ↑ ◯ ↑
 
 -- p
-p : (n : Nat) → Vec (WellScopedTm (1 + n)) n
+p : (n : Nat) → VecTerm (1 + n) n
 p = ↑ ◯ id -- or tabulate (lift ∘ (var n))
 
 -- alternative id and p
-id′ : ∀ n → Vec (WellScopedTm n) n
+id′ : ∀ n → VecTerm n n
 id′ n = map (var n) (allFin n)
 
-p′ : (n : Nat) → Vec (WellScopedTm (1 + n)) n
+p′ : (n : Nat) → VecTerm (1 + n) n
 p′ n = map (var (1 + n)) (1toN n)
 
-p² : (n : Nat) → Vec (WellScopedTm (2 + n)) n
+p² : (n : Nat) → VecTerm (2 + n) n
 p² n = map (var (2 + n)) (up n)
 
 -- sub
-_′[_] : ∀ {n m} → WellScopedTm n → Vec (WellScopedTm m) n → WellScopedTm m
+_′[_] : ∀ {n m} → WellScopedTm n → VecTerm m n → WellScopedTm m
 _′[_] (var _ i)   ts = lookup i ts
 _′[_] (lam _ t)   ts = lam _ (t ′[ q _ ∷ ↑ ts ])
 _′[_] (app _ t u) ts = app _ (t ′[ ts ]) (u ′[ ts ])
 
 -- composition of homs 
-_∘_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘_ : ∀ {m n k} → VecTerm n k → VecTerm m n → VecTerm m k
 _∘_ []        _ = []
 _∘_ (t ∷ ts) us = t ′[ us ] ∷ ts ∘ us
 
-_∘₁_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘₁_ : ∀ {m n k} → VecTerm n k → VecTerm m n → VecTerm m k
 _∘₁_ ts us = map (_′[ us ]) ts
 
-_∘₂_ : ∀ {m n k} → Vec (WellScopedTm n) k → Vec (WellScopedTm m) n → Vec (WellScopedTm m) k
+_∘₂_ : ∀ {m n k} → VecTerm n k → VecTerm m n → VecTerm m k
 _∘₂_ ts us = tabulate (λ i → lookup i ts ′[ us ])
 
 -- < Δ , τ >
-ext : ∀ {m n} → Vec (WellScopedTm m) n → WellScopedTm m → Vec (WellScopedTm m) (suc n)
+ext : ∀ {m n} → VecTerm m n → WellScopedTm m → VecTerm m (1 + n)
 ext ts t = t ∷ ts
 
 -- <>
-empt : ∀ {m} → Vec (WellScopedTm m) zero
+empt : ∀ {m} → VecTerm m 0
 empt = []
 
 -- β convertibility

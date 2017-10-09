@@ -69,6 +69,7 @@ subVarP : ∀ n i → (var n i) ′[ p n ] ≡ var (suc n) (suc i)
 subVarP = lookupPLemma
 
 postulate tss : ∀ n t →  lift (lam n t) ≡ (lam n t ′[ p n ])
+postulate lams : ∀ {n m} (t : WellScopedTm (1 + n))  (us : VecTerm m n) → lift (lam n t ′[ us ]) ≡ lift (lam n t) ′[ q _ ∷ ↑ us ] 
 
 liftSub : ∀ {n m} (t : WellScopedTm n) (us : Vec (WellScopedTm m) n) →
           lift (t ′[ us ]) ≡ lift t ′[ (q _ ∷ ↑ us) ]
@@ -84,15 +85,16 @@ liftSub (var _ (suc i)) (x ∷ us) = begin
     lookup (suc (suc i)) (q _ ∷ lift x ∷ ↑ us)  ≡⟨⟩
     lookup i (↑ us)                             ∎ ⟩
   _ ∎
-liftSub (lam n t) us = begin
+liftSub (lam n t) us = lams t us
+{-begin
   lift (lam _ (t ′[ q _ ∷ ↑ us ]))                             ≡⟨⟩
   lam _ (rename (t ′[ q _ ∷ ↑ us ]) (zero ∷ map suc (1toN _))) ≡⟨ {!!} ⟩
   lam _ (rename t (zero ∷ map suc (1toN _))
-               ′[ q _ ∷ ↑ (q _ ∷ ↑ us)])                       ∎
+               ′[ q _ ∷ ↑ (q _ ∷ ↑ us)])                       ∎-}
 liftSub (app n t u) us = trans (cong (λ x → app _ x _) (liftSub t us))
                                (cong (λ x → app _ _ x) (liftSub u us))
 
-liftDist : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) →
+liftDist : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) →
            ↑ (ts ∘ us) ≡ ↑ ts ∘ (q _ ∷ ↑ us)
 liftDist [] us = refl
 liftDist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
@@ -101,7 +103,7 @@ liftDist (x ∷ ts) us = trans (cong (λ z → z ∷ _) (liftSub x us))
 
 subLift : ∀ n x → lift x ≡ x ′[ p n ]
 subLift n (var _ i)   = trans (liftVar _ i) (sym (subVarP _ i))
-subLift n (lam _ t)   = {!!}
+subLift n (lam _ t)   = tss n t
 subLift n (app _ t u) = trans (cong (λ x → app _ x _) (subLift _ t))
                               (cong (λ x → app _ _ x) (subLift _ u))
 
@@ -117,27 +119,27 @@ tailIdp n  = sym $ begin
   tail (id′ (suc n)) ≡⟨ cong tail (sym (id=id′ $ 1 + n)) ⟩ 
   tail (id (suc n))  ∎
 
-∘=∘₁ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘ us ≡ ts ∘₁ us
+∘=∘₁ : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) → ts ∘ us ≡ ts ∘₁ us
 ∘=∘₁ [] us       = refl
 ∘=∘₁ (x ∷ ts) us = cong (x ′[ us ] ∷_) (∘=∘₁ ts us)
 
-∘₁=∘₂ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘₁ us ≡ ts ∘₂ us
+∘₁=∘₂ : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) → ts ∘₁ us ≡ ts ∘₂ us
 ∘₁=∘₂ ts us = begin
   map (_′[ us ]) ts                          ≡⟨ cong (λ x → map _ x) (sym (tabulate∘lookup ts)) ⟩
   map (_′[ us ]) (tabulate (flip lookup ts)) ≡⟨ sym (tabulate-∘ (_′[ us ]) (flip lookup ts)) ⟩
   tabulate (λ i → lookup i ts ′[ us ])       ∎
 
-∘=∘₂ : ∀ {m n k} (ts : Vec (WellScopedTm n) k) (us : Vec (WellScopedTm m) n) → ts ∘ us ≡ ts ∘₂ us
+∘=∘₂ : ∀ {m n k} (ts : VecTerm n k) (us : VecTerm m n) → ts ∘ us ≡ ts ∘₂ us
 ∘=∘₂ ts us = trans (∘=∘₁ ts us) (∘₁=∘₂ ts us)
 
-map-lookup-↑ : ∀ {n m} (ts : Vec (WellScopedTm m) (1 + n)) →
+map-lookup-↑ : ∀ {n m} (ts : VecTerm m (1 + n)) →
                map (flip lookup ts) (1toN n) ≡ tail ts
 map-lookup-↑ (t ∷ ts) = begin
   map (flip lookup (t ∷ ts)) (1toN _) ≡⟨ sym $ tabulate-∘ (flip lookup (t ∷ ts)) suc ⟩
   tabulate (flip lookup ts)           ≡⟨ tabulate∘lookup ts ⟩
   ts                                  ∎
 
-p∘-lookup : ∀ {m n} (ts : Vec (WellScopedTm m) (1 + n)) →
+p∘-lookup : ∀ {m n} (ts : VecTerm m (1 + n)) →
             p′ n ∘ ts ≡ map (flip lookup ts) (1toN n)
 p∘-lookup ts = begin
   p′ _ ∘ ts                               ≡⟨ ∘=∘₁ (p′ _) ts ⟩
