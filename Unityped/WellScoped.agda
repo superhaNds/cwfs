@@ -9,6 +9,11 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 
 infix 10 _`$_
+infix 8 _⊚_
+infix 8 _⊙_
+infix 8 _⊙r_
+infix 8 _r⊙_
+
 data Term (n : Nat) : Set where
   var   : (i : Fin n) → Term n
   `λ    : (t : Term (1 + n)) → Term n
@@ -31,7 +36,6 @@ ren (var i) r  = var (lookup i r)
 ren (`λ t)   r = `λ (ren t (↑ r))
 ren (t `$ u) r = (ren t r) `$ (ren u r)
 
-infix 8 _⊚_
 _⊚_ : ∀ {m n k} → Ren m n → Ren k m → Ren k n
 r₁ ⊚ r₂ = map (flip lookup r₂) r₁
 
@@ -68,7 +72,7 @@ lookup-pR i = begin
   zero ∷ map (flip lookup (↑ s)) (map suc r) ≡⟨⟩
   ↑ r ⊚ ↑ s                                  ∎
 
-⊚-asso : ∀ {m n k} (r : Ren m n)  (s : Ren k m) (t : Term n) → ren t (r ⊚ s) ≡ ren (ren t r) s
+⊚-asso : ∀ {m n k} (r : Ren m n) (s : Ren k m) (t : Term n) → ren t (r ⊚ s) ≡ ren (ren t r) s
 ⊚-asso r s (var i) = cong var (sym (lookup-map _ i r))
 ⊚-asso r s (`λ t) = begin
   `λ (ren t (↑ (r ⊚ s)))       ≡⟨ cong (`λ ∘ ren t) (↑-dist r s) ⟩
@@ -96,9 +100,10 @@ pR-⊚-↑ r = begin
 
 pR-↑ : ∀ {m n} (r : Ren m n) (t : Term n) → ren (ren t r) pR ≡ ren (ren t pR) (↑ r)
 pR-↑ r t = trans (sym (⊚-asso r pR t))
-                 (sym $ begin ren (ren t pR) (↑ r) ≡⟨ sym (⊚-asso pR (↑ r) t) ⟩
-                        ren t (pR ⊚ (↑ r))         ≡⟨ cong (ren t) (sym $ pR-⊚-↑ r) ⟩
-                        ren t (r ⊚ pR)             ∎)
+                 (sym $ begin
+                   ren (ren t pR) (↑ r) ≡⟨ sym (⊚-asso pR (↑ r) t) ⟩
+                   ren t (pR ⊚ (↑ r))   ≡⟨ cong (ren t) (sym $ pR-⊚-↑ r) ⟩
+                   ren t (r ⊚ pR)       ∎)
 
 Subst : Nat → Nat → Set
 Subst m n = Sub Term m n
@@ -113,10 +118,6 @@ _[_] : ∀ {m n} → Term n → Subst m n → Term m
 var i    [ ts ] = lookup i ts
 `λ t     [ ts ] = `λ (t [ ↑ₛ ts ])
 (t `$ u) [ ts ] = t [ ts ] `$ u [ ts ]
-
-infix 8 _⊙_
-infix 8 _⊙r_
-infix 8 _r⊙_
 
 _⊙_ : ∀ {m n k} → Subst m n → Subst k m → Subst k n
 ts ⊙ us = map (_[ us ]) ts
@@ -162,14 +163,15 @@ r⊙-asso is ts (t `$ u) = cong₂ _`$_ (r⊙-asso is ts t) (r⊙-asso is ts u)
 r⊙-asso is ts (`λ t)   = trans (cong (`λ ∘ t [_]) (↑-↑ₛ-dist is ts))
                                (cong `λ (r⊙-asso (↑ is) (↑ₛ ts) t))
 
--- τ ⊙r pR == pR r⊙ (↑ₛ τ)
+⊙pR-↑ₛ : ∀ {m n} (ts : Subst m n) → ts ⊙r pR ≡ pR r⊙ (↑ₛ ts)
+⊙pR-↑ₛ ts = sym $ trans (sym (map-∘ _ _ idF)) (map-lookup-allFin _)
 
 ↑ₛ-dist : ∀ {m n k} (ts : Subst m n) (us : Subst k m) → ↑ₛ (ts ⊙ us) ≡ (↑ₛ ts) ⊙ (↑ₛ us)
 ↑ₛ-dist ts us = begin
   ↑ₛ (ts ⊙ us)                                       ≡⟨⟩
   var zero ∷ map (λ t → ren t pR) (map (_[ us ]) ts) ≡⟨ cong (var zero ∷_) (sym (map-∘ _ _ ts)) ⟩
   var zero ∷ map (λ t → ren (t [ us ]) pR) ts        ≡⟨ cong (var zero ∷_) (map-cong (sym ∘ ⊙r-asso us pR) ts) ⟩
-  var zero ∷ map (_[ us ⊙r pR ]) ts                  ≡⟨ cong (var zero ∷_) (map-cong {!!} ts) ⟩
+  var zero ∷ map (_[ us ⊙r pR ]) ts                  ≡⟨ cong (var zero ∷_) (map-cong (λ x → cong (x [_]) (⊙pR-↑ₛ us)) ts) ⟩
   var zero ∷ map (_[ pR r⊙ (↑ₛ us) ]) ts             ≡⟨ cong (var zero ∷_) (map-cong (r⊙-asso _ _) ts) ⟩
   var zero ∷ map (_[ ↑ₛ us ] ∘ flip ren pR) ts       ≡⟨ cong (var zero ∷_) (map-∘ _ _ ts) ⟩
   var zero ∷ map (_[ ↑ₛ us ]) (map (flip ren pR) ts) ≡⟨⟩
@@ -182,5 +184,5 @@ r⊙-asso is ts (`λ t)   = trans (cong (`λ ∘ t [_]) (↑-↑ₛ-dist is ts))
 []-asso (x ∷ ts) us (var zero) = refl
 []-asso (x ∷ ts) us (var (suc i)) = []-asso ts us (var i)
 []-asso ts us (t `$ u) = cong₂ _`$_ ([]-asso ts us t) ([]-asso ts us u)
-[]-asso ts us (`λ t)= trans (cong (`λ ∘ t [_]) (↑ₛ-dist ts us))
-                            (cong `λ ([]-asso (↑ₛ ts) (↑ₛ us) t))
+[]-asso ts us (`λ t) = trans (cong (`λ ∘ t [_]) (↑ₛ-dist ts us))
+                             (cong `λ ([]-asso (↑ₛ ts) (↑ₛ us) t))
