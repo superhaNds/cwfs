@@ -25,7 +25,7 @@ record Ucwf (Term : Nat → Set) : Set₁ where
     idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ≡ ts
     assoc : ∀ {μ ν k p : Nat} (ts : Hom ν k) (us : Hom μ ν) (vs : Hom p μ) →
               (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
-    varId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ≡ t
+    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ≡ t
     pCons : ∀ {μ ν k : Nat} → (t : Term ν) → (ts : Hom ν k) → p k ∘ < ts , t > ≡ ts
     qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q μ [ < ts , t > ] ≡ t
     clos  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν ν) (us : Hom μ ν) →

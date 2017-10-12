@@ -5,14 +5,14 @@ open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; tail ; tabulate)
 open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
-open import Function renaming (_∘_ to _◯_) using (_$_ ; flip)
-open import Unityped.WSModel renaming (_∘_ to _∘'_ ; q to q~ ; id to id~ ; p to p~)
+open import Function using (_∘_ ;_$_ ; flip)
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
 open import Unityped.Wellscoped.WsUcwf
 open import Unityped.Wellscoped.Properties
 open import Relation.Binary.PropositionalEquality
 import Relation.Binary.EqReasoning as EqR
 
+{-
 -- Translation functions
 toCwf : ∀ {n} → WellScopedTm n → CwfTm n
 toWs  : ∀ {n} → CwfTm n → WellScopedTm n
@@ -156,3 +156,4 @@ toHomDist∘ (x ∷ xs) ys = sym~ₕ $  begin
   < toHom (xs ∘' ys) , toCwf x `[ toHom ys ] >    ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩
   < toHom (xs ∘' ys) , toCwf (x ′[ ys ]) >        ∎
   where open EqR (HomS {_} {_})
+-}
