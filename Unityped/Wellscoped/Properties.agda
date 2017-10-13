@@ -186,3 +186,22 @@ r⊙-asso is ts (`λ t)   = trans (cong (`λ ∘ t [_]) (↑-↑ₛ-dist is ts))
 ⊙=⊙₂ : ∀ {m n k} (σ : Subst m n) (ω : Subst k m) → σ ⊙ ω ≡ σ ⊙₂ ω
 ⊙=⊙₂ [] ω = refl
 ⊙=⊙₂ (t ∷ σ) ω = cong (λ x → _ ∷ x) (⊙=⊙₂ σ ω)
+
+var[p] : ∀ {n} (i : Fin n) → var i [ p n ] ≡ var (suc i)
+var[p] i = lookup-p i
+
+postulate wkλ : ∀ {n} (t : Term (1 + n)) → weaken (`λ t) ≡ `λ t [ p _ ]
+
+wk-[p] : ∀ {n} (t : Term n) → weaken t ≡ t [ p n ]
+wk-[p] (var ι)  = trans (wkVar ι) (sym $ var[p] ι)
+wk-[p] (`λ t)   = wkλ t
+wk-[p] (t `$ u) = cong₂ _`$_ (wk-[p] t) (wk-[p] u)
+
+mapWk-⊙p : ∀ {m n} (σ : Subst m n) → σ ⊙ p _ ≡ map weaken σ
+mapWk-⊙p [] = refl
+mapWk-⊙p (x ∷ σ) = trans (cong (_∷ σ ⊙ p _) (sym $ wk-[p] x))
+                         (cong (weaken x ∷_) (mapWk-⊙p σ))
+
+p′0=[] : ∀ {m} → p′ m 0 ≡ []
+p′0=[] {zero} = refl
+p′0=[] {suc m} = refl

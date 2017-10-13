@@ -24,26 +24,29 @@ record Ucwf (Term : Nat → Set) : Set₁ where
     idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ν ∘ ts ≡ ts
     idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ≡ ts
     assoc : ∀ {μ ν k p : Nat} (ts : Hom ν k) (us : Hom μ ν) (vs : Hom p μ) →
-              (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
+             (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
     terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ≡ t
     pCons : ∀ {μ ν k : Nat} → (t : Term ν) → (ts : Hom ν k) → p k ∘ < ts , t > ≡ ts
     qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q μ [ < ts , t > ] ≡ t
     clos  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν ν) (us : Hom μ ν) →
-              t [ ts ∘  us ] ≡ (t [ ts ]) [ us ]
+             t [ ts ∘  us ] ≡ t [ ts ] [ us ]
     maps  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) (us : Hom μ ν) →
-              < ts , t > ∘ us ≡ < ts ∘ us , t [ us ] >
+             < ts , t > ∘ us ≡ < ts ∘ us , t [ us ] >
 
-record λβ-ucwf (Term : Nat → Set) : Set₁ where
+record λβ-ucwf (Term : Nat → Set) (_~_ : ∀ {n} (t₁ t₂ : Term n) → Set) : Set₁ where
+  infix 10 _$_
   private
     Hom : Nat → Nat → Set
     Hom μ ν = Vec (Term μ) ν
+    
   field
     ucwf : Ucwf Term
   open Ucwf ucwf public
+  
   field
     `λ  : {ν : Nat} → Term (suc ν) → Term ν
     _$_ : {ν : Nat} → Term ν → Term ν → Term ν
-    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → `λ t $ u ≡  t [ < id ν , u > ]
-    η   : {ν : Nat} (t : Term ν) → `λ ((t [ p ν ]) $ q ν) ≡ t
-    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) $ (u [ ts ]) ≡ (t $ u) [ ts ]
-    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → `λ t [ ts ] ≡ `λ (t [ < ts ∘ p μ , q μ > ])
+    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → (`λ t $ u) ~ (t [ < id ν , u > ])
+    η   : {ν : Nat} (t : Term ν) → `λ (t [ p ν ] $ q ν) ~ t
+    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → ((t [ ts ]) $ (u [ ts ])) ~ ((t $ u) [ ts ])
+    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → (`λ t [ ts ]) ~ (`λ (t [ < ts ∘ p μ , q μ > ]))

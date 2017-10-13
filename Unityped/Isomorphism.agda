@@ -2,158 +2,152 @@
 module Unityped.Isomorphism where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
-open import Data.Vec using (Vec ; [] ; _∷_ ; map ; lookup ; tail ; tabulate)
+open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
-open import Function using (_∘_ ;_$_ ; flip)
+open import Function using (_$_ ; flip)
 open import Unityped.UcwfModel renaming (_[_] to _`[_])
+open import Unityped.Wellscoped
+  renaming (p to p~ ; p′ to p′~ ; q to q~ ; id to id~ ; weaken to weaken~)
 open import Unityped.Wellscoped.WsUcwf
 open import Unityped.Wellscoped.Properties
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 import Relation.Binary.EqReasoning as EqR
 
-{-
--- Translation functions
-toCwf : ∀ {n} → WellScopedTm n → CwfTm n
-toWs  : ∀ {n} → CwfTm n → WellScopedTm n
-toVec : ∀ {m n} → Hom m n → VecTerm m n
-toHom : ∀ {m n} → VecTerm m n → Hom m n
+-- The translation functions (morphisms)
+⟦_⟧  : ∀ {n} → Term n → CwfTm n
+⟦_⟧ₛ : ∀ {m n} → Subst m n → Hom m n
+⟪_⟫  : ∀ {n} → CwfTm n → Term n
+⟪_⟫ₕ : ∀ {m n} → Hom m n → Subst m n
 
-toVec (id n)     = id~ n
-toVec (ts ∘ us)  = toVec ts ∘' toVec us
-toVec (p n)      = p~ n
-toVec <>         = empt
-toVec < ts , t > = ext (toVec ts) (toWs t)
+⟦ [] ⟧ₛ    = <>
+⟦ t ∷ σ ⟧ₛ = < ⟦ σ ⟧ₛ , ⟦ t ⟧ > 
 
-toHom []       = <>
-toHom (x ∷ xs) = < toHom xs , toCwf x >
+⟦ var zero ⟧    = q _
+⟦ var (suc ι) ⟧ = weaken ⟦ var ι ⟧
+⟦ `λ t ⟧        = lam ⟦ t ⟧
+⟦ t `$ u ⟧      = app ⟦ t ⟧ ⟦ u ⟧
 
-toWs (q n)       = q~ n
-toWs (t `[ ts ]) = toWs t ′[ toVec ts ]
-toWs (lam n t)   = lam n (toWs t)
-toWs (app n t u) = app n (toWs t) (toWs u)
+⟪ q n ⟫       = q~ n
+⟪ t `[ us ] ⟫ = ⟪ t ⟫ [ ⟪ us ⟫ₕ ]
+⟪ lam t ⟫     = `λ ⟪ t ⟫
+⟪ app t u ⟫   = ⟪ t ⟫ `$ ⟪ u ⟫
 
-toCwf (var _ zero)    = q _
-toCwf (var _ (suc i)) = weaken (toCwf (var _ i))
-toCwf (lam n t)       = lam n (toCwf t)
-toCwf (app n t u)     = app n (toCwf t) (toCwf u)
+⟪ id n ⟫ₕ       = id~ n
+⟪ ts ∘ us ⟫ₕ    = ⟪ ts ⟫ₕ ⊙ ⟪ us ⟫ₕ
+⟪ p n ⟫ₕ        = p~ n
+⟪ <> ⟫ₕ         = []
+⟪ < ts , t > ⟫ₕ = ⟪ ts ⟫ₕ ∙ ⟪ t ⟫
 
--- Inverses
-ws∘ucwf : ∀ {n}   (t : WellScopedTm n) → t ≡ toWs (toCwf t)
-vec∘hom : ∀ {m n} (v : Vec (WellScopedTm m) n) → v ≡ toVec (toHom v)
-ucwf∘ws : ∀ {n}   (u : CwfTm n) → u ~ₜ toCwf (toWs u)
-hom∘vec : ∀ {n m} (u : Hom m n) → u ~ₕ toHom (toVec u)
+-- A scope safe term mapped to the cwf world returns the same
+ws∘cwf : ∀ {n} (t : Term n) → t ≡ ⟪ ⟦ t ⟧ ⟫
 
-toHomDist∘ : ∀ {m n k} (xs : Vec (WellScopedTm n) k) (ys : Vec (WellScopedTm m) n)
-               → toHom (xs ∘' ys) ~ₕ (toHom xs) ∘ (toHom ys)
-               
-subCommutes : ∀ {m n} (t : WellScopedTm n) (xs : Vec (WellScopedTm m) n)
-                → toCwf (t ′[ xs ]) ~ₜ toCwf t `[ toHom xs ]
+-- A cwf term mapped to a scope safe term returns the same
+cwf∘ws : ∀ {n} (t : CwfTm n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
 
-ucwf∘ws (q n) = refl~ₜ
-ucwf∘ws (u `[ ts ]) = sym~ₜ $ begin
-  toCwf (toWs u ′[ toVec ts ])         ≈⟨ subCommutes (toWs u) (toVec ts) ⟩ 
-  toCwf (toWs u) `[ toHom (toVec ts) ] ≈⟨ sym~ₜ $ cong~ₜ (λ z → z `[ _ ]) (ucwf∘ws u) ⟩
-  u `[ toHom (toVec ts) ]               ≈⟨ sym~ₜ $ congh~ₜ (λ z → _ `[ z ]) (hom∘vec ts) ⟩
-  u `[ ts ]                             ∎
-  where open EqR (CwfTmS {_})
-ucwf∘ws (lam n t) = cong~ₜ (lam n) (ucwf∘ws t)
-ucwf∘ws (app n t u) =
-  trans~ₜ (cong~ₜ (app n t) (ucwf∘ws u))
-          (cong~ₜ (λ z → app n z (toCwf $ toWs u)) (ucwf∘ws t))
+-- A substitution turned into a Hom and back returns the same
+sub∘hom : ∀ {m n} (σ : Subst m n) → σ ≡ ⟪ ⟦ σ ⟧ₛ ⟫ₕ
 
-hom∘vec (id zero)    = id₀
-hom∘vec (id (suc m)) = begin
-  id (suc m)             ≈⟨ id<p,q> ⟩
-  < p _ , q _ >          ≈⟨ cong~ₕ <_, q _ > (hom∘vec (p m)) ⟩
-  < toHom (p~ m) , q _ > ≈⟨ help m ⟩
-  _                      ∎
-  where open EqR (HomS {_} {_})
-        help : ∀ m → < toHom (p~ m) , q m >
-                ~ₕ < toHom (tail $ id~ _) , q m >
-        help m rewrite tailIdp m = refl~ₕ
-          
-hom∘vec (ts ∘ us) = sym~ₕ $
-  trans~ₕ (trans~ₕ (toHomDist∘ (toVec ts) (toVec us))
-                   (cong~ₕ (λ z → z ∘ _) (sym~ₕ $ hom∘vec ts)))
-          (cong~ₕ (λ z → _ ∘ z) (sym~ₕ $ hom∘vec us))
-          
-hom∘vec (p zero) = hom0~<> (p 0)
-hom∘vec (p (suc zero)) = begin
-  p 1 ≈⟨ eta (p 1) ⟩
-  < p 0 ∘ p 1 , q 0 `[ p 1 ] > ≈⟨ cong~ₕ (λ x → < x ∘ p 1 , q 0 `[ p 1 ] >) (hom0~<> (p 0)) ⟩
-  < <> ∘ p 1 , q 0 `[ p 1 ] >  ≈⟨ cong~ₕ (<_, q zero `[ p (suc zero) ] >)
-                                         (∘<> (p (suc zero))) ⟩
-  < <> , q 0 `[ p 1 ] >        ∎
-  where open EqR (HomS {_} {_})
-hom∘vec (p (suc (suc zero))) = begin
-  p 2                                                      ≈⟨ eta $ p 2 ⟩
-  < p 1 ∘ p (2) , q 1 `[ p 2 ] >                           ≈⟨ cong~ₕ (λ x → < x ∘ p 2 , q 1 `[ p 2 ] >) (eta $ p 1) ⟩
-  < < p 0 ∘ p 1 , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >    ≈⟨ cong~ₕ (λ x → < < x , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >)
-                                                                     (hom0~<> $ p 0 ∘ p 1) ⟩
-  < < <> , q 0 `[ p 1 ] > ∘ p 2 , q 1 `[ p 2 ] >           ≈⟨ refl~ₕ ⟩
-  < < <> , q 0 `[ p 1 ] > ∘ p 2 , weaken (q 1) >           ≈⟨ cong~ₕ (λ z → < z , q 1 `[ p 2 ] >)
-                                                                     (<a,t>∘s (q 0 `[ p 1 ]) <> (p 2)) ⟩
-  < < <> ∘ p 2 , q 0 `[ p 1 ] `[ p 2 ] > , weaken (q 1) >  ≈⟨ cong~ₕ (λ z → < < z , (q 0 `[ p 1 ]) `[ p 2 ] > , q 1 `[ p 2 ] >)
-                                                                     (∘<> (p 2)) ⟩
-  < < <> , q 0 `[ p 1 ] `[ p 2 ] > , weaken (q 1) >        ≈⟨ refl~ₕ ⟩
-  < < <> , weaken (weaken $ q 0) > , weaken (q 1) >        ∎
+-- A Hom turned into a substitution and back returns the same
+hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ₕ ⟧ₛ
+
+-- Interpreting a composition distributes
+⟦⟧-∘-dist : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⊙ γ ⟧ₛ ~ₕ ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ
+
+gen-p : ∀ m n → p′ m n ~ₕ ⟦ p′~ m n ⟧ₛ
+gen-p m zero rewrite p′0=[] {m} = p′0~<>
+gen-p m (suc n) = begin
+  p′ m (1 + n)                                   ≈⟨ eta $ p′ m (1 + n) ⟩
+  < p n ∘ p′ m (1 + n) , q n `[ p′ m (1 + n) ] > ≈⟨ {!!} ⟩
+  ⟦ p′~ m (1 + n) ⟧ₛ                             ∎
   where open EqR (HomS {_} {_})
 
-hom∘vec (p (suc (suc (suc n)))) = {!!}
-
-hom∘vec <> = refl~ₕ
-hom∘vec < u , x > = sym~ₕ $
-  trans~ₕ (sym~ₕ $ cong~ₕ (<_, toCwf (toWs x) >) (hom∘vec u))
-          (sym~ₕ $ congt~ₕ (< u ,_>) (ucwf∘ws x))
-                   
-ws∘ucwf (var _ zero) = refl
-ws∘ucwf (var _ (suc x)) = sym $
-  trans (sym $ cong (_′[ p~ _ ]) (ws∘ucwf (var _ x)))
-        (lookupPLemma _ x)
-ws∘ucwf (lam n t) = cong (lam n) (ws∘ucwf t)
-ws∘ucwf (app n t u) = trans (cong (app n t) (ws∘ucwf u))
-                            (cong (λ z → app n z _) (ws∘ucwf t))
-                                
-vec∘hom [] = refl
-vec∘hom (x ∷ xs)
-  rewrite sym (vec∘hom xs) |
-          sym (ws∘ucwf x) = refl
-
-subCommutes (var _ zero)    (x ∷ xs) = q[<a,t>] (toCwf x) (toHom xs)
-subCommutes (var _ (suc i)) (x ∷ xs) = sym~ₜ $ begin
-  (toCwf (var _ i) `[ p _ ]) `[ < toHom xs , toCwf x > ]
-    ≈⟨ sym~ₜ (∘sub (toCwf (var _ i)) (p _) < toHom xs , toCwf x >) ⟩
-  toCwf (var _ i) `[ p _ ∘ < toHom xs , toCwf x > ]
-    ≈⟨ sym~ₜ $ congh~ₜ (_`[_] (toCwf $ var _ i)) (p∘<a,t> (toCwf x) (toHom xs)) ⟩
-  toCwf (var _ i) `[ toHom xs ] ≈⟨ sym~ₜ $ subCommutes (var _ i) xs ⟩ 
-  (toCwf $ var _ i ′[ xs ])     ∎
-  where open EqR (CwfTmS {_})
-subCommutes (lam n t) xs = begin
-  lam _ (toCwf $ t ′[ q~ _ ∷ map lift xs ])     ≈⟨ help ⟩
-  lam _ (toCwf $ t ′[ q~ _ ∷ xs ∘' p~ _ ])      ≈⟨ cong~ₜ (lam _) (subCommutes t  (q~ _ ∷ xs ∘' p~ _)) ⟩
-  lam _ (toCwf t `[ < toHom (xs ∘' p~ _) , q _ > ])
-    ≈⟨ congh~ₜ (λ x → lam _ (toCwf t `[ < x , q _ > ])) {!!} ⟩ -- toHomDist∘ xs (p~ _)
-  lam _ (toCwf t `[ < toHom xs ∘ toHom (p~ _) , q _ > ])
-    ≈⟨ congh~ₜ (λ x → lam _ (toCwf t `[ < toHom xs ∘ x , q _ > ])) {!!} ⟩ -- hom∘vec p
-  lam _ (toCwf t `[ < toHom xs ∘ p _ , q _ > ]) ≈⟨ sym~ₜ (lamCm (toCwf t) (toHom xs)) ⟩ 
-  lam _ (toCwf t) `[ toHom xs ]                 ∎
-  where open EqR (CwfTmS {_})
-        help : lam _ (toCwf $ t ′[ q~ _ ∷ map lift xs ]) ~ₜ
-               lam _ (toCwf $  t ′[ q~ _ ∷ xs ∘' p~ _ ])
-        help rewrite lift∘p xs = refl~ₜ
-subCommutes (app n t u) xs = begin
-  app _ (toCwf (t ′[ xs ])) (toCwf (u ′[ xs ]))         ≈⟨ cong~ₜ (flip (app _) (toCwf (u ′[ xs ]))) (subCommutes t xs) ⟩
-  app _ (toCwf t `[ toHom xs ]) (toCwf (u ′[ xs ]))     ≈⟨ cong~ₜ (app _ (toCwf t `[ toHom xs ])) (subCommutes u xs) ⟩
-  app _ (toCwf t `[ toHom xs ]) (toCwf u `[ toHom xs ]) ≈⟨ appCm (toCwf t) (toCwf u) (toHom xs) ⟩
-  app _ (toCwf t) (toCwf u) `[ toHom xs ]               ∎
-  where open EqR (CwfTmS {_})
-
-toHomDist∘ []       ys = sym~ₕ $ ∘<> (toHom ys)
-toHomDist∘ (x ∷ xs) ys = sym~ₕ $  begin
-  < toHom xs , toCwf x > ∘ toHom ys               ≈⟨ <a,t>∘s (toCwf x) (toHom xs) (toHom ys) ⟩
-  < toHom xs ∘ toHom ys , toCwf x `[ toHom ys ] > ≈⟨ cong~ₕ (λ z → < z , _ >) (sym~ₕ $ toHomDist∘ xs ys) ⟩
-  < toHom (xs ∘' ys) , toCwf x `[ toHom ys ] >    ≈⟨ congt~ₕ (λ z → < _ , z >) (sym~ₜ $ subCommutes x ys) ⟩
-  < toHom (xs ∘' ys) , toCwf (x ′[ ys ]) >        ∎
+p~⟦p⟧ : ∀ n → p n ~ₕ ⟦ p~ n ⟧ₛ
+p~⟦p⟧ n = begin
+  p n               ≈⟨ sym~ₕ (∘lid (p n)) ⟩
+  id n ∘ p n        ≈⟨ gen-p 1 n ⟩
+  ⟦ id~ n ⊙ p~ n ⟧ₛ ≈⟨ help ⟩
+  ⟦ p~ n ⟧ₛ         ∎
   where open EqR (HomS {_} {_})
--}
+        help : ⟦ id~ n ⊙ p~ n ⟧ₛ ~ₕ ⟦ p~ n ⟧ₛ
+        help rewrite ∘-lid (p~ n) = refl~ₕ
+
+-- Interpreting a substitution commutes
+[]-comm : ∀ {m n} (t : Term n) (σ : Subst m n) → ⟦ t [ σ ] ⟧ ~ₜ ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]
+
+[]-comm (var zero)    (x ∷ σ) = q[<a,t>] ⟦ x ⟧ ⟦ σ ⟧ₛ
+[]-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
+  ⟦ var ι ⟧ `[ p _ ] `[ < ⟦ σ ⟧ₛ , ⟦ x ⟧ > ] ≈⟨ sym~ₜ (∘sub ⟦ var ι ⟧ (p _) < ⟦ σ ⟧ₛ , ⟦ x ⟧ >) ⟩
+  ⟦ var ι ⟧ `[ p _ ∘ < ⟦ σ ⟧ₛ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (congh~ₜ (_`[_] ⟦ var ι ⟧) (p∘<a,t> ⟦ x ⟧ ⟦ σ ⟧ₛ)) ⟩
+  ⟦ var ι ⟧ `[ ⟦ σ ⟧ₛ ]                      ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
+  ⟦ lookup ι σ ⟧                             ∎
+  where open EqR (CwfTmS {_})
+
+[]-comm (t `$ u) σ = begin
+  app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧                 ≈⟨ cong~ₜ (flip app ⟦ u [ σ ] ⟧) ([]-comm t σ) ⟩
+  app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]) (⟦ u [ σ ] ⟧)       ≈⟨ cong~ₜ (app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ])) ([]-comm u σ) ⟩
+  app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ₛ ]) ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ₛ ⟩
+  app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ₛ ]                 ∎
+  where open EqR (CwfTmS {_})
+  
+[]-comm (`λ t) σ = begin
+  lam ⟦ t [ ↑ₛ σ ] ⟧                            ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ₛ , q _ > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ x ])) help ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⊙ p~ _ ⟧ₛ , q _ > ])      ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q _ > ])) {!!} ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ ⟦ p~ _ ⟧ₛ , q _ > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ x , q _ > ]))
+                                                           (sym~ₕ (p~⟦p⟧ _)) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ p _ , q _ > ])       ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ₛ) ⟩
+  lam ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]                         ∎
+  where open EqR (CwfTmS {_})
+        help : < ⟦ map weaken~ σ ⟧ₛ , q _ > ~ₕ < ⟦ σ ⊙ p~ _ ⟧ₛ , q _ >
+        help rewrite sym (mapWk-⊙p σ) = refl~ₕ
+        
+⟦⟧-∘-dist [] γ = sym~ₕ (∘<> ⟦ γ ⟧ₛ)
+⟦⟧-∘-dist (t ∷ σ) γ = begin
+  < ⟦ σ ⊙ γ ⟧ₛ , ⟦ t [ γ ] ⟧ >            ≈⟨ cong~ₕ (λ z → < z , _ >) (⟦⟧-∘-dist σ γ) ⟩
+  < ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ , ⟦ t [ γ ] ⟧ >       ≈⟨ congt~ₕ (λ z → < _ , z >) ([]-comm t γ) ⟩
+  < ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ , ⟦ t ⟧ `[ ⟦ γ ⟧ₛ ] > ≈⟨ sym~ₕ (<a,t>∘s ⟦ t ⟧ ⟦ σ ⟧ₛ ⟦ γ ⟧ₛ) ⟩
+  < ⟦ σ ⟧ₛ , ⟦ t ⟧ > ∘ ⟦ γ ⟧ₛ             ∎
+  where open EqR (HomS {_} {_})
+
+ws∘cwf (var zero) = refl
+ws∘cwf (var (suc ι)) = sym $ trans (sym $ cong (_[ p~ _ ]) (ws∘cwf (var ι))) (lookup-p ι)
+ws∘cwf (`λ t) = cong `λ (ws∘cwf t)
+ws∘cwf (t `$ u) = cong₂ _`$_ (ws∘cwf t) (ws∘cwf u)
+
+cwf∘ws (q n) = refl~ₜ
+cwf∘ws (lam t) = cong~ₜ lam (cwf∘ws t)
+cwf∘ws (app t u) = trans~ₜ (cong~ₜ (app t) (cwf∘ws u)) (cong~ₜ (λ z → app z _) (cwf∘ws t))
+cwf∘ws (t `[ us ]) = sym~ₜ $ begin
+  ⟦ ⟪ t ⟫ [ ⟪ us ⟫ₕ ] ⟧       ≈⟨ []-comm ⟪ t ⟫ ⟪ us ⟫ₕ ⟩
+  ⟦ ⟪ t ⟫ ⟧ `[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ] ≈⟨ sym~ₜ (cong~ₜ (_`[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ]) (cwf∘ws t)) ⟩
+  t `[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ]         ≈⟨ sym~ₜ (congh~ₜ (t `[_]) (hom∘sub us)) ⟩
+  t `[ us ]                   ∎
+  where open EqR (CwfTmS {_})
+  
+sub∘hom [] = refl
+sub∘hom (t ∷ σ) rewrite sym  (sub∘hom σ)
+                      | sym (ws∘cwf t) = refl
+
+hom∘sub (id zero) = id₀
+hom∘sub (id (suc m)) = begin
+  id (1 + m)          ≈⟨ id<p,q> ⟩
+  < p m , q m >       ≈⟨ cong~ₕ (<_, q m >) (hom∘sub (p m)) ⟩
+  < ⟦ p~ m ⟧ₛ , q m > ∎
+  where open EqR (HomS {_} {_})
+
+hom∘sub (h ∘ g) = sym~ₕ $ begin
+  ⟦ ⟪ h ⟫ₕ ⊙ ⟪ g ⟫ₕ ⟧ₛ      ≈⟨ ⟦⟧-∘-dist ⟪ h ⟫ₕ ⟪ g ⟫ₕ ⟩
+  ⟦ ⟪ h ⟫ₕ ⟧ₛ ∘ ⟦ ⟪ g ⟫ₕ ⟧ₛ ≈⟨ sym~ₕ (cong~ₕ (_∘ ⟦ ⟪ g ⟫ₕ ⟧ₛ) (hom∘sub h)) ⟩
+  h ∘ ⟦ ⟪ g ⟫ₕ ⟧ₛ           ≈⟨ sym~ₕ (cong~ₕ (_∘_ h) (hom∘sub g)) ⟩
+  h ∘ g                     ∎
+  where open EqR (HomS {_} {_})
+  
+hom∘sub (p n) = p~⟦p⟧ n
+
+hom∘sub <> = refl~ₕ
+hom∘sub < h , x > = begin
+  < h , x >                   ≈⟨ cong~ₕ (<_, x >) (hom∘sub h) ⟩
+  < ⟦ ⟪ h ⟫ₕ ⟧ₛ , x >         ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
+  < ⟦ ⟪ h ⟫ₕ ⟧ₛ , ⟦ ⟪ x ⟫ ⟧ > ∎
+  where open EqR (HomS {_} {_})

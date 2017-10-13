@@ -14,6 +14,7 @@ open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; suc ; zero)
 open import Data.Vec hiding ([_])
 open import Function as Fun using (_∘_ ; _$_ ; flip)
+open import Relation.Binary using (IsEquivalence ; Setoid)
 
 infix 10 _`$_
 infix 8 _⊚_
@@ -21,6 +22,7 @@ infix 8 _⊙_
 infix 8 _⊙r_
 infix 8 _r⊙_
 infix 7 _∙_
+infix 9 _~_
 
 data Term (n : Nat) : Set where
   var   : (ι : Fin n)        → Term n
@@ -104,3 +106,30 @@ p n = tabulate (var ∘ suc)
 
 weaken' : ∀ {m} → Term m → Term (1 + m)
 weaken' t = t [ p _ ]
+
+p′ : ∀ m n → Subst (m + n) n
+p′ zero    n = id n
+p′ (suc m) n = p′ m n ⊙ p (m + n)
+
+-- β convertability as an inductive relation
+data _~_  {n : Nat} : (t u : Term n) → Set where
+  varcong : (i : Fin n) → var i ~ var i
+  apcong  : (t u t′ u′ : Term n) → t ~ t′ → u ~ u′ → t `$ u ~ t′ `$ u′
+  ξ : (t u : Term (1 + n)) → t ~ u → `λ t ~ `λ u
+  β : (t : Term (1 + n)) (u : Term n) → `λ t `$ u ~ t [ id n ∙ u ]
+  η : (t : Term n) → `λ (weaken t `$ q n) ~ t
+  sym~ : {t₁ t₂ : Term n} → t₁ ~ t₂ → t₂ ~ t₁
+  trans~ : {t₁ t₂ t₃ : Term n} → t₁ ~ t₂ → t₂ ~ t₃ → t₁ ~ t₃
+
+refl~ : ∀ {n} {t : Term n} → t ~ t
+refl~ {n} {t} = trans~ (sym~ (η t)) (η t)
+
+~equiv : ∀ {n} → IsEquivalence (_~_ {n})
+~equiv = record { refl  = refl~
+                ; sym   = sym~
+                ; trans = trans~ }
+
+TermSetoid : ∀ {n} → Setoid _ _
+TermSetoid {n} = record { Carrier = Term n
+                        ; _≈_ = _~_
+                        ; isEquivalence = ~equiv }
