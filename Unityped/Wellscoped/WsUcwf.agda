@@ -14,6 +14,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Ucwf
 open import Unityped.Wellscoped.Properties
 open import Unityped.Wellscoped
+import Relation.Binary.EqReasoning as EqR
 open ≡-Reasoning
 
 id=pq : ∀ {n} → id (1 + n) ≡ p n ∙ q n
@@ -77,6 +78,12 @@ maps : ∀ {m n} (t : Term n) (σ : Subst n m) (γ : Subst m n) →
        (σ ∙ t) ⊙ γ ≡ (σ ⊙ γ) ∙ t [ γ ]
 maps t σ γ = refl
 
+η′ : ∀ {n} (t : Term n) → `λ (t [ p n ] `$ q n) ~ t
+η′ t rewrite sym (wk-[p] t) = η t
+
+abs : ∀ {n m} (t : Term (1 + n)) (σ : Subst m n) → `λ t [ σ ] ~ `λ (t [ σ ⊙ p m ∙ q m ])
+abs t σ rewrite mapWk-⊙p σ = refl~
+
 Term-Ucwf : Ucwf Term
 Term-Ucwf = record
               { id    = id
@@ -98,3 +105,14 @@ Term-Ucwf = record
               ; clos  = []-asso
               ; maps  = maps
               }
+
+Term-λβ-ucwf : λβ-ucwf Term _~_
+Term-λβ-ucwf = record
+                 { ucwf = Term-Ucwf
+                 ; `λ   = `λ
+                 ; _$_  = _`$_
+                 ; β    = β
+                 ; η    = η′
+                 ; app  = λ _ _ _ → refl~
+                 ; abs  = abs
+                 }

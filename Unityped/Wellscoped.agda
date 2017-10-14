@@ -72,10 +72,10 @@ id : ∀ n → Subst n n
 id n = tabulate var
 
 weaken : ∀ {m} → Term m → Term (1 + m)
-weaken t = ren t pR
+weaken = flip ren pR
 
 ↑ₛ_ : ∀ {m n} → Subst m n → Subst (1 + m) (1 + n)
-↑ₛ ts = map weaken ts ∙ q _
+↑ₛ_ = (q _ ∷_) ∘ map weaken 
 
 _[_] : ∀ {m n} → Term n → Subst m n → Term m
 var i    [ σ ] = lookup i σ
@@ -115,11 +115,11 @@ p′ (suc m) n = p′ m n ⊙ p (m + n)
 data _~_  {n : Nat} : (t u : Term n) → Set where
   varcong : (i : Fin n) → var i ~ var i
   apcong  : (t u t′ u′ : Term n) → t ~ t′ → u ~ u′ → t `$ u ~ t′ `$ u′
-  ξ : (t u : Term (1 + n)) → t ~ u → `λ t ~ `λ u
-  β : (t : Term (1 + n)) (u : Term n) → `λ t `$ u ~ t [ id n ∙ u ]
-  η : (t : Term n) → `λ (weaken t `$ q n) ~ t
-  sym~ : {t₁ t₂ : Term n} → t₁ ~ t₂ → t₂ ~ t₁
-  trans~ : {t₁ t₂ t₃ : Term n} → t₁ ~ t₂ → t₂ ~ t₃ → t₁ ~ t₃
+  ξ       : (t u : Term (1 + n)) → t ~ u → `λ t ~ `λ u
+  β       : (t : Term (1 + n)) (u : Term n) → `λ t `$ u ~ t [ id n ∙ u ]
+  η       : (t : Term n) → `λ (weaken t `$ q n) ~ t
+  sym~    : {t₁ t₂ : Term n} → t₁ ~ t₂ → t₂ ~ t₁
+  trans~  : {t₁ t₂ t₃ : Term n} → t₁ ~ t₂ → t₂ ~ t₃ → t₁ ~ t₃
 
 refl~ : ∀ {n} {t : Term n} → t ~ t
 refl~ {n} {t} = trans~ (sym~ (η t)) (η t)
@@ -133,3 +133,4 @@ TermSetoid : ∀ {n} → Setoid _ _
 TermSetoid {n} = record { Carrier = Term n
                         ; _≈_ = _~_
                         ; isEquivalence = ~equiv }
+
