@@ -1,3 +1,9 @@
+------------------------------------------------------------------------------------
+-- The model of the initial Ucwf object in which everything is explicit
+-- in the sense they are part of the language as constructors, similar
+-- to the λσ calculus.
+------------------------------------------------------------------------------------
+
 module Unityped.UcwfModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
@@ -6,11 +12,14 @@ open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
 import Relation.Binary.PropositionalEquality as P
 
+------------------------------------------------------------------------------------
+-- The mutually recursive terms and homs as data types
+
 data CwfTm : Nat → Set
 data Hom : Nat → Nat → Set
 
 data CwfTm where
-  q    : (n : Nat) → CwfTm (suc n)
+  q    : {n : Nat} → CwfTm (suc n)
   _[_] : {m n : Nat} → CwfTm n → Hom m n → CwfTm m
   lam  : {n : Nat} → CwfTm (suc n) → CwfTm n
   app  : {n : Nat} → CwfTm n → CwfTm n → CwfTm n
@@ -25,6 +34,16 @@ data Hom where
 weaken : ∀ {n} → CwfTm n → CwfTm (suc n)
 weaken t = t [ p _ ]
 
+⇑_ : ∀ {m n} → Hom m n →  Hom (suc m) (suc n)
+⇑_ ts = < ts ∘ p _ , q >
+
+p′ : (m n : Nat) → Hom (m + n) n
+p′ zero n    = id n
+p′ (suc m) n = p′ m n ∘ p (m + n)
+
+------------------------------------------------------------------------------------
+-- The inductive relations that specify the Ucwf axioms regardings Homs and terms
+
 infix 10 _~ₜ_
 infix 10 _~ₕ_
 
@@ -32,53 +51,64 @@ data _~ₜ_ : ∀ {n} → CwfTm n → CwfTm n → Set
 data _~ₕ_ : ∀ {n m} → Hom n m → Hom n m → Set
 
 data _~ₜ_  where
-  subId    : ∀ {n} (u : CwfTm n) → u ~ₜ u [ (id n) ]
-  q[<a,t>] : ∀ {m n} (t : CwfTm n) (ts : Hom n m) → t ~ₜ (q m) [ < ts , t > ]
-  ∘sub     : ∀ {m n k} (t : CwfTm n) (ts : Hom k n) (us : Hom m k)
-               →  t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
-  β        : ∀ {n} (t : CwfTm (suc n)) (u : CwfTm n)
-               → app (lam t) u ~ₜ t [ < id n , u > ]
-  η        : ∀ {n} (t : CwfTm n) → lam (app (t [ p n ]) (q n)) ~ₜ t
-  appCm    : ∀ {n m} (t : CwfTm n) (u : CwfTm n) (ts : Hom m n) → app (t [ ts ]) (u [ ts ]) ~ₜ app t u [ ts ]
-  lamCm    : ∀ {n m} (t : CwfTm (suc n)) (ts : Hom m n) → lam t [ ts ] ~ₜ lam (t [ < ts ∘ p m , q m > ])
-  sym~ₜ    : ∀ {n} {u u′ : CwfTm n} → u ~ₜ u′ → u′ ~ₜ u
-  trans~ₜ  : ∀ {m} {t u v : CwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
-  cong~ₜ   : ∀ {m n} (f : CwfTm m → CwfTm n) {h u : CwfTm m} → h ~ₜ u → f h ~ₜ f u
-  congh~ₜ  : ∀ {m n k} (f : Hom m n → CwfTm k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
+
+  -- Ucwf laws
+  
+  termId  : ∀ {n} (u : CwfTm n) → u ~ₜ u [ (id n) ]
+  qCons   : ∀ {m n} (t : CwfTm n) (ts : Hom n m) → t ~ₜ q [ < ts , t > ]
+  clos    : ∀ {m n k} (t : CwfTm n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
+
+  -- β and η laws
+  
+  β       : ∀ {n} (t : CwfTm (suc n)) (u : CwfTm n) → app (lam t) u ~ₜ t [ < id n , u > ]
+  η       : ∀ {n} (t : CwfTm n) → lam (app (t [ p n ]) q) ~ₜ t
+
+  -- Substituting an application
+  
+  appCm   : ∀ {n m} (t : CwfTm n) (u : CwfTm n) (ts : Hom m n) →
+            app (t [ ts ]) (u [ ts ]) ~ₜ app t u [ ts ]
+            
+  -- Substituting a lambda expression
+  
+  lamCm   : ∀ {n m} (t : CwfTm (suc n)) (ts : Hom m n) → lam t [ ts ] ~ₜ lam (t [ ⇑ ts ])
+
+  -- Symmetry, transitivity, and congruence
+  
+  sym~ₜ   : ∀ {n} {u u′ : CwfTm n} → u ~ₜ u′ → u′ ~ₜ u
+  trans~ₜ : ∀ {m} {t u v : CwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
+  cong~ₜ  : ∀ {m n} (f : CwfTm m → CwfTm n) {h u : CwfTm m} → h ~ₜ u → f h ~ₜ f u
+  congh~ₜ : ∀ {m n k} (f : Hom m n → CwfTm k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
 
 refl~ₜ : ∀ {n} {u : CwfTm n} → u ~ₜ u
-refl~ₜ = trans~ₜ (subId _) (sym~ₜ (subId _))
+refl~ₜ = trans~ₜ (termId _) (sym~ₜ (termId _))
 
 data _~ₕ_ where
+
+  -- Ucwf laws
+  
   id₀     : id 0 ~ₕ <>
   ∘<>     : ∀ {m n} (ts : Hom m n) → (<> ∘ ts) ~ₕ <>
-  id<p,q> : ∀ {n} → id (suc n) ~ₕ < p n , q n >
-  ∘lid    : ∀ {m n} (ts : Hom m n) → (id n) ∘ ts ~ₕ ts
-  ∘rid    : ∀ {m n} (ts : Hom m n) → ts ∘ (id m) ~ₕ ts
-  ∘asso   : ∀ {m n k p} (ts : Hom n k) (us : Hom m n) (vs : Hom p m)
-              → (ts ∘ us) ∘ vs  ~ₕ ts ∘ (us ∘ vs)
-  p∘<a,t> : ∀ {m n} (u : CwfTm m) (us : Hom m n)
-              → us ~ₕ (p  n) ∘ < us , u >
-  <a,t>∘s : ∀ {m n k} (t : CwfTm n) (ts : Hom n k) (us : Hom m n)
-              → < ts , t > ∘ us  ~ₕ < ts ∘ us , t [ us ] > 
+  varp    : ∀ {n} → id (suc n) ~ₕ < p n , q >
+  idL     : ∀ {m n} (ts : Hom m n) → (id n) ∘ ts ~ₕ ts
+  idR     : ∀ {m n} (ts : Hom m n) → ts ∘ (id m) ~ₕ ts
+  assoc   : ∀ {m n k p} (ts : Hom n k) (us : Hom m n) (vs : Hom p m) →
+            (ts ∘ us) ∘ vs  ~ₕ ts ∘ (us ∘ vs)
+  pCons   : ∀ {m n} (u : CwfTm m) (us : Hom m n) → us ~ₕ (p  n) ∘ < us , u >
+  maps    : ∀ {m n k} (t : CwfTm n) (ts : Hom n k) (us : Hom m n) →
+            < ts , t > ∘ us  ~ₕ < ts ∘ us , t [ us ] >
+
+  -- Symmetry, transitivity, and congruence
+  
   sym~ₕ   : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~ₕ t → t ~ₕ h
   trans~ₕ : ∀ {m n} {h t v : Hom m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
   cong~ₕ  : ∀ {m n k p} (f : Hom m n → Hom k p) {h u : Hom m n} → h ~ₕ u → f h ~ₕ f u
   congt~ₕ : ∀ {m n} (f : CwfTm m → Hom m n) {t u : CwfTm m} → t ~ₜ u → f t ~ₕ f u
 
-hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
-
-eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p n ∘ ts , q n [ ts ] >
-
-p′ : (m n : Nat) → Hom (m + n) n
-p′ zero n    = id n
-p′ (suc m) n = p′ m n ∘ p (m + n)
-
-p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
-p′0~<> {m} = hom0~<> (p′ m zero)
+------------------------------------------------------------------------------------
+-- The relations are equivalence ones, plus setoid instances
 
 refl~ₕ : ∀ {n m} {h : Hom m n} → h ~ₕ h
-refl~ₕ = trans~ₕ (sym~ₕ (∘lid _)) (∘lid _)
+refl~ₕ = trans~ₕ (sym~ₕ (idL _)) (idL _)
 
 ~ₜequiv : ∀ {n} → IsEquivalence (_~ₜ_ {n})
 ~ₜequiv = record { refl  = refl~ₜ
@@ -102,16 +132,35 @@ HomS {n} {m} =
          ; _≈_ = _~ₕ_
          ; isEquivalence = ~ₕequiv }
 
+------------------------------------------------------------------------------------
+-- Some theorems about Ucwfs
+
+hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
 hom0~<> ts = begin
-  ts        ≈⟨ sym~ₕ (∘lid ts) ⟩
-  id 0 ∘ ts ≈⟨ cong~ₕ (_∘ ts) id₀ ⟩
-  <> ∘ ts   ≈⟨ ∘<> ts ⟩ 
-  <>        ∎
+  ts         ≈⟨ sym~ₕ (idL ts) ⟩
+  id 0 ∘ ts  ≈⟨ cong~ₕ (_∘ ts) id₀ ⟩
+  <> ∘ ts    ≈⟨ ∘<> ts ⟩ 
+  <>         ∎
   where open EqR (HomS {0} {_})
 
+p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
+p′0~<> {m} = hom0~<> (p′ m zero)
+
+eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p n ∘ ts , q [ ts ] >
 eta ts = begin
-  ts                        ≈⟨ sym~ₕ (∘lid ts) ⟩
-  id _ ∘ ts                 ≈⟨ cong~ₕ (λ z → z ∘ ts) id<p,q> ⟩
-  < p _ , q _ > ∘ ts        ≈⟨ <a,t>∘s (q _) (p _) ts ⟩
-  < p _ ∘ ts , q _ [ ts ] > ∎
+  ts                        ≈⟨ sym~ₕ (idL ts) ⟩
+  id _ ∘ ts                 ≈⟨ cong~ₕ (_∘ ts) varp  ⟩
+  < p _ , q > ∘ ts          ≈⟨ maps q (p _) ts ⟩
+  < p _ ∘ ts , q [ ts ] >   ∎
   where open EqR (HomS {_} {_})
+
+qLift : ∀ {m n} (ts : Hom m n) → q [ ⇑ ts ] ~ₜ q
+qLift ts = sym~ₜ (qCons q (ts ∘ p _))
+
+qLift₂ : ∀ {m n k} (s : Hom m n) (t : Hom k (suc m)) → q [ (⇑ s) ∘ t ] ~ₜ q [ t ]
+qLift₂ s t = begin
+  q [ (⇑ s) ∘ t ]                    ≈⟨ refl~ₜ ⟩
+  q [ < s ∘ p _ , q > ∘ t ]          ≈⟨ congh~ₜ (_[_] q) (maps q (s ∘ p _) t) ⟩
+  q [ < (s ∘ p _) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p _) ∘ t)) ⟩ 
+  q [ t ]                            ∎
+  where open EqR (CwfTmS {_})
