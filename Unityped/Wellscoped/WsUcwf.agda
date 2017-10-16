@@ -106,7 +106,7 @@ q[] _ _ = refl
 maps : ∀ {m n} (t : Term n) (σ : Subst n m) (γ : Subst m n) →
        (σ ∙ t) ⋆ γ ≡ (σ ⋆ γ) ∙ t [ γ ]
 maps t σ γ = refl
-
+{-
 Term-Ucwf : Ucwf Term
 Term-Ucwf = record
               { id    = id
@@ -148,3 +148,4 @@ Term-λβ-ucwf = record
                  ; app  = λ _ _ _ → refl~
                  ; abs  = abs
                  }
+-}

@@ -1,6 +1,7 @@
 ---------------------------------------------------------------------------------------------------
 -- Contains the definitions of the bijections between the setoids of wellscoped terms and terms as
--- a Ucwf. Moreover, a proof that they are inverses of each other, which means they are isomorphic
+-- a Ucwf. Moreover, a proof that they are inverses of each other, which means the objets
+-- are isomorphic.
 ---------------------------------------------------------------------------------------------------
 
 module Unityped.Isomorphism where
@@ -78,7 +79,8 @@ gen-p : ∀ m n → p′ m n ~ₕ ⟦ p′~ m n ⟧ₛ
 gen-p m zero rewrite p′0=[] {m} = p′0~<>
 gen-p m (suc n) = begin
   p′ m (1 + n)                                   ≈⟨ eta $ p′ m (1 + n) ⟩
-  < p n ∘ p′ m (1 + n) , q `[ p′ m (1 + n) ] >   ≈⟨ {!!} ⟩
+  < p n ∘ p′ m (1 + n) , q `[ p′ m (1 + n) ] >   ≈⟨ cong~ₕ (λ x → < p n ∘ x , q `[ p′ m (1 + n) ] >) (p′isp m _) ⟩
+  < p n ∘ p′′ m (1 + n) , q `[ p′ m (1 + n) ] >  ≈⟨ {!!} ⟩
   ⟦ p′~ m (1 + n) ⟧ₛ                             ∎
   where open EqR (HomS {_} {_})
 
@@ -110,15 +112,15 @@ p~⟦p⟧ n = begin
   app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ₛ ])  ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ₛ ⟩
   app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ₛ ]                  ∎
   where open EqR (CwfTmS {_})
-  
+
 []-comm (ƛ t) σ = begin
-  lam ⟦ t [ ↑ₛ σ ] ⟧                            ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
+  lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ₛ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ x ])) help ⟩
   lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ _ ⟧ₛ , q > ])      ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) {!!} ⟩
   lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ ⟦ p~ _ ⟧ₛ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ x , q > ]))
-                                                           (sym~ₕ (p~⟦p⟧ _)) ⟩
+                                                         (sym~ₕ (p~⟦p⟧ _)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ p _ , q > ])       ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ₛ) ⟩
-  lam ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]                         ∎
+  lam ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]                       ∎
   where open EqR (CwfTmS {_})
         help : < ⟦ map weaken~ σ ⟧ₛ , q > ~ₕ < ⟦ σ ⋆ p~ _ ⟧ₛ , q >
         help rewrite sym (mapWk-⋆p σ) = refl~ₕ
@@ -160,7 +162,7 @@ sub∘hom [] = refl
 sub∘hom (t ∷ σ) rewrite sym  (sub∘hom σ)
                       | sym (ws∘cwf t) = refl
 
--- h ∈ Hom m n ⇒ ⟦ ⟪ h ⟫ ⟧
+-- h ∈ Hom m n ⇒ ⟦ ⟪ h ⟫ ⟧ ~ h
 
 hom∘sub (id zero) = id₀
 hom∘sub (id (suc m)) = begin

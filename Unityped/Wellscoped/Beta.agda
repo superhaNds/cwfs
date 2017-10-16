@@ -39,7 +39,7 @@ refl~ {n} {t} = trans~ (sym~ (η t)) (η t)
 
 -- Instance of setoid for _~_
 
-TermSetoid : ∀ {n} → Setoid _ _
+TermSetoid : ∀ {n} → Setoid _ _ 
 TermSetoid {n} = record { Carrier = Term n
                         ; _≈_ = _~_
                         ; isEquivalence = ~equiv }

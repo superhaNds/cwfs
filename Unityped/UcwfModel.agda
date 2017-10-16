@@ -7,7 +7,7 @@
 module Unityped.UcwfModel where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
-open import Data.Nat.Properties
+import Data.Nat.Properties.Simple as NatP
 open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
 import Relation.Binary.PropositionalEquality as P
@@ -23,6 +23,9 @@ data CwfTm where
   _[_] : {m n : Nat} → CwfTm n → Hom m n → CwfTm m
   lam  : {n : Nat} → CwfTm (suc n) → CwfTm n
   app  : {n : Nat} → CwfTm n → CwfTm n → CwfTm n
+
+-- Hom m n corresponds to substitutions of length n of Terms with at most
+-- m free variables
 
 data Hom where
   id    : (m : Nat) → Hom m m
@@ -40,6 +43,10 @@ weaken t = t [ p _ ]
 p′ : (m n : Nat) → Hom (m + n) n
 p′ zero n    = id n
 p′ (suc m) n = p′ m n ∘ p (m + n)
+
+p′′ : (m n : Nat) → Hom (m + n) n
+p′′ zero n = id n
+p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p n ∘ p′′ m (1 + n)
 
 ------------------------------------------------------------------------------------
 -- The inductive relations that specify the Ucwf axioms regardings Homs and terms
@@ -133,7 +140,7 @@ HomS {n} {m} =
          ; isEquivalence = ~ₕequiv }
 
 ------------------------------------------------------------------------------------
--- Some theorems about Ucwfs
+-- Some theorems using the axiomatization
 
 hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
 hom0~<> ts = begin
@@ -144,7 +151,20 @@ hom0~<> ts = begin
   where open EqR (HomS {0} {_})
 
 p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
-p′0~<> {m} = hom0~<> (p′ m zero)
+p′0~<> {m} = hom0~<> (p′ m 0)
+
+p′′0~<> : ∀ {m} → p′′ m 0 ~ₕ <>
+p′′0~<> {m} = hom0~<> (p′′ m 0)
+
+postulate p′isp : ∀ m n → p′ m n ~ₕ p′′ m n
+
+-- p′ m n ∘ p (m + n)
+-- p n ∘ p′′ m (1 + n)
+{-
+pp′ : ∀ m n → p′ m n ~ₕ p′′ m n
+pp′ zero n = cong~ₕ (λ _ → id n) id₀
+pp′ (suc m) n = {!!}
+-}
 
 eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p n ∘ ts , q [ ts ] >
 eta ts = begin
