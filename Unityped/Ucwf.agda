@@ -1,16 +1,32 @@
+-----------------------------------------------------------------------------
+-- The notion of a ucwf and its extensions with lambdas and others
+-----------------------------------------------------------------------------
 module Unityped.Ucwf where
 
+open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
-open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary
 
+-----------------------------------------------------------------------------
+-- The sorts, operator symbols, and axioms of a ucwf gathered as a record
+
 record Ucwf : Set₁ where
+  infix 4 _~ₜ_
+  infix 4 _~ₕ_
   infix 9 _∘_
+  
   field
+    -- the types for terms and substitutions 
     Term   : Nat → Set
     Hom    : Nat → Nat → Set
+
+    -- two relations regarding equality of terms and substitutions
+    _~ₜ_   : ∀ {n} → Rel (Term n) lzero
+    _~ₕ_   : ∀ {m n} → Rel (Hom m n) lzero
+
+    -- operator symbols
     id     : (ν : Nat) → Hom ν ν
     <>     : {μ : Nat} → Hom μ 0
     p      : (ν : Nat) → Hom (suc ν) ν
@@ -19,25 +35,31 @@ record Ucwf : Set₁ where
     _[_]   : {μ ν : Nat} → Term ν → Hom μ ν → Term μ
     <_,_>  : {μ ν : Nat} → Hom μ ν → Term μ → Hom μ (suc ν)
 
-    id₀   : id 0 ≡ <>
-    ∘<>   : ∀ {μ ν : Nat} (ts : Hom μ ν) → <> ∘ ts ≡ <> 
-    varp  : ∀ {ν : Nat} → id (suc ν) ≡ < p ν , q >
-    idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ν ∘ ts ≡ ts
-    idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ≡ ts
+    -- axioms
+    id₀   : id 0 ~ₕ <>
+    ∘<>   : ∀ {μ ν : Nat} (ts : Hom μ ν) → <> ∘ ts ~ₕ <> 
+    varp  : ∀ {ν : Nat} → id (suc ν) ~ₕ < p ν , q >
+    idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ν ∘ ts ~ₕ ts
+    idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ~ₕ ts
     assoc : ∀ {μ ν k p : Nat} (ts : Hom ν k) (us : Hom μ ν) (vs : Hom p μ) →
-             (ts ∘ us) ∘ vs ≡ ts ∘ (us ∘ vs)
-    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ≡ t
-    pCons : ∀ {μ ν k : Nat} → (t : Term ν) → (ts : Hom ν k) → p k ∘ < ts , t > ≡ ts
-    qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q [ < ts , t > ] ≡ t
-    clos  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν ν) (us : Hom μ ν) →
-             t [ ts ∘  us ] ≡ t [ ts ] [ us ]
+             (ts ∘ us) ∘ vs ~ₕ ts ∘ (us ∘ vs)
+    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ~ₜ t
+    pCons : ∀ {μ ν k : Nat} → (t : Term ν) → (ts : Hom ν k) → p k ∘ < ts , t > ~ₕ ts
+    qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q [ < ts , t > ] ~ₜ t
+    clos  : ∀ {μ ν κ : Nat} (t : Term ν) (ts : Hom μ ν) (us : Hom κ μ) →
+             t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
     maps  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) (us : Hom μ ν) →
-             < ts , t > ∘ us ≡ < ts ∘ us , t [ us ] >
+             < ts , t > ∘ us ~ₕ < ts ∘ us , t [ us ] >
   
   ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
   ⇑ ts = < ts ∘ p _ , q >
-  
-record λ-app-ucwf : Set₁ where
+
+  weaken : ∀ {m} → Term m → Term (suc m)
+  weaken {m} = _[ p m ] 
+
+-- Extending the pure ucwf with lambdas and applications
+
+record Lambda-ucwf : Set₁ where
   infix 10 _·_
   field
     ucwf : Ucwf
@@ -48,14 +70,17 @@ record λ-app-ucwf : Set₁ where
     ƛ   : {ν : Nat} → Term (suc ν) → Term ν
     _·_ : {ν : Nat} → Term ν → Term ν → Term ν
 
-record λβ-ucwf : Set₁ where
+-- Extending the ucwf with lambdas up to β and η
+
+record Lambda-βη-ucwf : Set₁ where
   field
-    λ-$-ucwf : λ-app-ucwf
+    lambda-ucwf : Lambda-ucwf
 
-  open λ-app-ucwf λ-$-ucwf public
+  open Lambda-ucwf lambda-ucwf public
 
-  -- field
-    -- β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → (ƛ t · u) ≈ (t [ < id ν , u > ])
-  --  η   : {ν : Nat} (t : Term ν) → ƛ (t [ p ν ] · q) ~ t
-  --  app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → ((t [ ts ]) · (u [ ts ])) ~ ((t · u) [ ts ])
-  --  abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → (ƛ t [ ts ]) ~ (ƛ (t [ ⇑ ts ]))
+  field
+    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → (ƛ t · u) ~ₜ (t [ < id ν , u > ])
+    η   : {ν : Nat} (t : Term ν) → ƛ (weaken t · q) ~ₜ t
+    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) · (u [ ts ]) ~ₜ ((t · u) [ ts ])
+    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → (ƛ t [ ts ]) ~ₜ (ƛ (t [ ⇑ ts ]))
+    

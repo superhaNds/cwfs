@@ -1,7 +1,7 @@
 ---------------------------------------------------------------------------------------------------
 -- Contains the definitions of the bijections between the setoids of wellscoped terms and terms as
--- a Ucwf. Moreover, a proof that they are inverses of each other, which means the objets
--- are isomorphic.
+-- a Ucwf. Moreover, a proof that they are inverses of each other, which means the objects
+-- are isomorphic in the category of cwfs.
 ---------------------------------------------------------------------------------------------------
 
 module Unityped.Isomorphism where
@@ -11,22 +11,23 @@ open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
-open import Unityped.UcwfModel renaming (_[_] to _`[_])
+open import Function.Bijection using (Bijection ; Bijective)
+open import Unityped.UcwfModel renaming (Term to Tm-cwf ; _[_] to _`[_])
 open import Unityped.Wellscoped
-  renaming (p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~)
+  renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~)
   hiding (maps)
 open import Unityped.Wellscoped.Properties  
 open import Relation.Binary.PropositionalEquality hiding ([_])
 import Relation.Binary.EqReasoning as EqR
 
 ---------------------------------------------------------------------------------------------------
--- The bijection between wellscoped terms and terms as a Ucwf
+-- The bijection between wellscoped λ terms and terms as a Ucwf
 
 -- The translation functions (morphisms)
 
-⟦_⟧  : ∀ {n} → Term n → CwfTm n
+⟦_⟧  : ∀ {n} → Tm-λ n → Tm-cwf n
 ⟦_⟧ₛ : ∀ {m n} → Subst m n → Hom m n
-⟪_⟫  : ∀ {n} → CwfTm n → Term n
+⟪_⟫  : ∀ {n} → Tm-cwf n → Tm-λ n
 ⟪_⟫ₕ : ∀ {m n} → Hom m n → Subst m n
 
 -- Substitutions as vectors to a Hom
@@ -61,15 +62,11 @@ import Relation.Binary.EqReasoning as EqR
 
 -- A scope safe term mapped to the cwf world returns the same
 
-ws∘cwf : ∀ {n} (t : Term n) → t ≡ ⟪ ⟦ t ⟧ ⟫
+ws∘cwf : ∀ {n} (t : Tm-λ n) → t ~ ⟪ ⟦ t ⟧ ⟫
 
 -- A cwf term mapped to a scope safe term returns the same
 
-cwf∘ws : ∀ {n} (t : CwfTm n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
-
--- A substitution turned into a Hom and back returns the same
-
-sub∘hom : ∀ {m n} (σ : Subst m n) → σ ≡ ⟪ ⟦ σ ⟧ₛ ⟫ₕ
+cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
 
 -- A Hom turned into a substitution and back returns the same
 
@@ -94,9 +91,15 @@ p~⟦p⟧ n = begin
         help : ⟦ id~ n ⋆ p~ n ⟧ₛ ~ₕ ⟦ p~ n ⟧ₛ
         help rewrite ∘-lid (p~ n) = refl~ₕ
 
+-- Interpreting a composition distributes
+
+postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ₛ ~ₕ ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ
+
+⟦⟧-∘-dist : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ₛ ~ₕ ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ
+
 -- Interpreting a substitution commutes
 
-[]-comm : ∀ {m n} (t : Term n) (σ : Subst m n) → ⟦ t [ σ ] ⟧ ~ₜ ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]
+[]-comm : ∀ {m n} (t : Tm-λ n) (σ : Subst m n) → ⟦ t [ σ ] ⟧ ~ₜ ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]
 
 []-comm (var zero)    (x ∷ σ) = qCons ⟦ x ⟧ ⟦ σ ⟧ₛ
 []-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
@@ -104,30 +107,26 @@ p~⟦p⟧ n = begin
   ⟦ var ι ⟧ `[ p _ ∘ < ⟦ σ ⟧ₛ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (congh~ₜ (_`[_] ⟦ var ι ⟧) (pCons ⟦ x ⟧ ⟦ σ ⟧ₛ)) ⟩
   ⟦ var ι ⟧ `[ ⟦ σ ⟧ₛ ]                      ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
   ⟦ lookup ι σ ⟧                             ∎
-  where open EqR (CwfTmS {_})
+  where open EqR (TermS {_})
 
 []-comm (t · u) σ = begin
   app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧                  ≈⟨ cong~ₜ (flip app ⟦ u [ σ ] ⟧) ([]-comm t σ) ⟩
   app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]) (⟦ u [ σ ] ⟧)        ≈⟨ cong~ₜ (app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ])) ([]-comm u σ) ⟩
   app (⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ₛ ])  ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ₛ ⟩
   app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ₛ ]                  ∎
-  where open EqR (CwfTmS {_})
+  where open EqR (TermS {_})
 
 []-comm (ƛ t) σ = begin
   lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ₛ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ x ])) help ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ _ ⟧ₛ , q > ])      ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) {!!} ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ _ ⟧ₛ , q > ])      ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) (⟦⟧-∘-distₚ σ (p~ _)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ ⟦ p~ _ ⟧ₛ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ x , q > ]))
                                                          (sym~ₕ (p~⟦p⟧ _)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ σ ⟧ₛ ∘ p _ , q > ])       ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ₛ) ⟩
   lam ⟦ t ⟧ `[ ⟦ σ ⟧ₛ ]                       ∎
-  where open EqR (CwfTmS {_})
+  where open EqR (TermS {_})
         help : < ⟦ map weaken~ σ ⟧ₛ , q > ~ₕ < ⟦ σ ⋆ p~ _ ⟧ₛ , q >
         help rewrite sym (mapWk-⋆p σ) = refl~ₕ
-
--- Interpreting a composition distributes
-
-⟦⟧-∘-dist : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ₛ ~ₕ ⟦ σ ⟧ₛ ∘ ⟦ γ ⟧ₛ
 
 ⟦⟧-∘-dist [] γ = sym~ₕ (∘<> ⟦ γ ⟧ₛ)
 ⟦⟧-∘-dist (t ∷ σ) γ = begin
@@ -137,14 +136,21 @@ p~⟦p⟧ n = begin
   < ⟦ σ ⟧ₛ , ⟦ t ⟧ > ∘ ⟦ γ ⟧ₛ             ∎
   where open EqR (HomS {_} {_})
 
--- t ∈ Term n ⇒ ⟪ ⟦ t ⟧ ⟫ ≡ t
+-- t ∈ Tm-λ n ⇒ ⟪ ⟦ t ⟧ ⟫ ~ t
+ 
+ws∘cwf (ƛ t) = ξ t ⟪ ⟦ t ⟧ ⟫ (ws∘cwf t)
+ws∘cwf (t · u) = apcong t u ⟪ ⟦ t ⟧ ⟫ ⟪ ⟦ u ⟧ ⟫ (ws∘cwf t) (ws∘cwf u)
+ws∘cwf (var zero) = refl~
+ws∘cwf (var (suc i)) rewrite sym $ lookup-p i = cong~ (λ x → x [ p~ _ ]) (ws∘cwf (var i))
 
+{-
 ws∘cwf (var zero) = refl
 ws∘cwf (var (suc ι)) = sym $ trans (sym $ cong (_[ p~ _ ]) (ws∘cwf (var ι))) (lookup-p ι)
 ws∘cwf (ƛ t) = cong ƛ (ws∘cwf t)
 ws∘cwf (t · u) = cong₂ _·_ (ws∘cwf t) (ws∘cwf u)
+-}
 
--- t ∈ UcwfTm n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
+-- t ∈ Tm-cwf n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
 
 cwf∘ws q = refl~ₜ
 cwf∘ws (lam t) = cong~ₜ lam (cwf∘ws t)
@@ -154,19 +160,21 @@ cwf∘ws (t `[ us ]) = sym~ₜ $ begin
   ⟦ ⟪ t ⟫ ⟧ `[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ]   ≈⟨ sym~ₜ (cong~ₜ (_`[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ]) (cwf∘ws t)) ⟩
   t `[ ⟦ ⟪ us ⟫ₕ ⟧ₛ ]           ≈⟨ sym~ₜ (congh~ₜ (t `[_]) (hom∘sub us)) ⟩
   t `[ us ]                     ∎
-  where open EqR (CwfTmS {_})
+  where open EqR (TermS {_})
 
 -- σ ∈ Subst m n ⇒ ⟪ ⟦ σ ⟧ ⟫ ≡ σ
 
+{-
 sub∘hom [] = refl
 sub∘hom (t ∷ σ) rewrite sym  (sub∘hom σ)
                       | sym (ws∘cwf t) = refl
+-}
 
 -- h ∈ Hom m n ⇒ ⟦ ⟪ h ⟫ ⟧ ~ h
 
 hom∘sub (id zero) = id₀
 hom∘sub (id (suc m)) = begin
-  id (1 + m)                  ≈⟨ varp ⟩
+  id (1 + m)                  ≈⟨ varp {m} ⟩
   < p m , q >                 ≈⟨ cong~ₕ (<_, q >) (hom∘sub (p m)) ⟩
   < ⟦ p~ m ⟧ₛ , q >           ∎
   where open EqR (HomS {_} {_})
@@ -186,3 +194,4 @@ hom∘sub < h , x > = begin
   < ⟦ ⟪ h ⟫ₕ ⟧ₛ , x >           ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
   < ⟦ ⟪ h ⟫ₕ ⟧ₛ , ⟦ ⟪ x ⟫ ⟧ >   ∎
   where open EqR (HomS {_} {_})
+

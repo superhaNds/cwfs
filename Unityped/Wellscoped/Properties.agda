@@ -1,9 +1,8 @@
-{-
+-----------------------------------------------------------------------------------------
+-- Properties and lemmata required for proving the laws of a Ucwf for the well-scoped
+-- lambda calculus terms.
+-----------------------------------------------------------------------------------------
 
-Properties and lemmata required for proving the laws of a Ucwf for the well-scoped
-lambda calculus terms.
-
--}
 module Unityped.Wellscoped.Properties where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
@@ -15,6 +14,9 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Wellscoped.Syntax
 open import Unityped.Wellscoped.Substitution
 open ≡-Reasoning
+
+-----------------------------------------------------------------------------------------
+-- Properties mostly relating lookups in substitutions, renamings, weakening
 
 lookup-id : ∀ n i → lookup i (id n) ≡ var i
 lookup-id _ i = lookup∘tabulate var i
@@ -120,7 +122,7 @@ pR⊚-↑-map : ∀ {m n} (r : Ren m n) → pR ⊚ (↑ r) ≡ map suc r
 pR⊚-↑-map r = begin
   pR ⊚ (↑ r)                                       ≡⟨⟩
   map (λ i → lookup i (↑ r)) (map suc idF)         ≡⟨ cong (map (λ i → lookup i (↑ r)))
-                                                          (sym $ (tabulate-∘ suc Function.id)) ⟩
+                                                           (sym $ (tabulate-∘ suc Function.id)) ⟩
   map (λ i → lookup i (↑ r)) (tabulate suc)        ≡⟨ sym (tabulate-∘ _ suc) ⟩
   tabulate (flip lookup (zero ∷ map suc r) ∘ suc)  ≡⟨⟩
   tabulate (flip lookup (map suc r))               ≡⟨ tabulate∘lookup (map suc r) ⟩

@@ -9,20 +9,22 @@ module Unityped.UcwfModel where
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 import Data.Nat.Properties.Simple as NatP
 open import Relation.Binary using (IsEquivalence ; Setoid)
+open import Unityped.Ucwf
 import Relation.Binary.EqReasoning as EqR
 import Relation.Binary.PropositionalEquality as P
 
 ------------------------------------------------------------------------------------
--- The mutually recursive terms and homs as data types
+-- The mutually recursive terms and homs as data types which form a Term model of
+-- a ucwf
 
-data CwfTm : Nat → Set
+data Term : Nat → Set
 data Hom : Nat → Nat → Set
 
-data CwfTm where
-  q    : {n : Nat} → CwfTm (suc n)
-  _[_] : {m n : Nat} → CwfTm n → Hom m n → CwfTm m
-  lam  : {n : Nat} → CwfTm (suc n) → CwfTm n
-  app  : {n : Nat} → CwfTm n → CwfTm n → CwfTm n
+data Term where
+  q    : {n : Nat} → Term (suc n)
+  _[_] : {m n : Nat} → Term n → Hom m n → Term m
+  lam  : {n : Nat} → Term (suc n) → Term n
+  app  : {n : Nat} → Term n → Term n → Term n
 
 -- Hom m n corresponds to substitutions of length n of Terms with at most
 -- m free variables
@@ -32,10 +34,10 @@ data Hom where
   _∘_   : {m n k : Nat} → Hom n k → Hom m n → Hom m k
   p     : (n : Nat) → Hom (suc n) n
   <>    : {m : Nat} → Hom m zero
-  <_,_> : {m n : Nat} → Hom m n → CwfTm m → Hom m (suc n)
+  <_,_> : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
 
-weaken : ∀ {n} → CwfTm n → CwfTm (suc n)
-weaken t = t [ p _ ]
+weaken : ∀ {n} → Term n → Term (suc n)
+weaken {n} t = t [ p n ]
 
 ⇑_ : ∀ {m n} → Hom m n →  Hom (suc m) (suc n)
 ⇑_ ts = < ts ∘ p _ , q >
@@ -54,39 +56,39 @@ p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p n ∘ p′′ m (1 + n)
 infix 10 _~ₜ_
 infix 10 _~ₕ_
 
-data _~ₜ_ : ∀ {n} → CwfTm n → CwfTm n → Set
+data _~ₜ_ : ∀ {n} → Term n → Term n → Set
 data _~ₕ_ : ∀ {n m} → Hom n m → Hom n m → Set
 
 data _~ₜ_  where
 
   -- Ucwf laws
   
-  termId  : ∀ {n} (u : CwfTm n) → u ~ₜ u [ (id n) ]
-  qCons   : ∀ {m n} (t : CwfTm n) (ts : Hom n m) → t ~ₜ q [ < ts , t > ]
-  clos    : ∀ {m n k} (t : CwfTm n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
+  termId  : ∀ {n} (u : Term n) → u ~ₜ u [ (id n) ]
+  qCons   : ∀ {m n} (t : Term n) (ts : Hom n m) → t ~ₜ q [ < ts , t > ]
+  clos    : ∀ {m n k} (t : Term n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
 
-  -- β and η laws
+  -- β and η
   
-  β       : ∀ {n} (t : CwfTm (suc n)) (u : CwfTm n) → app (lam t) u ~ₜ t [ < id n , u > ]
-  η       : ∀ {n} (t : CwfTm n) → lam (app (t [ p n ]) q) ~ₜ t
+  β       : ∀ {n} (t : Term (suc n)) (u : Term n) → app (lam t) u ~ₜ t [ < id n , u > ]
+  η       : ∀ {n} (t : Term n) → lam (app (t [ p n ]) q) ~ₜ t
 
   -- Substituting an application
   
-  appCm   : ∀ {n m} (t : CwfTm n) (u : CwfTm n) (ts : Hom m n) →
+  appCm   : ∀ {n m} (t : Term n) (u : Term n) (ts : Hom m n) →
             app (t [ ts ]) (u [ ts ]) ~ₜ app t u [ ts ]
             
   -- Substituting a lambda expression
   
-  lamCm   : ∀ {n m} (t : CwfTm (suc n)) (ts : Hom m n) → lam t [ ts ] ~ₜ lam (t [ ⇑ ts ])
+  lamCm   : ∀ {n m} (t : Term (suc n)) (ts : Hom m n) → lam t [ ts ] ~ₜ lam (t [ ⇑ ts ])
 
   -- Symmetry, transitivity, and congruence
   
-  sym~ₜ   : ∀ {n} {u u′ : CwfTm n} → u ~ₜ u′ → u′ ~ₜ u
-  trans~ₜ : ∀ {m} {t u v : CwfTm m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
-  cong~ₜ  : ∀ {m n} (f : CwfTm m → CwfTm n) {h u : CwfTm m} → h ~ₜ u → f h ~ₜ f u
-  congh~ₜ : ∀ {m n k} (f : Hom m n → CwfTm k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
+  sym~ₜ   : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
+  trans~ₜ : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
+  cong~ₜ  : ∀ {m n} (f : Term m → Term n) {h u : Term m} → h ~ₜ u → f h ~ₜ f u
+  congh~ₜ : ∀ {m n k} (f : Hom m n → Term k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
 
-refl~ₜ : ∀ {n} {u : CwfTm n} → u ~ₜ u
+refl~ₜ : ∀ {n} {u : Term n} → u ~ₜ u
 refl~ₜ = trans~ₜ (termId _) (sym~ₜ (termId _))
 
 data _~ₕ_ where
@@ -100,8 +102,8 @@ data _~ₕ_ where
   idR     : ∀ {m n} (ts : Hom m n) → ts ∘ (id m) ~ₕ ts
   assoc   : ∀ {m n k p} (ts : Hom n k) (us : Hom m n) (vs : Hom p m) →
             (ts ∘ us) ∘ vs  ~ₕ ts ∘ (us ∘ vs)
-  pCons   : ∀ {m n} (u : CwfTm m) (us : Hom m n) → us ~ₕ (p  n) ∘ < us , u >
-  maps    : ∀ {m n k} (t : CwfTm n) (ts : Hom n k) (us : Hom m n) →
+  pCons   : ∀ {m n} (u : Term m) (us : Hom m n) → us ~ₕ (p  n) ∘ < us , u >
+  maps    : ∀ {m n k} (t : Term n) (ts : Hom n k) (us : Hom m n) →
             < ts , t > ∘ us  ~ₕ < ts ∘ us , t [ us ] >
 
   -- Symmetry, transitivity, and congruence
@@ -109,7 +111,7 @@ data _~ₕ_ where
   sym~ₕ   : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~ₕ t → t ~ₕ h
   trans~ₕ : ∀ {m n} {h t v : Hom m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
   cong~ₕ  : ∀ {m n k p} (f : Hom m n → Hom k p) {h u : Hom m n} → h ~ₕ u → f h ~ₕ f u
-  congt~ₕ : ∀ {m n} (f : CwfTm m → Hom m n) {t u : CwfTm m} → t ~ₜ u → f t ~ₕ f u
+  congt~ₕ : ∀ {m n} (f : Term m → Hom m n) {t u : Term m} → t ~ₜ u → f t ~ₕ f u
 
 ------------------------------------------------------------------------------------
 -- The relations are equivalence ones, plus setoid instances
@@ -122,9 +124,9 @@ refl~ₕ = trans~ₕ (sym~ₕ (idL _)) (idL _)
                  ; sym   = sym~ₜ
                  ; trans = trans~ₜ }
 
-CwfTmS : ∀ {n} → Setoid _ _
-CwfTmS {n} =
-  record { Carrier = CwfTm n
+TermS : ∀ {n} → Setoid _ _
+TermS {n} =
+  record { Carrier = Term n
          ; _≈_ = _~ₜ_
          ; isEquivalence = ~ₜequiv }
 
@@ -183,4 +185,49 @@ qLift₂ s t = begin
   q [ < s ∘ p _ , q > ∘ t ]          ≈⟨ congh~ₜ (_[_] q) (maps q (s ∘ p _) t) ⟩
   q [ < (s ∘ p _) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p _) ∘ t)) ⟩ 
   q [ t ]                            ∎
-  where open EqR (CwfTmS {_})
+  where open EqR (TermS {_})
+
+------------------------------------------------------------------------------------
+-- The term model instantiated as a Ucwf
+
+Tm-Ucwf : Ucwf
+Tm-Ucwf = record
+            { Term  = Term
+            ; Hom   = Hom
+            ; _~ₜ_  = _~ₜ_
+            ; _~ₕ_  = _~ₕ_
+            ; id    = id
+            ; <>    = <>
+            ; p     = p
+            ; q     = q
+            ; _∘_   = _∘_
+            ; _[_]  = _[_]
+            ; <_,_> = <_,_>
+            ; id₀   = id₀
+            ; ∘<>   = ∘<>
+            ; varp  = varp
+            ; idL   = idL
+            ; idR   = idR
+            ; assoc = assoc
+            ; terId = λ t → sym~ₜ (termId t)
+            ; pCons = λ t ts → sym~ₕ (pCons t ts)
+            ; qCons = λ t ts → sym~ₜ (qCons t ts)
+            ; clos  = clos
+            ; maps  = maps
+            }
+
+Tm-λ$-ucwf : Lambda-ucwf
+Tm-λ$-ucwf = record
+               { ucwf = Tm-Ucwf
+               ; ƛ    = lam
+               ; _·_  = app
+               }
+
+Tm-λβη-ucwf : Lambda-βη-ucwf
+Tm-λβη-ucwf = record
+                { lambda-ucwf = Tm-λ$-ucwf
+                ; β           = β
+                ; η           = η
+                ; app         = appCm
+                ; abs         = lamCm
+                }

@@ -16,9 +16,9 @@ open import Relation.Nullary.Decidable
 infix 10 _·_
 
 data Term (n : Nat) : Set where
-  var  : (i : Fin n)        → Term n
-  ƛ    : (t : Term (suc n)) → Term n
-  _·_  : (t₁ t₂ : Term n)   → Term n
+  var  : (i : Fin n)    → Term n
+  _·_  : (t u : Term n) → Term n
+  ƛ    : (t : Term (1 + n)) → Term n
 
 vr : ∀ m {n} {m<n : True (suc m ≤? n)} → Term n
 vr _ {m<n = m<n} = var (#_ _ {m<n = m<n})
@@ -41,7 +41,7 @@ I = ƛ q
 K : Term 0
 K = ƛ (ƛ (vr 1))
 
--- A non terminating term i.e., the omega combinator
+-- A non terminating term, i.e., the omega combinator
 
 Ω : Term 0
 Ω = ω · ω
