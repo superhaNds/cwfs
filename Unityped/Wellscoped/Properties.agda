@@ -216,5 +216,5 @@ mapWk-⋆p (x ∷ σ) = trans (cong (_∷ σ ⋆ p _) (sym $ wk-[p] x))
                          (cong (weakenₛ x ∷_) (mapWk-⋆p σ))
 
 p′0=[] : ∀ {m} → p′ m 0 ≡ []
-p′0=[] {zero} = refl
+p′0=[] {zero}  = refl
 p′0=[] {suc m} = refl

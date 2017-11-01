@@ -41,10 +41,10 @@ record Ucwf : Set₁ where
     varp  : ∀ {ν : Nat} → id (suc ν) ~ₕ < p ν , q >
     idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ν ∘ ts ~ₕ ts
     idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ~ₕ ts
-    assoc : ∀ {μ ν k p : Nat} (ts : Hom ν k) (us : Hom μ ν) (vs : Hom p μ) →
+    assoc : ∀ {μ ν κ ι : Nat} (ts : Hom ν κ) (us : Hom μ ν) (vs : Hom ι μ) →
              (ts ∘ us) ∘ vs ~ₕ ts ∘ (us ∘ vs)
     terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ~ₜ t
-    pCons : ∀ {μ ν k : Nat} → (t : Term ν) → (ts : Hom ν k) → p k ∘ < ts , t > ~ₕ ts
+    pCons : ∀ {μ ν κ : Nat} → (t : Term ν) → (ts : Hom ν κ) → p κ ∘ < ts , t > ~ₕ ts
     qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q [ < ts , t > ] ~ₜ t
     clos  : ∀ {μ ν κ : Nat} (t : Term ν) (ts : Hom μ ν) (us : Hom κ μ) →
              t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
@@ -61,6 +61,7 @@ record Ucwf : Set₁ where
 
 record Lambda-ucwf : Set₁ where
   infix 10 _·_
+  
   field
     ucwf : Ucwf
     
@@ -69,6 +70,8 @@ record Lambda-ucwf : Set₁ where
   field
     ƛ   : {ν : Nat} → Term (suc ν) → Term ν
     _·_ : {ν : Nat} → Term ν → Term ν → Term ν
+    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) · (u [ ts ]) ~ₜ (t · u) [ ts ]
+    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → ƛ t [ ts ] ~ₜ ƛ (t [ ⇑ ts ])
 
 -- Extending the ucwf with lambdas up to β and η
 
@@ -79,8 +82,6 @@ record Lambda-βη-ucwf : Set₁ where
   open Lambda-ucwf lambda-ucwf public
 
   field
-    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → (ƛ t · u) ~ₜ (t [ < id ν , u > ])
+    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → ƛ t · u ~ₜ t [ < id ν , u > ]
     η   : {ν : Nat} (t : Term ν) → ƛ (weaken t · q) ~ₜ t
-    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) · (u [ ts ]) ~ₜ ((t · u) [ ts ])
-    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → (ƛ t [ ts ]) ~ₜ (ƛ (t [ ⇑ ts ]))
     

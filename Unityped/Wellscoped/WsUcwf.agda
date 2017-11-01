@@ -51,18 +51,18 @@ t[id]~ (ƛ t) = begin
   
 -- Substituting in a composition is applying the substitution to the first and then the second
 
-[]-asso : ∀ {m n k} (t : Term n) (ts : Subst m n) (us : Subst k m) →
-          t [ ts ⋆ us ] ≡ t [ ts ] [ us ]
-[]-asso (var ()) [] us 
-[]-asso (var zero) (x ∷ ts) us = refl
-[]-asso (var (suc i)) (x ∷ ts) us = []-asso (var i) ts us
-[]-asso (t · u) ts us = cong₂ _·_ ([]-asso t ts us) ([]-asso u ts us)
-[]-asso (ƛ t) ts us = trans (cong (ƛ ∘ t [_]) (↑ₛ-dist ts us))
-                            (cong ƛ ([]-asso t (↑ₛ ts) (↑ₛ us)))
+[]-asso : ∀ {m n k} (t : Term n) (ρ : Subst m n) (σ : Subst k m) →
+          t [ ρ ⋆ σ ] ≡ t [ ρ ] [ σ ]
+[]-asso (var ()) [] σ 
+[]-asso (var zero) (x ∷ ρ) σ = refl
+[]-asso (var (suc i)) (x ∷ ρ) σ = []-asso (var i) ρ σ
+[]-asso (t · u) ρ σ = cong₂ _·_ ([]-asso t ρ σ) ([]-asso u ρ σ)
+[]-asso (ƛ t) ρ σ = trans (cong (ƛ ∘ t [_]) (↑ₛ-dist ρ σ))
+                            (cong ƛ ([]-asso t (↑ₛ ρ) (↑ₛ σ)))
 
-[]-asso~ : ∀ {m n k} (t : Term n) (ts : Subst m n) (us : Subst k m) →
-           t [ ts ⋆ us ] ~ t [ ts ] [ us ]
-[]-asso~ t ts us rewrite []-asso t ts us = refl~
+[]-asso~ : ∀ {m n k} (t : Term n) (ρ : Subst m n) (σ : Subst k m) →
+           t [ ρ ⋆ σ ] ~ t [ ρ ] [ σ ]
+[]-asso~ t ρ σ rewrite []-asso t ρ σ = refl~
 
 -- identity sub of zero
 
@@ -71,7 +71,7 @@ id₀[] = refl
 
 -- the empty substitution is a left absorbing element (left zero)
 
-∘-[] : ∀ {m n} (ts : Subst m n) → [] ⋆ ts ≡ []
+∘-[] : ∀ {m n} (ρ : Subst m n) → [] ⋆ ρ ≡ []
 ∘-[] _ = refl
 
 -- Composing with the projection substitution drops the last element
@@ -164,12 +164,12 @@ Tm-λ-ucwf : Lambda-ucwf
 Tm-λ-ucwf = record { ucwf = Tm-ucwf
                    ; ƛ    = ƛ
                    ; _·_  = _·_
+                   ; app  = λ _ _ _ → refl~
+                   ; abs  = abs
                    }
 
 Tm-λβη-ucwf : Lambda-βη-ucwf
 Tm-λβη-ucwf = record { lambda-ucwf = Tm-λ-ucwf
                      ; β   = β
                      ; η   = η′
-                     ; app = λ _ _ _ → refl~
-                     ; abs = abs
                      }

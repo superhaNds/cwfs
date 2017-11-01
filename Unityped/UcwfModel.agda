@@ -37,7 +37,7 @@ data Hom where
   <_,_> : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
 
 weaken : ∀ {n} → Term n → Term (suc n)
-weaken {n} t = t [ p n ]
+weaken {n} t = t [ p n ] 
 
 ⇑_ : ∀ {m n} → Hom m n →  Hom (suc m) (suc n)
 ⇑_ ts = < ts ∘ p _ , q >
@@ -221,13 +221,13 @@ Tm-λ$-ucwf = record
                { ucwf = Tm-Ucwf
                ; ƛ    = lam
                ; _·_  = app
+               ; app  = appCm
+               ; abs  = lamCm
                }
 
 Tm-λβη-ucwf : Lambda-βη-ucwf
 Tm-λβη-ucwf = record
                 { lambda-ucwf = Tm-λ$-ucwf
-                ; β           = β
-                ; η           = η
-                ; app         = appCm
-                ; abs         = lamCm
+                ; β = β
+                ; η = η
                 }

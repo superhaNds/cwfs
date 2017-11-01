@@ -49,7 +49,7 @@ idF = allFin _
 -- The renaming operation on terms
 
 ren : ∀ {n m} → Term n → Ren m n → Term m
-ren (var i)  ρ = var (lookup i ρ)
+ren (var i) ρ = var (lookup i ρ)
 ren (ƛ t)   ρ = ƛ (ren t (↑ ρ))
 ren (t · u) ρ = (ren t ρ) · (ren u ρ)
 
