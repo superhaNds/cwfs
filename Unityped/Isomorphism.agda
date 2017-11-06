@@ -72,19 +72,19 @@ cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
 
 hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
 
-gen-p : ∀ m n → p′ m n ~ₕ ⟦ p′~ m n ⟧ˢ
-gen-p m zero rewrite p′0=[] {m} = p′0~<>
-gen-p m (suc n) = begin
-  p′ m (1 + n)                                   ≈⟨ eta $ p′ m (1 + n) ⟩
-  < p n ∘ p′ m (1 + n) , q `[ p′ m (1 + n) ] >   ≈⟨ cong~ₕ (λ x → < p n ∘ x , q `[ p′ m (1 + n) ] >) (p′isp m _) ⟩
-  < p n ∘ p′′ m (1 + n) , q `[ p′ m (1 + n) ] >  ≈⟨ {!!} ⟩
-  ⟦ p′~ m (1 + n) ⟧ˢ                             ∎
+p1p'~ : ∀ m n → p1 m n ~ₕ ⟦ p′~ m n ⟧ˢ
+p1p'~ m zero rewrite p′0=[] {m} = hom0~<> (p1 m zero)
+p1p'~ m (suc n) = begin
+  p1 m (suc n) ≈⟨ eta $ p1 m (suc n) ⟩
+  < p n ∘ p1 m (suc n) , q `[ p1 m (suc n) ] > ≈⟨ cong~ₕ (λ x → < p n ∘ x , q `[ p1 m (1 + n) ] >) (p1=p2 m _) ⟩
+  < p n ∘ p2 m (suc n) , q `[ p1 m (suc n) ] > ≈⟨ {!p2 (suc m) n!} ⟩
+  ⟦ p′~ m (suc n) ⟧ˢ ∎
   where open EqR (HomS {_} {_})
 
 p~⟦p⟧ : ∀ n → p n ~ₕ ⟦ p~ n ⟧ˢ
 p~⟦p⟧ n = begin
   p n               ≈⟨ sym~ₕ (idL (p n)) ⟩
-  id n ∘ p n        ≈⟨ gen-p 1 n ⟩
+  id n ∘ p n        ≈⟨ p1p'~ 1 n ⟩
   ⟦ id~ n ⋆ p~ n ⟧ˢ ≈⟨ help ⟩
   ⟦ p~ n ⟧ˢ         ∎
   where open EqR (HomS {_} {_})

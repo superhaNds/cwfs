@@ -50,6 +50,14 @@ record Ucwf : Set₁ where
              t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
     maps  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) (us : Hom μ ν) →
              < ts , t > ∘ us ~ₕ < ts ∘ us , t [ us ] >
+             
+    -- congruence rules for operators
+    cong-<,> : ∀ {m n} {t u : Term m} {ts us : Hom m n} →
+                t ~ₜ u → ts ~ₕ us → < ts , t > ~ₕ < us , u >
+    cong-[_] : ∀ {m n} {t u : Term n} {ts us : Hom m n} →
+                t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
+    cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
+                ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs
   
   ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
   ⇑ ts = < ts ∘ p _ , q >

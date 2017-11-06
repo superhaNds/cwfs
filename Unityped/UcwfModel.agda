@@ -50,6 +50,39 @@ p′′ : (m n : Nat) → Hom (m + n) n
 p′′ zero n = id n
 p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p n ∘ p′′ m (1 + n)
 
+record Homable (H : Nat → Nat → Set) : Set where
+  field
+    id-able  : (m : Nat) → H m m
+    _∘-able_ : ∀ {m n k} → H n k → H m n → H m k
+    p-able   : (n : Nat) → H (suc n) n
+
+suc-homable : ∀ {H} → Homable H → Homable (λ m n → H (suc m) (suc n))
+suc-homable homable = record
+  { id-able  = λ m → id-able (suc m)
+  ; _∘-able_ = _∘-able_
+  ; p-able   = λ m → p-able (suc m)
+  } where open Homable homable
+
+p2-go : ∀ {H} → Homable H → (m : Nat) → H m 0
+p2-go homable  zero   = id-able 0 where
+  open Homable homable
+p2-go homable (suc m) = p-able 0 ∘-able p2-go (suc-homable homable) m where
+  open Homable homable
+
+plus-homable-hom : ∀ k → Homable (λ m n → Hom (m + k) (n + k))
+plus-homable-hom k = record
+  { id-able  = λ n → id (n + k)
+  ; _∘-able_ = _∘_
+  ; p-able   = λ n → p (n + k)
+  }
+
+p1 : (m n : Nat) → Hom (m + n) n
+p1 zero n    = id n
+p1 (suc m) n = p1 m n ∘ p (m + n)
+
+p2 : (m n : Nat) → Hom (m + n) n
+p2 m n = p2-go (plus-homable-hom n) m
+
 ------------------------------------------------------------------------------------
 -- The inductive relations that specify the Ucwf axioms regardings Homs and terms
 
@@ -83,10 +116,11 @@ data _~ₜ_  where
 
   -- Symmetry, transitivity, and congruence
   
-  sym~ₜ   : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
-  trans~ₜ : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
-  cong~ₜ  : ∀ {m n} (f : Term m → Term n) {h u : Term m} → h ~ₜ u → f h ~ₜ f u
-  congh~ₜ : ∀ {m n k} (f : Hom m n → Term k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
+  sym~ₜ    : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
+  trans~ₜ  : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
+  cong-[_] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
+  cong~ₜ   : ∀ {m n} (f : Term m → Term n) {h u : Term m} → h ~ₜ u → f h ~ₜ f u
+  congh~ₜ  : ∀ {m n k} (f : Hom m n → Term k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
 
 refl~ₜ : ∀ {n} {u : Term n} → u ~ₜ u
 refl~ₜ = trans~ₜ (termId _) (sym~ₜ (termId _))
@@ -108,10 +142,14 @@ data _~ₕ_ where
 
   -- Symmetry, transitivity, and congruence
   
-  sym~ₕ   : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~ₕ t → t ~ₕ h
-  trans~ₕ : ∀ {m n} {h t v : Hom m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
-  cong~ₕ  : ∀ {m n k p} (f : Hom m n → Hom k p) {h u : Hom m n} → h ~ₕ u → f h ~ₕ f u
-  congt~ₕ : ∀ {m n} (f : Term m → Hom m n) {t u : Term m} → t ~ₜ u → f t ~ₕ f u
+  sym~ₕ    : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~ₕ t → t ~ₕ h
+  trans~ₕ  : ∀ {m n} {h t v : Hom m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
+  cong-<,> : ∀ {m n} {t u : Term m} {ts us : Hom m n} →
+             t ~ₜ u → ts ~ₕ us → < ts , t > ~ₕ < us , u >
+  cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
+             ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs             
+  cong~ₕ   : ∀ {m n k p} (f : Hom m n → Hom k p) {h u : Hom m n} → h ~ₕ u → f h ~ₕ f u
+  congt~ₕ  : ∀ {m n} (f : Term m → Hom m n) {t u : Term m} → t ~ₜ u → f t ~ₕ f u
 
 ------------------------------------------------------------------------------------
 -- The relations are equivalence ones, plus setoid instances
@@ -158,15 +196,21 @@ p′0~<> {m} = hom0~<> (p′ m 0)
 p′′0~<> : ∀ {m} → p′′ m 0 ~ₕ <>
 p′′0~<> {m} = hom0~<> (p′′ m 0)
 
-postulate p′isp : ∀ m n → p′ m n ~ₕ p′′ m n
+postulate
+  sublemm : ∀ m n → (p2 (suc m) n ∘ p (suc (m + n))) ~ₕ p2 (suc (suc m)) n
 
--- p′ m n ∘ p (m + n)
--- p n ∘ p′′ m (1 + n)
-{-
-pp′ : ∀ m n → p′ m n ~ₕ p′′ m n
-pp′ zero n = cong~ₕ (λ _ → id n) id₀
-pp′ (suc m) n = {!!}
--}
+lemmap : ∀ m n → p2 m n ∘ p (m + n) ~ₕ p2 (suc m) n
+lemmap zero n = begin
+  id n ∘ p n       ≈⟨ idL (p n) ⟩
+  p n              ≈⟨ sym~ₕ (idR (p n)) ⟩
+  p n ∘ id (suc n) ∎
+  where open EqR (HomS {_} {_})
+lemmap (suc m) n = sublemm m n
+
+p1=p2 : ∀ m n → p1 m n ~ₕ p2 m n
+p1=p2 zero n    = refl~ₕ
+p1=p2 (suc m) n = trans~ₕ (cong~ₕ (_∘ p (m + n)) (p1=p2 m n))
+                          (lemmap m n)
 
 eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p n ∘ ts , q [ ts ] >
 eta ts = begin
@@ -214,6 +258,9 @@ Tm-Ucwf = record
             ; qCons = λ t ts → sym~ₜ (qCons t ts)
             ; clos  = clos
             ; maps  = maps
+            ; cong-<,> = cong-<,>
+            ; cong-[_] = cong-[_]
+            ; cong-∘   = cong-∘
             }
 
 Tm-λ$-ucwf : Lambda-ucwf
