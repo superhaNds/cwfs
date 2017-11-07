@@ -122,9 +122,9 @@ maps : ∀ {m n} (t : Term n) (σ : Subst n m) (γ : Subst m n) →
        (σ ∙ t) ⋆ γ ≡ (σ ⋆ γ) ∙ t [ γ ]
 maps t σ γ = refl
 
-cong-• : ∀ {m n} {t u : Term m} {ρ σ : Subst m n} →
-           t ~ u → ρ ≡ σ → ρ ∙ t ≡ σ ∙ u
-cong-• t~u refl = {!!}
+--cong-• : ∀ {m n} {t u : Term m} {ρ σ : Subst m n} →
+--           t ~ u → ρ ≡ σ → ρ ∙ t ≡ σ ∙ u
+--cong-• t~u refl = {!!}
 
 cong-[_] : ∀ {m n} {t u : Term n} {ρ σ : Subst m n} →
            t ~ u → ρ ≡ σ → (t [ ρ ]) ~ (u [ σ ])
@@ -136,7 +136,7 @@ cong-⋆ refl refl = refl
 
 ----------------------------------------------------------------------------------
 -- Terms form a pure ucwf
-
+{-
 Tm-ucwf : Ucwf
 Tm-ucwf = record
             { Term  = Term
@@ -188,3 +188,4 @@ Tm-λβη-ucwf = record { lambda-ucwf = Tm-λ-ucwf
                      ; β   = β
                      ; η   = η′
                      }
+-}

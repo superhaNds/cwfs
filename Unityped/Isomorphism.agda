@@ -11,11 +11,11 @@ open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
-open import Function.Bijection using (Bijection ; Bijective)
 open import Unityped.UcwfModel renaming (Term to Tm-cwf ; _[_] to _`[_])
 open import Unityped.Wellscoped
   renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~)
   hiding (maps)
+open import Unityped.Projection renaming (var to varPr)
 open import Unityped.Wellscoped.Properties  
 open import Relation.Binary.PropositionalEquality hiding ([_])
 import Relation.Binary.EqReasoning as EqR
@@ -37,10 +37,9 @@ import Relation.Binary.EqReasoning as EqR
 
 -- Traditional lambda calculus terms to Ucwf terms
 
-⟦ var zero ⟧    = q
-⟦ var (suc ι) ⟧ = weaken ⟦ var ι ⟧
-⟦ ƛ t ⟧         = lam ⟦ t ⟧
-⟦ t · u ⟧       = app ⟦ t ⟧ ⟦ u ⟧
+⟦ var i ⟧ = varPr i
+⟦ ƛ t ⟧   = lam ⟦ t ⟧
+⟦ t · u ⟧ = app ⟦ t ⟧ ⟦ u ⟧
 
 -- Ucwf terms to lambda terms, (substitution is a constructor which is mapped to the meta operation)
 
@@ -60,36 +59,12 @@ import Relation.Binary.EqReasoning as EqR
 ---------------------------------------------------------------------------------------------------
 -- Proofs that the translation functions are inverses of each other
 
--- A scope safe term mapped to the cwf world returns the same
+-- auxiliary props
 
-ws∘cwf : ∀ {n} (t : Tm-λ n) → t ~ ⟪ ⟦ t ⟧ ⟫
-
--- A cwf term mapped to a scope safe term returns the same
-
-cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
-
--- A Hom turned into a substitution and back returns the same
-
-hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
-
-p1p'~ : ∀ m n → p1 m n ~ₕ ⟦ p′~ m n ⟧ˢ
-p1p'~ m zero rewrite p′0=[] {m} = hom0~<> (p1 m zero)
-p1p'~ m (suc n) = begin
-  p1 m (suc n) ≈⟨ eta $ p1 m (suc n) ⟩
-  < p n ∘ p1 m (suc n) , q `[ p1 m (suc n) ] > ≈⟨ cong~ₕ (λ x → < p n ∘ x , q `[ p1 m (1 + n) ] >) (p1=p2 m _) ⟩
-  < p n ∘ p2 m (suc n) , q `[ p1 m (suc n) ] > ≈⟨ {!p2 (suc m) n!} ⟩
-  ⟦ p′~ m (suc n) ⟧ˢ ∎
-  where open EqR (HomS {_} {_})
-
+postulate lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ n ⟧ˢ
+  
 p~⟦p⟧ : ∀ n → p n ~ₕ ⟦ p~ n ⟧ˢ
-p~⟦p⟧ n = begin
-  p n               ≈⟨ sym~ₕ (idL (p n)) ⟩
-  id n ∘ p n        ≈⟨ p1p'~ 1 n ⟩
-  ⟦ id~ n ⋆ p~ n ⟧ˢ ≈⟨ help ⟩
-  ⟦ p~ n ⟧ˢ         ∎
-  where open EqR (HomS {_} {_})
-        help : ⟦ id~ n ⋆ p~ n ⟧ˢ ~ₕ ⟦ p~ n ⟧ˢ
-        help rewrite ∘-lid (p~ n) = refl~ₕ
+p~⟦p⟧ n = sym~ₕ (trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n)))
 
 -- Interpreting a composition distributes
 
@@ -135,6 +110,21 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
   < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t ⟧ `[ ⟦ γ ⟧ˢ ] > ≈⟨ sym~ₕ (maps ⟦ t ⟧ ⟦ σ ⟧ˢ ⟦ γ ⟧ˢ) ⟩
   < ⟦ σ ⟧ˢ , ⟦ t ⟧ > ∘ ⟦ γ ⟧ˢ             ∎
   where open EqR (HomS {_} {_})
+  
+---------------------------------------------------------------------------------------------------
+-- Inverses
+
+-- A scope safe term mapped to the cwf world returns the same
+
+ws∘cwf : ∀ {n} (t : Tm-λ n) → t ~ ⟪ ⟦ t ⟧ ⟫
+
+-- A cwf term mapped to a scope safe term returns the same
+
+cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
+
+-- A Hom turned into a substitution and back returns the same
+
+hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
 
 -- t ∈ Tm-λ n ⇒ ⟪ ⟦ t ⟧ ⟫ ~ t
  
@@ -162,7 +152,7 @@ cwf∘ws (t `[ us ]) = sym~ₜ $ begin
 hom∘sub (id zero) = id₀
 hom∘sub (id (suc m)) = begin
   id (1 + m)                  ≈⟨ varp {m} ⟩
-  < p m , q >                 ≈⟨ cong~ₕ (<_, q >) (hom∘sub (p m)) ⟩
+  < p m , q >                 ≈⟨ cong~ₕ (<_, q >) (p~⟦p⟧ m) ⟩
   < ⟦ p~ m ⟧ˢ , q >           ∎
   where open EqR (HomS {_} {_})
 
