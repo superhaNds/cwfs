@@ -133,7 +133,7 @@ p' : ∀ {n} → Subst (1 + n) n
 p' = map (λ t → ren t pR) (id _)
 
 p : ∀ n → Subst (1 + n) n
-p n = tabulate (var ∘ suc)
+p n = tabulate (λ x → var (suc x))
 
 idFin : ∀ n → Ren n n
 idFin zero = []
@@ -158,63 +158,3 @@ weaken' t = t [ p _ ]
 p′ : ∀ m n → Subst (m + n) n
 p′ zero    n = id n
 p′ (suc m) n = p′ m n ⋆ p (m + n)
-
----------------------------------------------------------------------------------
--- Using the standard library's substitution modules to get some lemmas
-
-module TmApp {T} (l : Lift T Term) where
-  open Lift l hiding (var)
-
-  infix 8 _/_
-
-  _/_ : ∀ {m n} → Term m → SubF T m n → Term n
-  var x   / ρ = lift (lookup x ρ)
-  ƛ t     / ρ = ƛ (t / ρ ↑)
-  t₁ · t₂ / ρ = (t₁ / ρ) · (t₂ / ρ)
-
-  open Application (record { _/_ = _/_ }) using (_/✶_)
-
-  ƛ-/✶-↑✶ : ∀ k {m n t} (ρs : Subs T m n) →
-            ƛ t /✶ ρs ↑✶ k ≡ ƛ (t /✶ ρs ↑✶ suc k)
-  ƛ-/✶-↑✶ k ε        = refl
-  ƛ-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (ƛ-/✶-↑✶ k ρs) refl
-
-  ·-/✶-↑✶ : ∀ k {m n t₁ t₂} (ρs : Subs T m n) →
-            t₁ · t₂ /✶ ρs ↑✶ k ≡ (t₁ /✶ ρs ↑✶ k) · (t₂ /✶ ρs ↑✶ k)
-  ·-/✶-↑✶ k ε        = refl
-  ·-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (·-/✶-↑✶ k ρs) refl
-
-tmSubst : TermSubst Term
-tmSubst = record { var = var; app = TmApp._/_ }
-
-open TermSubst tmSubst hiding (var)
-
-tmLemmas : TermLemmas Term
-tmLemmas = record
-  { termSubst = tmSubst
-  ; app-var   = refl
-  ; /✶-↑✶     = Lemma./✶-↑✶
-  }
-  where
-  module Lemma {T₁ T₂} {lift₁ : Lift T₁ Term} {lift₂ : Lift T₂ Term} where
-
-    open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
-    open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
-
-    /✶-↑✶ : ∀ {m n} (ρs₁ : Subs T₁ m n) (ρs₂ : Subs T₂ m n) →
-            (∀ k x → var x /✶₁ ρs₁ ↑✶₁ k ≡ var x /✶₂ ρs₂ ↑✶₂ k) →
-             ∀ k t → t     /✶₁ ρs₁ ↑✶₁ k ≡ t     /✶₂ ρs₂ ↑✶₂ k
-    /✶-↑✶ ρs₁ ρs₂ hyp k (var x) = hyp k x
-    /✶-↑✶ ρs₁ ρs₂ hyp k (ƛ t)   = begin
-      ƛ t /✶₁ ρs₁ ↑✶₁ k        ≡⟨ TmApp.ƛ-/✶-↑✶ _ k ρs₁ ⟩
-      ƛ (t /✶₁ ρs₁ ↑✶₁ suc k)  ≡⟨ cong ƛ (/✶-↑✶ ρs₁ ρs₂ hyp (suc k) t) ⟩
-      ƛ (t /✶₂ ρs₂ ↑✶₂ suc k)  ≡⟨ sym (TmApp.ƛ-/✶-↑✶ _ k ρs₂) ⟩
-      ƛ t /✶₂ ρs₂ ↑✶₂ k        ∎
-    /✶-↑✶ ρs₁ ρs₂ hyp k (t₁ · t₂) = begin
-      t₁ · t₂ /✶₁ ρs₁ ↑✶₁ k                    ≡⟨ TmApp.·-/✶-↑✶ _ k ρs₁ ⟩
-      (t₁ /✶₁ ρs₁ ↑✶₁ k) · (t₂ /✶₁ ρs₁ ↑✶₁ k)  ≡⟨ cong₂ _·_ (/✶-↑✶ ρs₁ ρs₂ hyp k t₁)
-                                                            (/✶-↑✶ ρs₁ ρs₂ hyp k t₂) ⟩
-      (t₁ /✶₂ ρs₂ ↑✶₂ k) · (t₂ /✶₂ ρs₂ ↑✶₂ k)  ≡⟨ sym (TmApp.·-/✶-↑✶ _ k ρs₂) ⟩
-      t₁ · t₂ /✶₂ ρs₂ ↑✶₂ k                    ∎
-
-open TermLemmas tmLemmas

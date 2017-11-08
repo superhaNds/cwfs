@@ -61,7 +61,7 @@ import Relation.Binary.EqReasoning as EqR
 
 -- auxiliary props
 
-postulate lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ n ⟧ˢ
+lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ n ⟧ˢ
   
 p~⟦p⟧ : ∀ n → p n ~ₕ ⟦ p~ n ⟧ˢ
 p~⟦p⟧ n = sym~ₕ (trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n)))
@@ -171,3 +171,8 @@ hom∘sub < h , x > = begin
   < ⟦ ⟪ h ⟫ʰ ⟧ˢ , x >           ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
   < ⟦ ⟪ h ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >   ∎
   where open EqR (HomS {_} {_})
+
+postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ (suc n) ⟧ˢ
+
+lemmaₚ zero = cong~ₕ (λ _ → <>) id₀
+lemmaₚ (suc n) = obv n
