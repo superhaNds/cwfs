@@ -18,9 +18,9 @@ module TermApp {T} (l : Lift T Term) where
   infix 8 _/_
 
   _/_ : ∀ {m n} → Term m → Sub T m n → Term n
-  var x   / ρ = lift (lookup x ρ)
-  ƛ t     / ρ = ƛ (t / ρ ↑)
-  t₁ · t₂ / ρ = (t₁ / ρ) · (t₂ / ρ)
+  var i  / ρ = lift (lookup i ρ)
+  ƛ t    / ρ = ƛ (t / ρ ↑)
+  t · u  / ρ = (t / ρ) · (u / ρ)
 
   open Application (record { _/_ = _/_ }) using (_/✶_)
 

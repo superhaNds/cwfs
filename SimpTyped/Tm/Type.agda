@@ -1,4 +1,4 @@
-module Type where
+module SimpTyped.Tm.Type where
 
 open import Relation.Binary.PropositionalEquality using (_≡_ ; refl)
 open import Relation.Nullary using (Dec; yes; no)
@@ -18,13 +18,13 @@ eq⇒₂ : ∀ {α α′ β β′} → α ⇒ β ≡ α′ ⇒ β′ → β ≡ 
 eq⇒₂ refl = refl
 
 _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
-♭        ≟ ♭       = yes refl
-♭        ≟ (_ ⇒ _) = no $ λ ()
-(_ ⇒ _)  ≟ ♭       = no $ λ ()
-(α ⇒ γ)  ≟ (β ⇒ δ) with α ≟ β | γ ≟ δ
-... | yes refl | yes refl = yes refl
-... | no α≠β   | _        = no $ α≠β ∘ eq⇒₁
-... | _        | no γ≠δ   = no $ γ≠δ ∘ eq⇒₂
+♭       ≟ ♭       = yes refl
+♭       ≟ (_ ⇒ _) = no $ λ ()
+(_ ⇒ _) ≟ ♭       = no $ λ ()
+(α ⇒ γ) ≟ (β ⇒ δ) with α ≟ β | γ ≟ δ
+(α ⇒ γ) ≟ (_ ⇒ _) | yes refl | yes refl = yes refl
+...               | no α≠β   | _        = no $ α≠β ∘ eq⇒₁
+...               | _        | no γ≠δ   = no $ γ≠δ ∘ eq⇒₂
 
 ⟦_⟧ᵀ : (α : Ty) → Set
 ⟦ ♭ ⟧ᵀ       = ⊤

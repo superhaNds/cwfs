@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------------
 -- The model of the initial Ucwf object in which everything is explicit
--- in the sense they are part of the language as constructors, similar
--- to the λσ calculus.
+-- in the sense they are part of the language as constructors. It is trivially
+-- a Ucwf.
 ------------------------------------------------------------------------------------
 
 module Unityped.UcwfModel where
@@ -30,25 +30,25 @@ data Term where
 -- m free variables
 
 data Hom where
-  id    : (m : Nat) → Hom m m
+  id    : {m : Nat} → Hom m m
   _∘_   : {m n k : Nat} → Hom n k → Hom m n → Hom m k
-  p     : (n : Nat) → Hom (suc n) n
+  p     : {n : Nat} → Hom (suc n) n
   <>    : {m : Nat} → Hom m zero
   <_,_> : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
 
 weaken : ∀ {n} → Term n → Term (suc n)
-weaken {n} t = t [ p n ] 
+weaken {n} t = t [ p ] 
 
 ⇑_ : ∀ {m n} → Hom m n →  Hom (suc m) (suc n)
-⇑_ ts = < ts ∘ p _ , q >
+⇑_ ts = < ts ∘ p , q >
 
 p′ : (m n : Nat) → Hom (m + n) n
-p′ zero n    = id n
-p′ (suc m) n = p′ m n ∘ p (m + n)
+p′ zero n    = id
+p′ (suc m) n = p′ m n ∘ p
 
 p′′ : (m n : Nat) → Hom (m + n) n
-p′′ zero n = id n
-p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p n ∘ p′′ m (1 + n)
+p′′ zero n = id
+p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p ∘ p′′ m (1 + n)
 
 record Homable (H : Nat → Nat → Set) : Set where
   field
@@ -71,14 +71,14 @@ p2-go homable (suc m) = p-able 0 ∘-able p2-go (suc-homable homable) m where
 
 plus-homable-hom : ∀ k → Homable (λ m n → Hom (m + k) (n + k))
 plus-homable-hom k = record
-  { id-able  = λ n → id (n + k)
+  { id-able  = λ n → id {n + k}
   ; _∘-able_ = _∘_
-  ; p-able   = λ n → p (n + k)
+  ; p-able   = λ n → p {n + k}
   }
 
 p1 : (m n : Nat) → Hom (m + n) n
-p1 zero n    = id n
-p1 (suc m) n = p1 m n ∘ p (m + n)
+p1 zero n    = id
+p1 (suc m) n = p1 m n ∘ p
 
 p2 : (m n : Nat) → Hom (m + n) n
 p2 m n = p2-go (plus-homable-hom n) m
@@ -96,14 +96,14 @@ data _~ₜ_  where
 
   -- Ucwf laws
   
-  termId  : ∀ {n} (u : Term n) → u ~ₜ u [ (id n) ]
+  termId  : ∀ {n} (u : Term n) → u ~ₜ u [ id ]
   qCons   : ∀ {m n} (t : Term n) (ts : Hom n m) → t ~ₜ q [ < ts , t > ]
   clos    : ∀ {m n k} (t : Term n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
 
   -- β and η
   
-  β       : ∀ {n} (t : Term (suc n)) (u : Term n) → app (lam t) u ~ₜ t [ < id n , u > ]
-  η       : ∀ {n} (t : Term n) → lam (app (t [ p n ]) q) ~ₜ t
+  β       : ∀ {n} (t : Term (suc n)) (u : Term n) → app (lam t) u ~ₜ t [ < id , u > ]
+  η       : ∀ {n} (t : Term n) → lam (app (t [ p ]) q) ~ₜ t
 
   -- Substituting an application
   
@@ -118,7 +118,7 @@ data _~ₜ_  where
   
   sym~ₜ    : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
   trans~ₜ  : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
-  cong-[_] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
+  cong-[] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
   cong~ₜ   : ∀ {m n} (f : Term m → Term n) {h u : Term m} → h ~ₜ u → f h ~ₜ f u
   congh~ₜ  : ∀ {m n k} (f : Hom m n → Term k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
 
@@ -129,14 +129,14 @@ data _~ₕ_ where
 
   -- Ucwf laws
   
-  id₀     : id 0 ~ₕ <>
+  id₀     : id {0} ~ₕ <>
   ∘<>     : ∀ {m n} (ts : Hom m n) → (<> ∘ ts) ~ₕ <>
-  varp    : ∀ {n} → id (suc n) ~ₕ < p n , q >
-  idL     : ∀ {m n} (ts : Hom m n) → (id n) ∘ ts ~ₕ ts
-  idR     : ∀ {m n} (ts : Hom m n) → ts ∘ (id m) ~ₕ ts
+  varp    : ∀ {n} → id {suc n} ~ₕ < p , q >
+  idL     : ∀ {m n} (ts : Hom m n) → id ∘ ts ~ₕ ts
+  idR     : ∀ {m n} (ts : Hom m n) → ts ∘ id ~ₕ ts
   assoc   : ∀ {m n k p} (ts : Hom n k) (us : Hom m n) (vs : Hom p m) →
             (ts ∘ us) ∘ vs  ~ₕ ts ∘ (us ∘ vs)
-  pCons   : ∀ {m n} (u : Term m) (us : Hom m n) → us ~ₕ (p  n) ∘ < us , u >
+  pCons   : ∀ {m n} (u : Term m) (us : Hom m n) → us ~ₕ p ∘ < us , u >
   maps    : ∀ {m n k} (t : Term n) (ts : Hom n k) (us : Hom m n) →
             < ts , t > ∘ us  ~ₕ < ts ∘ us , t [ us ] >
 
@@ -184,10 +184,10 @@ HomS {n} {m} =
 
 hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
 hom0~<> ts = begin
-  ts         ≈⟨ sym~ₕ (idL ts) ⟩
-  id 0 ∘ ts  ≈⟨ cong~ₕ (_∘ ts) id₀ ⟩
-  <> ∘ ts    ≈⟨ ∘<> ts ⟩ 
-  <>         ∎
+  ts           ≈⟨ sym~ₕ (idL ts) ⟩
+  id {0} ∘ ts  ≈⟨ cong~ₕ (_∘ ts) id₀ ⟩
+  <> ∘ ts      ≈⟨ ∘<> ts ⟩ 
+  <>           ∎
   where open EqR (HomS {0} {_})
 
 p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
@@ -196,39 +196,23 @@ p′0~<> {m} = hom0~<> (p′ m 0)
 p′′0~<> : ∀ {m} → p′′ m 0 ~ₕ <>
 p′′0~<> {m} = hom0~<> (p′′ m 0)
 
-postulate
-  sublemm : ∀ m n → (p2 (suc m) n ∘ p (suc (m + n))) ~ₕ p2 (suc (suc m)) n
-
-lemmap : ∀ m n → p2 m n ∘ p (m + n) ~ₕ p2 (suc m) n
-lemmap zero n = begin
-  id n ∘ p n       ≈⟨ idL (p n) ⟩
-  p n              ≈⟨ sym~ₕ (idR (p n)) ⟩
-  p n ∘ id (suc n) ∎
-  where open EqR (HomS {_} {_})
-lemmap (suc m) n = sublemm m n
-
-p1=p2 : ∀ m n → p1 m n ~ₕ p2 m n
-p1=p2 zero n    = refl~ₕ
-p1=p2 (suc m) n = trans~ₕ (cong~ₕ (_∘ p (m + n)) (p1=p2 m n))
-                          (lemmap m n)
-
-eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p n ∘ ts , q [ ts ] >
+eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p ∘ ts , q [ ts ] >
 eta ts = begin
-  ts                        ≈⟨ sym~ₕ (idL ts) ⟩
-  id _ ∘ ts                 ≈⟨ cong~ₕ (_∘ ts) varp  ⟩
-  < p _ , q > ∘ ts          ≈⟨ maps q (p _) ts ⟩
-  < p _ ∘ ts , q [ ts ] >   ∎
+  ts                      ≈⟨ sym~ₕ (idL ts) ⟩
+  id ∘ ts                 ≈⟨ cong~ₕ (_∘ ts) varp  ⟩
+  < p , q > ∘ ts          ≈⟨ maps q p ts ⟩
+  < p ∘ ts , q [ ts ] >   ∎
   where open EqR (HomS {_} {_})
 
 qLift : ∀ {m n} (ts : Hom m n) → q [ ⇑ ts ] ~ₜ q
-qLift ts = sym~ₜ (qCons q (ts ∘ p _))
+qLift ts = sym~ₜ (qCons q (ts ∘ p))
 
 qLift₂ : ∀ {m n k} (s : Hom m n) (t : Hom k (suc m)) → q [ (⇑ s) ∘ t ] ~ₜ q [ t ]
 qLift₂ s t = begin
-  q [ (⇑ s) ∘ t ]                    ≈⟨ refl~ₜ ⟩
-  q [ < s ∘ p _ , q > ∘ t ]          ≈⟨ congh~ₜ (_[_] q) (maps q (s ∘ p _) t) ⟩
-  q [ < (s ∘ p _) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p _) ∘ t)) ⟩ 
-  q [ t ]                            ∎
+  q [ (⇑ s) ∘ t ]                  ≈⟨ refl~ₜ ⟩
+  q [ < s ∘ p , q > ∘ t ]          ≈⟨ congh~ₜ (_[_] q) (maps q (s ∘ p) t) ⟩
+  q [ < (s ∘ p) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p) ∘ t)) ⟩ 
+  q [ t ]                          ∎
   where open EqR (TermS {_})
 
 ------------------------------------------------------------------------------------
@@ -259,7 +243,7 @@ Tm-Ucwf = record
             ; clos  = clos
             ; maps  = maps
             ; cong-<,> = cong-<,>
-            ; cong-[_] = cong-[_]
+            ; cong-[_] = cong-[]
             ; cong-∘   = cong-∘
             }
 

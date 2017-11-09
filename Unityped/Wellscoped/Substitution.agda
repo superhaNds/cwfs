@@ -83,8 +83,8 @@ ren2sub = map var
 
 -- The identity substituion
 
-id : ∀ n → Subst n n
-id n = tabulate var
+id : ∀ {n} → Subst n n
+id = tabulate var
 
 -- Weakening a term is renaming it in the projection sub for Fin
 
@@ -130,10 +130,10 @@ _⋆r_ : ∀ {m n k} → Subst m n → Ren k m → Subst k n
 -- the second definition is much easier to reasoin with for many proofs
 
 p' : ∀ {n} → Subst (1 + n) n
-p' = map (λ t → ren t pR) (id _)
+p' = map (λ t → ren t pR) id
 
-p : ∀ n → Subst (1 + n) n
-p n = tabulate (λ x → var (suc x))
+p : ∀ {n} → Subst (1 + n) n
+p = tabulate (λ x → var (suc x))
 
 idFin : ∀ n → Ren n n
 idFin zero = []
@@ -148,13 +148,14 @@ pFn n = sfins (idFin n)
 
 pp : ∀ n → Subst (1 + n) n
 pp n = map var (pFn n)
+
 -- Another version of weakening
 
 weaken' : ∀ {m} → Term m → Term (1 + m)
-weaken' t = t [ p _ ]
+weaken' t = t [ p ]
 
 -- A generalized projection substitution
 
 p′ : ∀ m n → Subst (m + n) n
-p′ zero    n = id n
-p′ (suc m) n = p′ m n ⋆ p (m + n)
+p′ zero    n = id
+p′ (suc m) n = p′ m n ⋆ p

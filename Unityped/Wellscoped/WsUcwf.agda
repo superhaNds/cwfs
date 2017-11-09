@@ -22,31 +22,31 @@ import Relation.Binary.EqReasoning as EqR
 
 -- id = < p , q >
 
-id=pq : ∀ {n} → id (1 + n) ≡ p n ∙ q
+id=pq : ∀ {n} → id {1 + n} ≡ p ∙ q
 id=pq = refl
 
 -- Substituting in the identity gives the same term
 
-t[id] : ∀ {n} (t : Term n) → t [ id n ] ≡ t
-t[id] (var i) = lookup-id _ i
-t[id] (t · u) = trans (cong (_· u [ id _ ]) (t[id] t))
+t[id] : ∀ {n} (t : Term n) → t [ id ] ≡ t
+t[id] (var i) = lookup-id i
+t[id] (t · u) = trans (cong (_· u [ id ]) (t[id] t))
                       (cong (_·_ t) (t[id] u))
 t[id] (ƛ t) = begin
-  ƛ (t [ ↑ₛ id _ ])   ≡⟨⟩
-  ƛ (t [ p' ∙ q ])    ≡⟨ cong (λ x → ƛ (t [ x ∙ q ])) (sym pS=p') ⟩
-  ƛ (t [ p _ ∙ q ])   ≡⟨ cong (ƛ ∘ t [_]) (sym id=pq) ⟩
-  ƛ (t [ id _ ])      ≡⟨ cong ƛ (t[id] t) ⟩
-  ƛ t                 ∎
+  ƛ (t [ ↑ₛ id ])   ≡⟨⟩
+  ƛ (t [ p' ∙ q ])  ≡⟨ cong (λ x → ƛ (t [ x ∙ q ])) (sym p=p') ⟩
+  ƛ (t [ p ∙ q ])   ≡⟨ cong (ƛ ∘ t [_]) (sym id=pq) ⟩
+  ƛ (t [ id ])      ≡⟨ cong ƛ (t[id] t) ⟩
+  ƛ t               ∎
   where open P.≡-Reasoning
 
-t[id]~ : ∀ {n} (t : Term n) → t [ id n ] ~ t
-t[id]~ (var i) rewrite lookup-id _ i = varcong i
+t[id]~ : ∀ {n} (t : Term n) → t [ id ] ~ t
+t[id]~ (var i) rewrite lookup-id i = varcong i
 t[id]~ (t · u) = apcong (t[id]~ t) (t[id]~ u)
 t[id]~ (ƛ t) = begin
-  ƛ (t [ ↑ₛ id _ ]) ≈⟨ refl~ ⟩
-  ƛ (t [ p' ∙ q ])  ≈⟨ cong≡~ (λ x → ƛ (t [ x ∙ q ])) (sym pS=p') ⟩
-  ƛ (t [ p _ ∙ q ]) ≈⟨ ξ (t [ p _ ∙ q ]) t (t[id]~ t) ⟩
-  ƛ t               ∎
+  ƛ (t [ ↑ₛ id ])  ≈⟨ refl~ ⟩
+  ƛ (t [ p' ∙ q ]) ≈⟨ cong≡~ (λ x → ƛ (t [ x ∙ q ])) (sym p=p') ⟩
+  ƛ (t [ p ∙ q ])  ≈⟨ ξ (t [ p ∙ q ]) t (t[id]~ t) ⟩
+  ƛ t              ∎
   where open EqR (TermSetoid {_})
   
 -- Substituting in a composition is applying the substitution to the first and then the second
@@ -66,7 +66,7 @@ t[id]~ (ƛ t) = begin
 
 -- identity sub of zero
 
-id₀[] : id 0 ≡ []
+id₀[] : id {0} ≡ []
 id₀[] = refl
 
 -- the empty substitution is a left absorbing element (left zero)
@@ -76,7 +76,7 @@ id₀[] = refl
 
 -- Composing with the projection substitution drops the last element
 
-p⋆Cons : ∀ {n k} (t : Term n) (σ : Subst n k) → p k ⋆ (σ ∙ t) ≡ σ
+p⋆Cons : ∀ {n k} (t : Term n) (σ : Subst n k) → p ⋆ (σ ∙ t) ≡ σ
 p⋆Cons t σ = trans (p∘-lookup (σ ∙ t)) (map-lookup-↑ (σ ∙ t))
 
 -- Category of substitutions
@@ -87,29 +87,30 @@ p⋆Cons t σ = trans (p∘-lookup (σ ∙ t)) (map-lookup-↑ (σ ∙ t))
          (σ ⋆ γ) ⋆ δ ≡ σ ⋆ (γ ⋆ δ)
 ⋆-asso [] γ δ = refl
 ⋆-asso (t ∷ σ) γ δ = sym $ begin
-  (σ ∙ t) ⋆ (γ ⋆ δ)              ≡⟨⟩
-  σ ⋆ (γ ⋆ δ) ∙ t [ γ ⋆ δ ]      ≡⟨ cong (λ x → x ∷ _) ([]-asso t γ δ) ⟩
-  σ ⋆ (γ ⋆ δ) ∙ t [ γ ] [ δ ]    ≡⟨ sym $ cong (t [ γ ] [ δ ] ∷_) (⋆-asso σ γ δ) ⟩
-  (σ ⋆ γ) ⋆ δ ∙ t [ γ ] [ δ ]    ∎
+  (σ ∙ t) ⋆ (γ ⋆ δ)            ≡⟨⟩
+  σ ⋆ (γ ⋆ δ) ∙ t [ γ ⋆ δ ]    ≡⟨ cong (λ x → x ∷ _) ([]-asso t γ δ) ⟩
+  σ ⋆ (γ ⋆ δ) ∙ t [ γ ] [ δ ]  ≡⟨ sym $ cong (t [ γ ] [ δ ] ∷_) (⋆-asso σ γ δ) ⟩
+  (σ ⋆ γ) ⋆ δ ∙ t [ γ ] [ δ ]  ∎
   where open P.≡-Reasoning
 
 -- id is a left identity
 
-∘-lid : ∀ {m n} (σ : Subst m n) → id n ⋆ σ ≡ σ
+∘-lid : ∀ {m n} (σ : Subst m n) → id ⋆ σ ≡ σ
 ∘-lid [] = refl
 ∘-lid (x ∷ σ) = begin
-  id _ ⋆ (σ ∙ x)        ≡⟨ ⋆=⋆₂ (id _) (σ ∙ x) ⟩
-  p _  ⋆₂ (σ ∙ x) ∙ x   ≡⟨ cong (_∙ x) (sym $ ⋆=⋆₂ (p _) (σ ∙ x)) ⟩
-  p _ ⋆ (σ ∙ x) ∙ x     ≡⟨ cong (_∙ x) (p⋆Cons x σ) ⟩
-  σ ∙ x                 ∎
+  id ⋆ (σ ∙ x)      ≡⟨ ⋆=⋆₂ id (σ ∙ x) ⟩
+  p ⋆₂ (σ ∙ x) ∙ x  ≡⟨ cong (_∙ x) (sym $ ⋆=⋆₂ p (σ ∙ x)) ⟩
+  p ⋆ (σ ∙ x) ∙ x   ≡⟨ cong (_∙ x) (p⋆Cons x σ) ⟩
+  σ ∙ x             ∎
   where open P.≡-Reasoning
 
 -- id is a right identity (the proofs differ as composition is not a symmetric)
 
-∘-rid : ∀ {m n} (σ : Subst m n) → σ ⋆ id m  ≡ σ
+∘-rid : ∀ {m n} (σ : Subst m n) → σ ⋆ id ≡ σ
 ∘-rid [] = refl
-∘-rid (t ∷ σ) rewrite t[id] t
-                    | ∘-rid σ = refl
+∘-rid (t ∷ σ)
+  rewrite t[id] t
+        | ∘-rid σ = refl
 
 -- Substituting the De Bruijn zero variable takes the last assumption
 

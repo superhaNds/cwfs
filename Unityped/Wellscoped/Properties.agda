@@ -18,8 +18,8 @@ open ≡-Reasoning
 -----------------------------------------------------------------------------------------
 -- Properties mostly relating lookups in substitutions, renamings, weakening
 
-lookup-id : ∀ n i → lookup i (id n) ≡ var i
-lookup-id _ i = lookup∘tabulate var i
+lookup-id : ∀ {n} i → lookup i (id {n}) ≡ var i
+lookup-id i = lookup∘tabulate var i
 
 lookupIn↑ : ∀ n i → lookup i (1toN n) ≡ suc i
 lookupIn↑ n i = lookup∘tabulate suc i
@@ -52,20 +52,20 @@ wkVar i = begin
   var (suc i)        ∎
 
 lookup-p' : ∀ {n} i → lookup i (p' {n}) ≡ var (suc i)
-lookup-p' i = begin
-  lookup i (map weakenₛ (id _))  ≡⟨ sym (lookupMap _ i (id _)) ⟩
-  weakenₛ (lookup i (id _))      ≡⟨ cong weakenₛ (lookup-id _ i) ⟩
+lookup-p' {n} i = begin
+  lookup i (map weakenₛ id)      ≡⟨ sym (lookupMap _ i (id {n})) ⟩
+  weakenₛ (lookup i (id {n}))    ≡⟨ cong weakenₛ (lookup-id i) ⟩
   weakenₛ (var i)                ≡⟨ wkVar i ⟩
-  var (suc i) ∎
+  var (suc i)                    ∎
 
-lookup-p : ∀ {n} i → lookup i (p n) ≡ var (suc i)
+lookup-p : ∀ {n} i → lookup i (p {n}) ≡ var (suc i)
 lookup-p i = begin
   lookup i (tabulate (λ i → var (suc i)))  ≡⟨ cong (lookup i) (tabulate-∘ var suc) ⟩
   lookup i (map var (tabulate suc))        ≡⟨ sym $ lookupMap _ i (tabulate suc) ⟩
   var (lookup i (tabulate suc))            ≡⟨ cong var (lookup∘tabulate suc i) ⟩
   var (suc i)                              ∎
 
-p-lookup-eq : ∀ {n} i → lookup i (p n) ≡ lookup i (p' {n})
+p-lookup-eq : ∀ {n} i → lookup i p ≡ lookup i (p' {n})
 p-lookup-eq i = trans (lookup-p i) (sym (lookup-p' i))
 
 allEqLookup : ∀ {A : Set} {n : Nat} (xs : Vec A n) (ys : Vec A n) →
@@ -77,10 +77,10 @@ allEqLookup (x ∷ xs) (y ∷ ys) φ = begin
   _         ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (sym ∘ φ ∘ suc))) ⟩
   y ∷ ys    ∎
 
-pS=p' : ∀ {n} → p n ≡ p' {n}
-pS=p' = allEqLookup (p _) p' p-lookup-eq
+p=p' : ∀ {n} → p {n} ≡ p' {n}
+p=p' = allEqLookup p p' p-lookup-eq
 
-tail-id-p : ∀ {n} → tail (id (1 + n)) ≡ p n
+tail-id-p : ∀ {n} → tail (id {1 + n}) ≡ p {n}
 tail-id-p = refl
 
 map-lookup-↑ : ∀ {n m} (ts : Subst m (1 + n)) →
@@ -91,7 +91,7 @@ map-lookup-↑ (t ∷ ts) = begin
   ts                                    ∎
 
 p∘-lookup : ∀ {m n} (ts : Subst m (1 + n)) →
-            p n ⋆ ts ≡ map (flip lookup ts) (1toN n)
+            p {n} ⋆ ts ≡ map (flip lookup ts) (1toN n)
 p∘-lookup ts = begin
   map (_[ ts ]) (tabulate (λ x → var (suc x)))  ≡⟨ cong (map (_[ ts ])) (tabulate-∘ var suc) ⟩
   map (_[ ts ]) (map var (tabulate suc))        ≡⟨⟩
@@ -199,20 +199,20 @@ r⋆-asso is ts (ƛ t) = trans (cong (ƛ ∘ t [_]) (↑-↑ₛ-dist is ts))
 ⋆=⋆₂ [] ω = refl
 ⋆=⋆₂ (t ∷ σ) ω = cong (λ x → _ ∷ x) (⋆=⋆₂ σ ω)
 
-var[p] : ∀ {n} (i : Fin n) → var i [ p n ] ≡ var (suc i)
+var[p] : ∀ {n} (i : Fin n) → var i [ p {n} ] ≡ var (suc i)
 var[p] i = lookup-p i
 
 postulate 
-  renλ : ∀ {n} (t : Term (1 + n)) → ren t (↑ pR) ≡ t [ ↑ₛ (p n) ]
+  renλ : ∀ {n} (t : Term (1 + n)) → ren t (↑ pR) ≡ t [ ↑ₛ p ]
 
-wk-[p] : ∀ {n} (t : Term n) → weakenₛ t ≡ t [ p n ]
+wk-[p] : ∀ {n} (t : Term n) → weakenₛ t ≡ t [ p {n} ]
 wk-[p] (var ι) = trans (wkVar ι) (sym $ var[p] ι)
 wk-[p] (t · u) = cong₂ _·_ (wk-[p] t) (wk-[p] u)
 wk-[p] (ƛ t)   = cong ƛ (renλ t)
 
-mapWk-⋆p : ∀ {m n} (σ : Subst m n) → σ ⋆ p _ ≡ map weakenₛ σ
+mapWk-⋆p : ∀ {m n} (σ : Subst m n) → σ ⋆ p ≡ map weakenₛ σ
 mapWk-⋆p [] = refl
-mapWk-⋆p (x ∷ σ) = trans (cong (_∷ σ ⋆ p _) (sym $ wk-[p] x))
+mapWk-⋆p (x ∷ σ) = trans (cong (_∷ σ ⋆ p) (sym $ wk-[p] x))
                          (cong (weakenₛ x ∷_) (mapWk-⋆p σ))
 
 p′0=[] : ∀ {m} → p′ m 0 ≡ []

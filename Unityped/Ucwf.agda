@@ -27,24 +27,24 @@ record Ucwf : Set₁ where
     _~ₕ_   : ∀ {m n} → Rel (Hom m n) lzero
 
     -- operator symbols
-    id     : (ν : Nat) → Hom ν ν
+    id     : {ν : Nat} → Hom ν ν
     <>     : {μ : Nat} → Hom μ 0
-    p      : (ν : Nat) → Hom (suc ν) ν
+    p      : {ν : Nat} → Hom (suc ν) ν
     q      : {ν : Nat} → Term (suc ν)
     _∘_    : {μ ν k : Nat} → Hom ν k → Hom μ ν → Hom μ k
     _[_]   : {μ ν : Nat} → Term ν → Hom μ ν → Term μ
     <_,_>  : {μ ν : Nat} → Hom μ ν → Term μ → Hom μ (suc ν)
 
     -- axioms
-    id₀   : id 0 ~ₕ <>
+    id₀   : id {0} ~ₕ <>
     ∘<>   : ∀ {μ ν : Nat} (ts : Hom μ ν) → <> ∘ ts ~ₕ <> 
-    varp  : ∀ {ν : Nat} → id (suc ν) ~ₕ < p ν , q >
-    idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ν ∘ ts ~ₕ ts
-    idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id μ ~ₕ ts
+    varp  : ∀ {ν : Nat} → id {suc ν} ~ₕ < p , q >
+    idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ∘ ts ~ₕ ts
+    idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id ~ₕ ts
     assoc : ∀ {μ ν κ ι : Nat} (ts : Hom ν κ) (us : Hom μ ν) (vs : Hom ι μ) →
              (ts ∘ us) ∘ vs ~ₕ ts ∘ (us ∘ vs)
-    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ν ] ~ₜ t
-    pCons : ∀ {μ ν κ : Nat} → (t : Term ν) → (ts : Hom ν κ) → p κ ∘ < ts , t > ~ₕ ts
+    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ] ~ₜ t
+    pCons : ∀ {μ ν κ : Nat} → (t : Term ν) → (ts : Hom ν κ) → p ∘ < ts , t > ~ₕ ts
     qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q [ < ts , t > ] ~ₜ t
     clos  : ∀ {μ ν κ : Nat} (t : Term ν) (ts : Hom μ ν) (us : Hom κ μ) →
              t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
@@ -60,10 +60,10 @@ record Ucwf : Set₁ where
                 ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs
   
   ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
-  ⇑ ts = < ts ∘ p _ , q >
+  ⇑ ts = < ts ∘ p , q >
 
   weaken : ∀ {m} → Term m → Term (suc m)
-  weaken {m} = _[ p m ] 
+  weaken {m} = _[ p ] 
 
 -- Extending the pure ucwf with lambdas and applications
 
@@ -90,6 +90,6 @@ record Lambda-βη-ucwf : Set₁ where
   open Lambda-ucwf lambda-ucwf public
 
   field
-    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → ƛ t · u ~ₜ t [ < id ν , u > ]
+    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → ƛ t · u ~ₜ t [ < id , u > ]
     η   : {ν : Nat} (t : Term ν) → ƛ (weaken t · q) ~ₜ t
     

@@ -43,16 +43,16 @@ import Relation.Binary.EqReasoning as EqR
 
 -- Ucwf terms to lambda terms, (substitution is a constructor which is mapped to the meta operation)
 
-⟪ q ⟫         = vr 0
+⟪ q ⟫         = var zero
 ⟪ t `[ us ] ⟫ = ⟪ t ⟫ [ ⟪ us ⟫ʰ ]
 ⟪ lam t ⟫     = ƛ ⟪ t ⟫
 ⟪ app t u ⟫   = ⟪ t ⟫ · ⟪ u ⟫
 
 -- Homs to vector substitutions
 
-⟪ id n ⟫ʰ       = id~ n
+⟪ id ⟫ʰ         = id~
 ⟪ ts ∘ us ⟫ʰ    = ⟪ ts ⟫ʰ ⋆ ⟪ us ⟫ʰ
-⟪ p n ⟫ʰ        = p~ n
+⟪ p ⟫ʰ          = p~
 ⟪ <> ⟫ʰ         = []
 ⟪ < ts , t > ⟫ʰ = ⟪ ts ⟫ʰ ∙ ⟪ t ⟫
 
@@ -61,10 +61,10 @@ import Relation.Binary.EqReasoning as EqR
 
 -- auxiliary props
 
-lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ n ⟧ˢ
+lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ ⟧ˢ
   
-p~⟦p⟧ : ∀ n → p n ~ₕ ⟦ p~ n ⟧ˢ
-p~⟦p⟧ n = sym~ₕ (trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n)))
+p~⟦p⟧ : ∀ {n} → p ~ₕ ⟦ p~ ⟧ˢ
+p~⟦p⟧ {n} = sym~ₕ (trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n)))
 
 -- Interpreting a composition distributes
 
@@ -78,10 +78,10 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 
 []-comm (var zero)    (x ∷ σ) = qCons ⟦ x ⟧ ⟦ σ ⟧ˢ
 []-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
-  ⟦ var ι ⟧ `[ p _ ] `[ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ] ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ (p _) < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
-  ⟦ var ι ⟧ `[ p _ ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (congh~ₜ (_`[_] ⟦ var ι ⟧) (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
-  ⟦ var ι ⟧ `[ ⟦ σ ⟧ˢ ]                      ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
-  ⟦ lookup ι σ ⟧                             ∎
+  ⟦ var ι ⟧ `[ p ] `[ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ] ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
+  ⟦ var ι ⟧ `[ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (congh~ₜ (_`[_] ⟦ var ι ⟧) (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
+  ⟦ var ι ⟧ `[ ⟦ σ ⟧ˢ ]                    ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
+  ⟦ lookup ι σ ⟧                           ∎
   where open EqR (TermS {_})
 
 []-comm (t · u) σ = begin
@@ -94,13 +94,13 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 []-comm (ƛ t) σ = begin
   lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
   lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ˢ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ x ])) help ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ _ ⟧ˢ , q > ])      ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) (⟦⟧-∘-distₚ σ (p~ _)) ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ _ ⟧ˢ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ x , q > ]))
-                                                         (sym~ₕ (p~⟦p⟧ _)) ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ p _ , q > ])       ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])        ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) (⟦⟧-∘-distₚ σ p~) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])   ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ x , q > ]))
+                                                         (sym~ₕ (p~⟦p⟧)) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ p , q > ])         ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
   lam ⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]                       ∎
   where open EqR (TermS {_})
-        help : < ⟦ map weaken~ σ ⟧ˢ , q > ~ₕ < ⟦ σ ⋆ p~ _ ⟧ˢ , q >
+        help : < ⟦ map weaken~ σ ⟧ˢ , q > ~ₕ < ⟦ σ ⋆ p~ ⟧ˢ , q >
         help rewrite sym (mapWk-⋆p σ) = refl~ₕ
 
 ⟦⟧-∘-dist [] γ = sym~ₕ (∘<> ⟦ γ ⟧ˢ)
@@ -133,7 +133,7 @@ ws∘cwf (t · u) = apcong (ws∘cwf t) (ws∘cwf u)
 ws∘cwf (var zero) = refl~
 ws∘cwf (var (suc i))
   rewrite sym $ lookup-p i
-     = cong~ (λ x → x [ p~ _ ]) (ws∘cwf (var i))
+     = cong~ (λ x → x [ p~ ]) (ws∘cwf (var i))
 
 -- t ∈ Tm-cwf n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
 
@@ -149,30 +149,30 @@ cwf∘ws (t `[ us ]) = sym~ₜ $ begin
 
 -- h ∈ Hom m n ⇒ ⟦ ⟪ h ⟫ ⟧ ~ h
 
-hom∘sub (id zero) = id₀
-hom∘sub (id (suc m)) = begin
-  id (1 + m)                  ≈⟨ varp {m} ⟩
-  < p m , q >                 ≈⟨ cong~ₕ (<_, q >) (p~⟦p⟧ m) ⟩
-  < ⟦ p~ m ⟧ˢ , q >           ∎
+hom∘sub (id {zero}) = id₀
+hom∘sub (id {suc m}) = begin
+  id {1 + m}                ≈⟨ varp ⟩
+  < p , q >                 ≈⟨ cong~ₕ (<_, q >) p~⟦p⟧ ⟩
+  < ⟦ p~ ⟧ˢ , q >           ∎
   where open EqR (HomS {_} {_})
 
 hom∘sub (h ∘ g) = sym~ₕ $ begin
-  ⟦ ⟪ h ⟫ʰ ⋆ ⟪ g ⟫ʰ ⟧ˢ          ≈⟨ ⟦⟧-∘-dist ⟪ h ⟫ʰ ⟪ g ⟫ʰ ⟩
-  ⟦ ⟪ h ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ     ≈⟨ sym~ₕ (cong~ₕ (_∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ) (hom∘sub h)) ⟩
-  h ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ               ≈⟨ sym~ₕ (cong~ₕ (_∘_ h) (hom∘sub g)) ⟩
-  h ∘ g                         ∎
+  ⟦ ⟪ h ⟫ʰ ⋆ ⟪ g ⟫ʰ ⟧ˢ       ≈⟨ ⟦⟧-∘-dist ⟪ h ⟫ʰ ⟪ g ⟫ʰ ⟩
+  ⟦ ⟪ h ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ  ≈⟨ sym~ₕ (cong~ₕ (_∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ) (hom∘sub h)) ⟩
+  h ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ            ≈⟨ sym~ₕ (cong~ₕ (_∘_ h) (hom∘sub g)) ⟩
+  h ∘ g                      ∎
   where open EqR (HomS {_} {_})
  
-hom∘sub (p n) = p~⟦p⟧ n
+hom∘sub p = p~⟦p⟧
 
 hom∘sub <> = refl~ₕ
 hom∘sub < h , x > = begin
-  < h , x >                     ≈⟨ cong~ₕ (<_, x >) (hom∘sub h) ⟩
-  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , x >           ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
-  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >   ∎
+  < h , x >                    ≈⟨ cong~ₕ (<_, x >) (hom∘sub h) ⟩
+  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , x >          ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
+  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >  ∎
   where open EqR (HomS {_} {_})
 
-postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ (suc n) ⟧ˢ
+postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ ⟧ˢ
 
 lemmaₚ zero = cong~ₕ (λ _ → <>) id₀
 lemmaₚ (suc n) = obv n

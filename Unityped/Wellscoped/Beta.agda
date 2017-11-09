@@ -25,7 +25,7 @@ data _~_  {n : Nat} : (t u : Term n) → Set where
   varcong : (i : Fin n) → var i ~ var i
   apcong  : {t u t′ u′ : Term n} → t ~ t′ → u ~ u′ → t · u ~ t′ · u′
   ξ       : (t u : Term (1 + n)) → t ~ u → ƛ t ~ ƛ u
-  β       : (t : Term (1 + n)) (u : Term n) → ƛ t · u ~ t [ id n ∙ u ]
+  β       : (t : Term (1 + n)) (u : Term n) → ƛ t · u ~ t [ id ∙ u ]
   η       : (t : Term n) → ƛ (weakenₛ t · q) ~ t
   sym~    : {t₁ t₂ : Term n} → t₁ ~ t₂ → t₂ ~ t₁
   trans~  : {t₁ t₂ t₃ : Term n} → t₁ ~ t₂ → t₂ ~ t₃ → t₁ ~ t₃
