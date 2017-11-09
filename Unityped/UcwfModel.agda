@@ -118,9 +118,9 @@ data _~ₜ_  where
   
   sym~ₜ    : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
   trans~ₜ  : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
+  cong-app  : ∀ {n} {t u t′ u′ : Term n} → t ~ₜ t′ → u ~ₜ u′ → app t u ~ₜ app t′ u′
   cong-[] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
-  cong~ₜ   : ∀ {m n} (f : Term m → Term n) {h u : Term m} → h ~ₜ u → f h ~ₜ f u
-  congh~ₜ  : ∀ {m n k} (f : Hom m n → Term k) {h v : Hom m n} → h ~ₕ v → f h ~ₜ f v
+  cong-lam    : ∀ {n} {t u : Term (1 + n)} → t ~ₜ u → lam t ~ₜ lam u
 
 refl~ₜ : ∀ {n} {u : Term n} → u ~ₜ u
 refl~ₜ = trans~ₜ (termId _) (sym~ₜ (termId _))
@@ -148,8 +148,6 @@ data _~ₕ_ where
              t ~ₜ u → ts ~ₕ us → < ts , t > ~ₕ < us , u >
   cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
              ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs             
-  cong~ₕ   : ∀ {m n k p} (f : Hom m n → Hom k p) {h u : Hom m n} → h ~ₕ u → f h ~ₕ f u
-  congt~ₕ  : ∀ {m n} (f : Term m → Hom m n) {t u : Term m} → t ~ₜ u → f t ~ₕ f u
 
 ------------------------------------------------------------------------------------
 -- The relations are equivalence ones, plus setoid instances
@@ -185,7 +183,7 @@ HomS {n} {m} =
 hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
 hom0~<> ts = begin
   ts           ≈⟨ sym~ₕ (idL ts) ⟩
-  id {0} ∘ ts  ≈⟨ cong~ₕ (_∘ ts) id₀ ⟩
+  id {0} ∘ ts  ≈⟨ cong-∘ id₀ refl~ₕ ⟩
   <> ∘ ts      ≈⟨ ∘<> ts ⟩ 
   <>           ∎
   where open EqR (HomS {0} {_})
@@ -199,7 +197,7 @@ p′′0~<> {m} = hom0~<> (p′′ m 0)
 eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p ∘ ts , q [ ts ] >
 eta ts = begin
   ts                      ≈⟨ sym~ₕ (idL ts) ⟩
-  id ∘ ts                 ≈⟨ cong~ₕ (_∘ ts) varp  ⟩
+  id ∘ ts                 ≈⟨ cong-∘ varp refl~ₕ  ⟩
   < p , q > ∘ ts          ≈⟨ maps q p ts ⟩
   < p ∘ ts , q [ ts ] >   ∎
   where open EqR (HomS {_} {_})
@@ -210,13 +208,13 @@ qLift ts = sym~ₜ (qCons q (ts ∘ p))
 qLift₂ : ∀ {m n k} (s : Hom m n) (t : Hom k (suc m)) → q [ (⇑ s) ∘ t ] ~ₜ q [ t ]
 qLift₂ s t = begin
   q [ (⇑ s) ∘ t ]                  ≈⟨ refl~ₜ ⟩
-  q [ < s ∘ p , q > ∘ t ]          ≈⟨ congh~ₜ (_[_] q) (maps q (s ∘ p) t) ⟩
+  q [ < s ∘ p , q > ∘ t ]          ≈⟨ cong-[] refl~ₜ (maps q (s ∘ p) t) ⟩
   q [ < (s ∘ p) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p) ∘ t)) ⟩ 
   q [ t ]                          ∎
   where open EqR (TermS {_})
 
 ------------------------------------------------------------------------------------
--- The term model instantiated as a Ucwf
+-- The term model is trivially a ucwf
 
 Tm-Ucwf : Ucwf
 Tm-Ucwf = record
@@ -249,11 +247,13 @@ Tm-Ucwf = record
 
 Tm-λ$-ucwf : Lambda-ucwf
 Tm-λ$-ucwf = record
-               { ucwf = Tm-Ucwf
-               ; ƛ    = lam
-               ; _·_  = app
-               ; app  = appCm
-               ; abs  = lamCm
+               { ucwf   = Tm-Ucwf
+               ; ƛ      = lam
+               ; _·_    = app
+               ; cong-ƛ = cong-lam
+               ; cong-· = cong-app
+               ; app    = appCm
+               ; abs    = lamCm
                }
 
 Tm-λβη-ucwf : Lambda-βη-ucwf

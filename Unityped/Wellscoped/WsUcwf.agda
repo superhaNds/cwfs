@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas  #-}
 -------------------------------------------------------------------------------
 -- Proofs of the equational laws of a ucwf and a λβ-ucwf for the wellscoped
 -- terms.
@@ -45,7 +46,7 @@ t[id]~ (t · u) = apcong (t[id]~ t) (t[id]~ u)
 t[id]~ (ƛ t) = begin
   ƛ (t [ ↑ₛ id ])  ≈⟨ refl~ ⟩
   ƛ (t [ p' ∙ q ]) ≈⟨ cong≡~ (λ x → ƛ (t [ x ∙ q ])) (sym p=p') ⟩
-  ƛ (t [ p ∙ q ])  ≈⟨ ξ (t [ p ∙ q ]) t (t[id]~ t) ⟩
+  ƛ (t [ p ∙ q ])  ≈⟨ ξ (t[id]~ t) ⟩
   ƛ t              ∎
   where open EqR (TermSetoid {_})
   
@@ -62,7 +63,11 @@ t[id]~ (ƛ t) = begin
 
 []-asso~ : ∀ {m n k} (t : Term n) (ρ : Subst m n) (σ : Subst k m) →
            t [ ρ ⋆ σ ] ~ t [ ρ ] [ σ ]
-[]-asso~ t ρ σ rewrite []-asso t ρ σ = refl~
+[]-asso~ (var zero) (x ∷ ρ) σ = refl~
+[]-asso~ (var (suc i)) (x ∷ ρ) σ = []-asso~ (var i) ρ σ
+[]-asso~ (t · u) ρ σ = apcong ([]-asso~ t ρ σ) ([]-asso~ u ρ σ)
+[]-asso~ (ƛ t) ρ σ = trans~ (ξ (cong-[] {t = t} refl~ (↑ₛ-dist ρ σ)))
+                            (ξ ([]-asso~ t (↑ₛ ρ) (↑ₛ σ)))
 
 -- identity sub of zero
 
@@ -123,21 +128,9 @@ maps : ∀ {m n} (t : Term n) (σ : Subst n m) (γ : Subst m n) →
        (σ ∙ t) ⋆ γ ≡ (σ ⋆ γ) ∙ t [ γ ]
 maps t σ γ = refl
 
---cong-• : ∀ {m n} {t u : Term m} {ρ σ : Subst m n} →
---           t ~ u → ρ ≡ σ → ρ ∙ t ≡ σ ∙ u
---cong-• t~u refl = {!!}
-
-cong-[_] : ∀ {m n} {t u : Term n} {ρ σ : Subst m n} →
-           t ~ u → ρ ≡ σ → (t [ ρ ]) ~ (u [ σ ])
-cong-[ t~u ] refl = cong~ (_[ _ ]) t~u
-
-cong-⋆ : ∀ {m n k } {ρ ρ' : Subst n k} {σ σ' : Subst m n} →
-         ρ ≡ ρ' → σ ≡ σ' → ρ ⋆ σ ≡ ρ' ⋆ σ'
-cong-⋆ refl refl = refl         
-
 ----------------------------------------------------------------------------------
 -- Terms form a pure ucwf
-{-
+
 Tm-ucwf : Ucwf
 Tm-ucwf = record
             { Term  = Term
@@ -162,26 +155,28 @@ Tm-ucwf = record
             ; qCons = q[]
             ; clos  = []-asso~
             ; maps  = maps
-            ; cong-<,> = {!!}
-            ; cong-[_] = cong-[_]
+            ; cong-<,> = cong-∙
+            ; cong-[_] = cong-[]
             ; cong-∘   = cong-⋆
             }
 
 ------------------------------------------------------------------------------------
 -- Term is also a Ucwf with lambda - application and with β - η
 
-η′ : ∀ {n} (t : Term n) → ƛ (t [ p n ] · q) ~ t
+η′ : ∀ {n} (t : Term n) → ƛ (t [ p ] · q) ~ t
 η′ t = trans~ (cong≡~ (λ x → ƛ (x · q)) (sym $ wk-[p] t)) (η t) 
 
-abs : ∀ {n m} (t : Term (1 + n)) (σ : Subst m n) → ƛ t [ σ ] ~ ƛ (t [ (σ ⋆ p m) ∙ q ])
+abs : ∀ {n m} (t : Term (1 + n)) (σ : Subst m n) → ƛ t [ σ ] ~ ƛ (t [ (σ ⋆ p) ∙ q ])
 abs t σ = sym~ $ cong≡~ (λ x → ƛ (t [ x ∙ q ] )) (mapWk-⋆p σ)
 
 Tm-λ-ucwf : Lambda-ucwf
-Tm-λ-ucwf = record { ucwf = Tm-ucwf
-                   ; ƛ    = ƛ
-                   ; _·_  = _·_
-                   ; app  = λ _ _ _ → refl~
-                   ; abs  = abs
+Tm-λ-ucwf = record { ucwf   = Tm-ucwf
+                   ; ƛ      = ƛ
+                   ; _·_    = _·_
+                   ; cong-ƛ = ξ
+                   ; cong-· = apcong
+                   ; app    = λ _ _ _ → refl~
+                   ; abs    = abs
                    }
 
 Tm-λβη-ucwf : Lambda-βη-ucwf
@@ -189,4 +184,3 @@ Tm-λβη-ucwf = record { lambda-ucwf = Tm-λ-ucwf
                      ; β   = β
                      ; η   = η′
                      }
--}

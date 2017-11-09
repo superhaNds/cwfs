@@ -35,7 +35,7 @@ var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~ₕ vars (sucs is)
 var-lemma <> = ∘<> p
 var-lemma < is , i > = begin
   < vars is , var i > ∘ p           ≈⟨ maps (var i) (vars is) p ⟩
-  < vars is ∘ p , var i [ p ] >     ≈⟨ cong~ₕ (<_, var i [ p ] >) (var-lemma is) ⟩
+  < vars is ∘ p , var i [ p ] >     ≈⟨ cong-<,> refl~ₜ (var-lemma is) ⟩
   < vars (sucs is) , var (suc i) >  ≈⟨ refl~ₕ ⟩
   vars (sucs < is , i > )           ∎
   where open EqR (HomS {_} {_})
@@ -44,8 +44,8 @@ p~vars : ∀ n → p ~ₕ pNorm n
 p~vars zero = hom0~<> (p {0})
 p~vars (suc n) = begin
   p                                           ≈⟨ eta p ⟩
-  < p ∘ p , q [ p ] >                         ≈⟨ cong~ₕ (λ x → < x ∘ p , q [ p ] >) (p~vars n) ⟩
-  < vars (pFins n) ∘ p , q [ p ] >            ≈⟨ cong~ₕ (<_, q [ p ] >) (var-lemma (sucs (idFins n))) ⟩
+  < p ∘ p , q [ p ] >                         ≈⟨ cong-<,> refl~ₜ (cong-∘ (p~vars n) (refl~ₕ)) ⟩
+  < vars (pFins n) ∘ p , q [ p ] >            ≈⟨ cong-<,> refl~ₜ (var-lemma (sucs (idFins n))) ⟩
   < vars (sucs (pFins n)) , q [ p ] >         ≈⟨ refl~ₕ ⟩
   < vars (sucs (sucs (idFins n))) , q [ p ] > ∎
   where open EqR (HomS {_} {_})

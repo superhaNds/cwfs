@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas  #-}
 ---------------------------------------------------------------------------------------------------
 -- Contains the definitions of the bijections between the setoids of wellscoped terms and terms as
 -- a Ucwf. Moreover, a proof that they are inverses of each other, which means the objects
@@ -13,11 +14,11 @@ open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
 open import Unityped.UcwfModel renaming (Term to Tm-cwf ; _[_] to _`[_])
 open import Unityped.Wellscoped
-  renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~)
+  renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~ ; cong-[] to cong-[]λ)
   hiding (maps)
 open import Unityped.Projection renaming (var to varPr)
 open import Unityped.Wellscoped.Properties  
-open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_] ; cong-app)
 import Relation.Binary.EqReasoning as EqR
 
 ---------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ import Relation.Binary.EqReasoning as EqR
 ---------------------------------------------------------------------------------------------------
 -- Proofs that the translation functions are inverses of each other
 
--- auxiliary props
+-- Auxiliary props
 
 lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ ⟧ˢ
   
@@ -79,24 +80,23 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 []-comm (var zero)    (x ∷ σ) = qCons ⟦ x ⟧ ⟦ σ ⟧ˢ
 []-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
   ⟦ var ι ⟧ `[ p ] `[ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ] ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
-  ⟦ var ι ⟧ `[ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (congh~ₜ (_`[_] ⟦ var ι ⟧) (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
+  ⟦ var ι ⟧ `[ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (cong-[] refl~ₜ (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
   ⟦ var ι ⟧ `[ ⟦ σ ⟧ˢ ]                    ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
   ⟦ lookup ι σ ⟧                           ∎
   where open EqR (TermS {_})
 
 []-comm (t · u) σ = begin
-  app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧                  ≈⟨ cong~ₜ (flip app ⟦ u [ σ ] ⟧) ([]-comm t σ) ⟩
-  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u [ σ ] ⟧)        ≈⟨ cong~ₜ (app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ])) ([]-comm u σ) ⟩
+  app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧                  ≈⟨ cong-app ([]-comm t σ) refl~ₜ ⟩
+  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u [ σ ] ⟧)        ≈⟨ cong-app refl~ₜ ([]-comm u σ) ⟩
   app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ˢ ])  ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ˢ ⟩
   app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ˢ ]                  ∎
   where open EqR (TermS {_})
 
 []-comm (ƛ t) σ = begin
-  lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong~ₜ lam ([]-comm t (↑ₛ σ)) ⟩
-  lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ˢ , q > ]) ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ x ])) help ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])        ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < x , q > ])) (⟦⟧-∘-distₚ σ p~) ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])   ≈⟨ congh~ₜ (λ x → lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ x , q > ]))
-                                                         (sym~ₕ (p~⟦p⟧)) ⟩
+  lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong-lam $ []-comm t (↑ₛ σ) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ˢ , q > ]) ≈⟨ cong-lam $ cong-[] refl~ₜ help ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])        ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (⟦⟧-∘-distₚ σ p~)) ⟩ 
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])   ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (cong-∘ refl~ₕ (sym~ₕ $ p~⟦p⟧))) ⟩ 
   lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ p , q > ])         ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
   lam ⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]                       ∎
   where open EqR (TermS {_})
@@ -105,8 +105,8 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 
 ⟦⟧-∘-dist [] γ = sym~ₕ (∘<> ⟦ γ ⟧ˢ)
 ⟦⟧-∘-dist (t ∷ σ) γ = begin
-  < ⟦ σ ⋆ γ ⟧ˢ , ⟦ t [ γ ] ⟧ >            ≈⟨ cong~ₕ (λ z → < z , _ >) (⟦⟧-∘-dist σ γ) ⟩
-  < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t [ γ ] ⟧ >       ≈⟨ congt~ₕ (λ z → < _ , z >) ([]-comm t γ) ⟩
+  < ⟦ σ ⋆ γ ⟧ˢ , ⟦ t [ γ ] ⟧ >            ≈⟨ cong-<,> refl~ₜ (⟦⟧-∘-dist σ γ) ⟩ 
+  < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t [ γ ] ⟧ >       ≈⟨ cong-<,> ([]-comm t γ) refl~ₕ ⟩
   < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t ⟧ `[ ⟦ γ ⟧ˢ ] > ≈⟨ sym~ₕ (maps ⟦ t ⟧ ⟦ σ ⟧ˢ ⟦ γ ⟧ˢ) ⟩
   < ⟦ σ ⟧ˢ , ⟦ t ⟧ > ∘ ⟦ γ ⟧ˢ             ∎
   where open EqR (HomS {_} {_})
@@ -128,23 +128,23 @@ hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
 
 -- t ∈ Tm-λ n ⇒ ⟪ ⟦ t ⟧ ⟫ ~ t
  
-ws∘cwf (ƛ t) = ξ t ⟪ ⟦ t ⟧ ⟫ (ws∘cwf t)
+ws∘cwf (ƛ t) = ξ (ws∘cwf t)
 ws∘cwf (t · u) = apcong (ws∘cwf t) (ws∘cwf u)
 ws∘cwf (var zero) = refl~
-ws∘cwf (var (suc i))
-  rewrite sym $ lookup-p i
-     = cong~ (λ x → x [ p~ ]) (ws∘cwf (var i))
+ws∘cwf (var (suc i)) =
+  trans~ (cong≡~ (λ x → x) (sym $ lookup-p i))
+         (cong-[]λ (ws∘cwf (var i)) refl)
 
 -- t ∈ Tm-cwf n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
 
 cwf∘ws q = refl~ₜ
-cwf∘ws (lam t) = cong~ₜ lam (cwf∘ws t)
-cwf∘ws (app t u) = trans~ₜ (cong~ₜ (app t) (cwf∘ws u)) (cong~ₜ (λ z → app z _) (cwf∘ws t))
+cwf∘ws (lam t) = cong-lam (cwf∘ws t) 
+cwf∘ws (app t u) = cong-app (cwf∘ws t) (cwf∘ws u)
 cwf∘ws (t `[ us ]) = sym~ₜ $ begin
-  ⟦ ⟪ t ⟫ [ ⟪ us ⟫ʰ ] ⟧         ≈⟨ []-comm ⟪ t ⟫ ⟪ us ⟫ʰ ⟩
-  ⟦ ⟪ t ⟫ ⟧ `[ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]   ≈⟨ sym~ₜ (cong~ₜ (_`[ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]) (cwf∘ws t)) ⟩
-  t `[ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]           ≈⟨ sym~ₜ (congh~ₜ (t `[_]) (hom∘sub us)) ⟩
-  t `[ us ]                     ∎
+  ⟦ ⟪ t ⟫ [ ⟪ us ⟫ʰ ] ⟧        ≈⟨ []-comm ⟪ t ⟫ ⟪ us ⟫ʰ ⟩
+  ⟦ ⟪ t ⟫ ⟧ `[ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]  ≈⟨ sym~ₜ (cong-[] (cwf∘ws t) refl~ₕ) ⟩
+  t `[ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]          ≈⟨ sym~ₜ (cong-[] refl~ₜ (hom∘sub us)) ⟩
+  t `[ us ]                    ∎
   where open EqR (TermS {_})
 
 -- h ∈ Hom m n ⇒ ⟦ ⟪ h ⟫ ⟧ ~ h
@@ -152,27 +152,27 @@ cwf∘ws (t `[ us ]) = sym~ₜ $ begin
 hom∘sub (id {zero}) = id₀
 hom∘sub (id {suc m}) = begin
   id {1 + m}                ≈⟨ varp ⟩
-  < p , q >                 ≈⟨ cong~ₕ (<_, q >) p~⟦p⟧ ⟩
+  < p , q >                 ≈⟨ cong-<,> refl~ₜ p~⟦p⟧ ⟩ 
   < ⟦ p~ ⟧ˢ , q >           ∎
   where open EqR (HomS {_} {_})
 
-hom∘sub (h ∘ g) = sym~ₕ $ begin
-  ⟦ ⟪ h ⟫ʰ ⋆ ⟪ g ⟫ʰ ⟧ˢ       ≈⟨ ⟦⟧-∘-dist ⟪ h ⟫ʰ ⟪ g ⟫ʰ ⟩
-  ⟦ ⟪ h ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ  ≈⟨ sym~ₕ (cong~ₕ (_∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ) (hom∘sub h)) ⟩
-  h ∘ ⟦ ⟪ g ⟫ʰ ⟧ˢ            ≈⟨ sym~ₕ (cong~ₕ (_∘_ h) (hom∘sub g)) ⟩
-  h ∘ g                      ∎
+hom∘sub (γ ∘ δ) = sym~ₕ $ begin
+  ⟦ ⟪ γ ⟫ʰ ⋆ ⟪ δ ⟫ʰ ⟧ˢ       ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫ʰ ⟪ δ ⟫ʰ ⟩
+  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ  ≈⟨ sym~ₕ (cong-∘ (hom∘sub γ) refl~ₕ) ⟩ 
+  γ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ            ≈⟨ sym~ₕ (cong-∘ refl~ₕ (hom∘sub δ)) ⟩ 
+  γ ∘ δ                      ∎
   where open EqR (HomS {_} {_})
  
 hom∘sub p = p~⟦p⟧
 
 hom∘sub <> = refl~ₕ
-hom∘sub < h , x > = begin
-  < h , x >                    ≈⟨ cong~ₕ (<_, x >) (hom∘sub h) ⟩
-  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , x >          ≈⟨ congt~ₕ (λ z → < _ , z >) (cwf∘ws x) ⟩
-  < ⟦ ⟪ h ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >  ∎
+hom∘sub < γ , x > = begin
+  < γ , x >                    ≈⟨ cong-<,> refl~ₜ (hom∘sub γ) ⟩
+  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , x >          ≈⟨ cong-<,> (cwf∘ws x) refl~ₕ ⟩ 
+  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >  ∎
   where open EqR (HomS {_} {_})
 
 postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ ⟧ˢ
 
-lemmaₚ zero = cong~ₕ (λ _ → <>) id₀
+lemmaₚ zero = refl~ₕ
 lemmaₚ (suc n) = obv n

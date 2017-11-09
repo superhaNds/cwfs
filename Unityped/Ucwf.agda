@@ -78,6 +78,8 @@ record Lambda-ucwf : Set₁ where
   field
     ƛ   : {ν : Nat} → Term (suc ν) → Term ν
     _·_ : {ν : Nat} → Term ν → Term ν → Term ν
+    cong-ƛ : ∀ {ν} {t u : Term (suc ν)} → t ~ₜ u → ƛ t ~ₜ ƛ u
+    cong-· : ∀ {ν} {t u t′ u′ : Term ν} → t ~ₜ t′ → u ~ₜ u′ → t · u ~ₜ t′ · u′
     app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) · (u [ ts ]) ~ₜ (t · u) [ ts ]
     abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → ƛ t [ ts ] ~ₜ ƛ (t [ ⇑ ts ])
 

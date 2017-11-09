@@ -96,8 +96,7 @@ weakenₛ = flip ren pR
 ↑ₛ_ : ∀ {m n} → Subst m n → Subst (1 + m) (1 + n)
 ↑ₛ_ = (q ∷_) ∘ map weakenₛ 
 
--- The substitution operation, which is a meta-operation and not
--- explicit as in the λσ calculus (Abadi et al)
+-- The substitution operation, which is a meta level operation
 
 _[_] : ∀ {m n} → Term n → Subst m n → Term m
 var i    [ σ ] = lookup i σ
@@ -123,11 +122,13 @@ _r⋆_ : ∀ {m n k} → Ren m n → Subst k m → Subst k n
 _⋆r_ : ∀ {m n k} → Subst m n → Ren k m → Subst k n
 σ ⋆r ρ = map (flip ren ρ) σ
 
+-- the sequence of fins from 1 to n
+
 1toN_ : ∀ n → Ren (1 + n) n
 1toN _ = tabulate suc
 
 -- The projection substitution for terms, expressed in two different ways
--- the second definition is much easier to reasoin with for many proofs
+-- the second definition is much easier to reason with for many proofs
 
 p' : ∀ {n} → Subst (1 + n) n
 p' = map (λ t → ren t pR) id

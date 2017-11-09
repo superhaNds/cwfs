@@ -7,6 +7,7 @@ open import Data.Nat
 open import Data.Product
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Unit
+open import Function using (_∘_ ; _$_)
 open import Data.Vec as Vec
 open import Relation.Binary.PropositionalEquality
 open import Unityped.Wellscoped.Syntax
@@ -77,68 +78,67 @@ data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
 
 module Var where
 
-  map-suc-preserves :
+  map-suc-preserv :
     ∀ {m n Γ Δ σ} (ρ : Sub Fin m n) →
     Γ ▹ Δ ⊢ Vec.map var ρ → Γ ▹ σ ∷ Δ ⊢ Vec.map var (Vec.map suc ρ)
-  map-suc-preserves []      []         = []
-  map-suc-preserves (x ∷ ρ) (var ∷ ⊢ρ) = var ∷ map-suc-preserves ρ ⊢ρ
+  map-suc-preserv []      []         = []
+  map-suc-preserv (x ∷ ρ) (var ∷ ⊢ρ) = var ∷ map-suc-preserv ρ ⊢ρ
 
-  ↑-preserves : ∀ {m n Γ Δ σ} {ρ : Sub Fin m n} →
+  ↑-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Fin m n} →
                     Γ ▹ Δ ⊢ Vec.map var ρ →
                     σ ∷ Γ ▹ σ ∷ Δ ⊢ Vec.map var (VarSubst._↑ ρ)
-  ↑-preserves ⊢ρ = var ∷ map-suc-preserves _ ⊢ρ
+  ↑-preserv ⊢ρ = var ∷ map-suc-preserv _ ⊢ρ
 
-  id-preserves : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ Vec.map var VarSubst.id
-  id-preserves {Γ = []}    = []
-  id-preserves {Γ = _ ∷ _} = ↑-preserves id-preserves
+  id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ Vec.map var VarSubst.id
+  id-preserv {Γ = []}    = []
+  id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-  wk-preserves : ∀ {n} {Γ : Ctx n} {σ} →
+  wk-preserv : ∀ {n} {Γ : Ctx n} {σ} →
                  Γ ▹ σ ∷ Γ ⊢ Vec.map var VarSubst.wk
-  wk-preserves = map-suc-preserves VarSubst.id id-preserves
+  wk-preserv = map-suc-preserv VarSubst.id id-preserv
 
-  lookup-preserves :
+  lookup-preserv :
     ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x ρ →
     Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ var (lookup x ρ) ∈ lookup x Γ
-  lookup-preserves zero    (y ∷ ρ) (var ∷ ⊢ρ) = var
-  lookup-preserves (suc x) (y ∷ ρ) (var ∷ ⊢ρ) = lookup-preserves x ρ ⊢ρ
+  lookup-preserv zero    (y ∷ ρ) (var ∷ ⊢ρ) = var
+  lookup-preserv (suc x) (y ∷ ρ) (var ∷ ⊢ρ) = lookup-preserv x ρ ⊢ρ
 
-  /-preserves : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
+  []-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
                 Γ ⊢ t ∈ σ → Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ t /Var ρ ∈ σ
-  /-preserves (var {i}) ⊢ρ = lookup-preserves i _ ⊢ρ
-  /-preserves (ƛ t∈)        ⊢ρ = ƛ (/-preserves t∈ (↑-preserves ⊢ρ))
-  /-preserves (t₁∈ · t₂∈)   ⊢ρ = /-preserves t₁∈ ⊢ρ · /-preserves t₂∈ ⊢ρ
+  []-preserv (var {i}) ⊢ρ = lookup-preserv i _ ⊢ρ
+  []-preserv (ƛ t∈)        ⊢ρ = ƛ ([]-preserv t∈ (↑-preserv ⊢ρ))
+  []-preserv (t₁∈ · t₂∈)   ⊢ρ = []-preserv t₁∈ ⊢ρ · []-preserv t₂∈ ⊢ρ
 
-weaken-preserves : ∀ {n Γ σ τ} {t : Term n} → Γ ⊢ t ∈ τ → σ ∷ Γ ⊢ weaken t ∈ τ
-weaken-preserves t∈ = Var./-preserves t∈ Var.wk-preserves
+weaken-preserv : ∀ {n Γ σ τ} {t : Term n} → Γ ⊢ t ∈ τ → σ ∷ Γ ⊢ weaken t ∈ τ
+weaken-preserv t∈ = Var.[]-preserv t∈ Var.wk-preserv
 
-map-weaken-preserves :
-  ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
-  Γ ▹ Δ ⊢ ρ → Γ ▹ σ ∷ Δ ⊢ Vec.map weaken ρ
-map-weaken-preserves []        = []
-map-weaken-preserves (t∈ ∷ ⊢ρ) =
-  weaken-preserves t∈ ∷ map-weaken-preserves ⊢ρ
+map-weaken-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
+                       Γ ▹ Δ ⊢ ρ → Γ ▹ σ ∷ Δ ⊢ Vec.map weaken ρ
+map-weaken-preserv []        = []
+map-weaken-preserv (t∈ ∷ ⊢ρ) =
+  weaken-preserv t∈ ∷ map-weaken-preserv ⊢ρ
 
-↑-preserves : ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
+↑-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
               Γ ▹ Δ ⊢ ρ → σ ∷ Γ ▹ σ ∷ Δ ⊢ ρ ↑
-↑-preserves ⊢ρ = var ∷ map-weaken-preserves ⊢ρ
+↑-preserv ⊢ρ = var ∷ map-weaken-preserv ⊢ρ
 
-id-preserves : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ id
-id-preserves {Γ = []}    = []
-id-preserves {Γ = _ ∷ _} = ↑-preserves id-preserves
+id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ id
+id-preserv {Γ = []}    = []
+id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-sub-preserves : ∀ {n} {Γ : Ctx n} {σ t} → Γ ⊢ t ∈ σ → σ ∷ Γ ▹ Γ ⊢ sub t
-sub-preserves t∈ = t∈ ∷ id-preserves
+p-preserv : ∀ {n σ} {Γ : Ctx n} → Γ ▹ σ ∷ Γ ⊢ Vec.map weaken id
+p-preserv {Γ = []}    = []
+p-preserv {Γ = x ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
 
-lookup-preserves :
-  ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x {ρ} →
-  Γ ▹ Δ ⊢ ρ → Δ ⊢ lookup x ρ ∈ lookup x Γ
-lookup-preserves zero    (t∈ ∷ ⊢ρ) = t∈
-lookup-preserves (suc x) (t∈ ∷ ⊢ρ) = lookup-preserves x ⊢ρ
+lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x {ρ} →
+                   Γ ▹ Δ ⊢ ρ → Δ ⊢ lookup x ρ ∈ lookup x Γ
+lookup-preserv zero    (t∈ ∷ ⊢ρ) = t∈
+lookup-preserv (suc x) (t∈ ∷ ⊢ρ) = lookup-preserv x ⊢ρ
 
-/-preserves : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
-              Γ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ → Δ ⊢ t / ρ ∈ σ
-/-preserves (var {i}) ⊢ρ = lookup-preserves i ⊢ρ
-/-preserves (ƛ t∈)        ⊢ρ = ƛ (/-preserves t∈ (↑-preserves ⊢ρ))
-/-preserves (t₁∈ · t₂∈)   ⊢ρ = /-preserves t₁∈ ⊢ρ · /-preserves t₂∈ ⊢ρ
+[]-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
+               Γ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ → Δ ⊢ t / ρ ∈ σ
+[]-preserv (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
+[]-preserv (ƛ t∈)    ⊢ρ = ƛ ([]-preserv t∈ (↑-preserv ⊢ρ))
+[]-preserv (t∈ · u∈) ⊢ρ = []-preserv t∈ ⊢ρ · []-preserv u∈ ⊢ρ
 
 open TermLemmas tmLemmas public hiding (var)
