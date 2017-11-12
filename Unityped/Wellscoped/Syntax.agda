@@ -48,23 +48,4 @@ K = ƛ (ƛ (vr 1))
 Ω = ω · ω
   where ω : Term 0
         ω = ƛ (q · q)
-
-------------------------------------------------------
--- Type system
-
-infixr 8 _⇒_
-
-data Ty : Set where
-  nat : Ty
-  _⇒_ : (σ τ : Ty) → Ty
-
-Ctx : Nat → Set
-Ctx = Vec.Vec Ty
-
-infix 4 _⊢_∈_
-
-data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
-  var : ∀ {i} → Γ ⊢ var i ∈ Vec.lookup i Γ
-  ƛ   : ∀ {t σ τ} (t∈ : σ Vec.∷ Γ ⊢ t ∈ τ) → Γ ⊢ ƛ t ∈ σ ⇒ τ
-  _·_ : ∀ {t₁ t₂ σ τ} (t₁∈ : Γ ⊢ t₁ ∈ σ ⇒ τ) (t₂∈ : Γ ⊢ t₂ ∈ σ) →
-        Γ ⊢ t₁ · t₂ ∈ τ
+        

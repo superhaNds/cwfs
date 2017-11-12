@@ -3,7 +3,7 @@ module Unityped.Wellscoped.Preservation where
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
-open import Data.Nat
+open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Unit
@@ -12,6 +12,36 @@ open import Data.Vec as Vec
 open import Relation.Binary.PropositionalEquality
 open import Unityped.Wellscoped.Syntax
 open ≡-Reasoning
+
+------------------------------------------------------
+-- Type system
+
+infixr 8 _⇒_
+
+data Ty : Set where
+  ♭   : Ty
+  _⇒_ : Ty → Ty → Ty
+
+Ctx : Nat → Set
+Ctx = Vec.Vec Ty
+
+infix 4 _⊢_∈_
+
+data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
+
+  var : ∀ {i} → Γ ⊢ var i ∈ Vec.lookup i Γ
+  
+  ƛ   : ∀ {t σ τ} →
+  
+          σ Vec.∷ Γ ⊢ t ∈ τ →
+          ----------------------
+              Γ ⊢ ƛ t ∈ σ ⇒ τ
+              
+  _·_ : ∀ {t₁ t₂ σ τ} →
+  
+          Γ ⊢ t₁ ∈ σ ⇒ τ → Γ ⊢ t₂ ∈ σ →
+          ------------------------------
+                Γ ⊢ t₁ · t₂ ∈ τ
 
 module TermApp {T} (l : Lift T Term) where
   open Lift l hiding (var)
@@ -71,10 +101,15 @@ tmLemmas = record
 infixr 5 _∷_
 infix  4 _▹_⊢_
 
-data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
+data _▹_⊢_ {n : Nat} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
+
   []  : ∀ {Δ} → [] ▹ Δ ⊢ []
-  _∷_ : ∀ {m} {Γ : Ctx m} {Δ σ t ρ}
-        (t∈ : Δ ⊢ t ∈ σ) (⊢ρ : Γ ▹ Δ ⊢ ρ) → σ ∷ Γ ▹ Δ ⊢ t ∷ ρ
+  
+  _∷_ : ∀ {m} {Γ : Ctx m} {Δ σ t ρ} →
+  
+          Δ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ →
+          -----------------------
+             σ ∷ Γ ▹ Δ ⊢ t ∷ ρ
 
 module Var where
 

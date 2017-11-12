@@ -2,43 +2,88 @@ module SimpTyped.Tm.Context where
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
+open import Function using (_$_ ; _∘_)
 
-infix 20 _,_
+infix 20 _∙_
 
 data Ctxt (A : Set) : Set where
   ε   : Ctxt A
-  _,_ : Ctxt A → A → Ctxt A
+  _∙_ : Ctxt A → A → Ctxt A
 
 data _⊆_ {A : Set} : Ctxt A → Ctxt A → Set where
   base : ε ⊆ ε
-  step : ∀ {Γ Δ : Ctxt A} {σ} (φ : Γ ⊆ Δ) → Γ ⊆ (Δ , σ)
-  pop! : ∀ {Γ Δ : Ctxt A} {σ} (ψ : Γ ⊆ Δ) → (Γ , σ) ⊆ (Δ , σ)
+  step : ∀ {Γ Δ : Ctxt A} {σ} (φ : Γ ⊆ Δ) → Γ ⊆ (Δ ∙ σ)
+  pop! : ∀ {Γ Δ : Ctxt A} {σ} (ψ : Γ ⊆ Δ) → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 
 ⊆-refl : {A : Set} {Γ : Ctxt A} → Γ ⊆ Γ
-⊆-refl {Γ = ε} = base 
-⊆-refl {Γ = Γ , _} = pop! ⊆-refl
+⊆-refl {Γ = ε}     = base 
+⊆-refl {Γ = Γ ∙ _} = pop! ⊆-refl
 
 ⊆-trans : ∀ {A : Set} {Γ Δ Ε : Ctxt A} → Γ ⊆ Δ → Δ ⊆ Ε → Γ ⊆ Ε
-⊆-trans base Δ⊆E = Δ⊆E
+⊆-trans base       Δ⊆E        = Δ⊆E
 ⊆-trans (step Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (step Γ⊆Δ) Δ⊆E)
 ⊆-trans (step Γ⊆Δ) (pop! Δ⊆E) = step (⊆-trans Γ⊆Δ Δ⊆E)
 ⊆-trans (pop! Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (pop! Γ⊆Δ) Δ⊆E)
 ⊆-trans (pop! Γ⊆Δ) (pop! Δ⊆E) = pop! (⊆-trans Γ⊆Δ Δ⊆E)
 
+⊆-∙ : {A : Set} {Γ : Ctxt A} {a : A} → Γ ⊆ (Γ ∙ a)
+⊆-∙ = step ⊆-refl
+
 infix 10 _∈_
 
 data _∈_ {A : Set} (a : A) : Ctxt A → Set where
-  here  : {Γ : Ctxt A} → a ∈ Γ , a
-  there : {Γ : Ctxt A} {x : A} → a ∈ Γ → a ∈ Γ , x
+  here  : {Γ : Ctxt A} → a ∈ Γ ∙ a
+  there : {Γ : Ctxt A} {x : A} → a ∈ Γ → a ∈ Γ ∙ x
 
 there-eq : {A : Set} {Γ : Ctxt A} {a x : A} {φ ψ : a ∈ Γ} →
            there {x = x} φ ≡ there {x = x} ψ → φ ≡ ψ
 there-eq refl = refl           
 
 ∈-dec : {A : Set} {Γ : Ctxt A} {a : A} (φ ψ : a ∈ Γ) → Dec (φ ≡ ψ)
-∈-dec here here = yes refl
+∈-dec here here      = yes refl
 ∈-dec here (there ψ) = no (λ ())
 ∈-dec (there φ) here = no (λ ())
 ∈-dec (there φ) (there ψ) with ∈-dec φ ψ
 ∈-dec (there φ) (there _) | yes refl = yes refl
-∈-dec (there φ) (there _) | no ¬p = no (λ p → ¬p (there-eq p))
+∈-dec (there φ) (there _) | no φ≠ψ    = no (φ≠ψ ∘ there-eq)
+
+sub-in : {A : Set} {Γ Δ : Ctxt A} {a : A} → Γ ⊆ Δ → a ∈ Γ → a ∈ Δ
+sub-in base a∈Γ               = a∈Γ
+sub-in (step Γ⊆Δ) a∈Γ         = there (sub-in Γ⊆Δ a∈Γ)
+sub-in (pop! Γ⊆Δ) here        = here
+sub-in (pop! Γ⊆Δ) (there a∈Γ) = there (sub-in Γ⊆Δ a∈Γ)
+
+sub-in-refl : ∀ {A : Set} {Δ : Ctxt A} {a} (φ : a ∈ Δ) → sub-in ⊆-refl φ ≡ φ
+sub-in-refl here      = refl
+sub-in-refl (there φ) = cong there (sub-in-refl φ)
+
+⊆-refl-l : {A : Set} {Γ Δ : Ctxt A} (φ : Γ ⊆ Δ) → ⊆-trans ⊆-refl φ ≡ φ
+⊆-refl-l base                 = refl
+⊆-refl-l {Γ = ε}     (step φ) = refl
+⊆-refl-l {Γ = Γ ∙ x} (step φ) = cong step (⊆-refl-l φ)
+⊆-refl-l (pop! φ)             = cong pop! (⊆-refl-l φ)
+
+⊆-refl-r : {A : Set} {Γ Δ : Ctxt A} (φ : Γ ⊆ Δ) → ⊆-trans φ ⊆-refl ≡ φ
+⊆-refl-r base     = refl
+⊆-refl-r (step φ) = cong step (⊆-refl-r φ)
+⊆-refl-r (pop! φ) = cong pop! (⊆-refl-r φ)
+
+sub-in₂ : {A : Set} {Γ Δ Θ : Ctxt A} {a : A} (φ : Γ ⊆ Δ) (ψ : Δ ⊆ Θ) (ω : a ∈ Γ) →
+          sub-in ψ (sub-in φ ω) ≡ sub-in (⊆-trans φ ψ) ω
+sub-in₂ base base     ()
+sub-in₂ base (step ψ) ω = refl
+sub-in₂ (step φ) (step ψ) ω = cong there (sub-in₂ (step φ) ψ ω)
+sub-in₂ (step φ) (pop! ψ) ω = cong there (sub-in₂ φ ψ ω)
+sub-in₂ (pop! φ) (step ψ) ω = cong there (sub-in₂ (pop! φ) ψ ω)
+sub-in₂ (pop! φ) (pop! ψ) here = refl
+sub-in₂ (pop! φ) (pop! ψ) (there ω) = cong there (sub-in₂ φ ψ ω)          
+
+sub-in-step : {A : Set} → ∀ {Γ Δ σ} {γ : A} (φ : (Γ ∙ γ) ⊆ Δ) (ψ : σ ∈ Γ) →
+              sub-in (⊆-trans ⊆-∙ φ) ψ ≡ sub-in φ (there ψ)
+sub-in-step {Γ = ε} φ ()
+sub-in-step (step φ) ψ = cong there (sub-in-step φ ψ)
+sub-in-step (pop! φ) here = cong there (sym (sub-in₂ (pop! ⊆-refl) φ here))
+sub-in-step (pop! φ) (there ψ) =
+  cong there (trans (trans (sym (sub-in₂ ⊆-refl φ (there ψ)))
+                    (sub-in₂ (step ⊆-refl) φ ψ))
+             (sub-in-step φ ψ))              
