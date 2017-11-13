@@ -5,14 +5,8 @@ open import Data.Vec hiding ([_])
 open import Data.Fin
 open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
-
-data Ty : Set where
-  o   : Ty
-  _⇒_ : Ty → Ty → Ty
-  
-data Ctx : Set where
-  ε   : Ctx
-  _,_ : Ctx → Ty → Ctx
+open import SimpTyped.Context renaming (_∙_ to _,_)
+open import SimpTyped.Type
 
 data Tm : Ctx → Ty → Set
 data Hom : Ctx → Ctx → Set
@@ -28,7 +22,7 @@ data Hom where
   _∘_   : ∀ {Γ Δ Θ} → Hom Γ Θ → Hom Δ Γ → Hom Δ Θ
   <_,_> : ∀ {Γ Δ α} → Hom Γ Δ → Tm Γ α  → Hom Γ (Δ , α)
 
-weaken : ∀ {Γ α} → Tm Γ α → Tm (Γ , α) α
+weaken : ∀ {Γ α β} → Tm Γ α → Tm (Γ , β) α
 weaken t = t [ p ]
 
 infix 6 _~_

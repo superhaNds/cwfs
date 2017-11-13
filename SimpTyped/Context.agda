@@ -1,4 +1,4 @@
-module SimpTyped.Tm.Context where
+module SimpTyped.Context where
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
@@ -19,7 +19,7 @@ data _⊆_ {A : Set} : Ctxt A → Ctxt A → Set where
 ⊆-refl {Γ = ε}     = base 
 ⊆-refl {Γ = Γ ∙ _} = pop! ⊆-refl
 
-⊆-trans : ∀ {A : Set} {Γ Δ Ε : Ctxt A} → Γ ⊆ Δ → Δ ⊆ Ε → Γ ⊆ Ε
+⊆-trans : {A : Set} {Γ Δ Ε : Ctxt A} → Γ ⊆ Δ → Δ ⊆ Ε → Γ ⊆ Ε
 ⊆-trans base       Δ⊆E        = Δ⊆E
 ⊆-trans (step Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (step Γ⊆Δ) Δ⊆E)
 ⊆-trans (step Γ⊆Δ) (pop! Δ⊆E) = step (⊆-trans Γ⊆Δ Δ⊆E)

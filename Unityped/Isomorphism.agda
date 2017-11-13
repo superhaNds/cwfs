@@ -65,7 +65,7 @@ import Relation.Binary.EqReasoning as EqR
 lemmaₚ : ∀ n → pNorm n ~ₕ ⟦ p~ ⟧ˢ
   
 p~⟦p⟧ : ∀ {n} → p ~ₕ ⟦ p~ ⟧ˢ
-p~⟦p⟧ {n} = sym~ₕ (trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n)))
+p~⟦p⟧ {n} = sym~ₕ $ trans~ₕ (sym~ₕ $ lemmaₚ n) (sym~ₕ (p~vars n))
 
 -- Interpreting a composition distributes
 

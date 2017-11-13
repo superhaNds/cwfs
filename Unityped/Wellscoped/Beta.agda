@@ -34,7 +34,7 @@ data _~_  {n : Nat} : (t u : Term n) → Set where
 -- Reflexivity is derived giving rise to _~_ as an equivalence relation
 
 refl~ : ∀ {n} {t : Term n} → t ~ t
-refl~ {n} {t} = trans~ (sym~ (η t)) (η t)
+refl~ {t = t} = trans~ (sym~ (η t)) (η t)
 
 ~equiv : ∀ {n} → IsEquivalence (_~_ {n})
 ~equiv = record { refl  = refl~
@@ -83,10 +83,10 @@ cong-∙ {ρ = ρ} (apcong t~t' t~t'') φ
 cong-∙ (ξ t~t') refl
   with cong-∙ {ρ = []} t~t' refl
 ... | refl = refl
-cong-∙ (β t u) refl = {!!}
-cong-∙ (η t) refl = {!!}
 cong-∙ (sym~ t~t') refl =
   sym (cong-∙ t~t' refl)
 cong-∙ (trans~ t~t' t~t'') refl =
   trans (cong-∙ t~t' refl)
         (cong-∙ t~t'' refl)
+cong-∙ (β t u) refl = {!!}
+cong-∙ (η t) refl = {!!}

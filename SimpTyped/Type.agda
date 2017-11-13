@@ -1,9 +1,10 @@
-module SimpTyped.Tm.Type where
+module SimpTyped.Type where
 
 open import Relation.Binary.PropositionalEquality using (_≡_ ; refl)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤)
 open import Function using (_∘_ ; _$_)
+open import SimpTyped.Context
 
 infixr 20 _⇒_
 
@@ -30,3 +31,5 @@ _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
 ⟦ ♭ ⟧ᵀ       = ⊤
 ⟦ α₁ ⇒ α₂ ⟧ᵀ = ⟦ α₁ ⟧ᵀ → ⟦ α₂ ⟧ᵀ
 
+Ctx : Set
+Ctx = Ctxt Ty
