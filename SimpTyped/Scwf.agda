@@ -1,4 +1,4 @@
-module Scwf where
+module SimpTyped.Scwf where
 
 open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)

@@ -65,6 +65,9 @@ data _~_ {Γ α} : (t₁ t₂ : Term Γ α) → Set where
 refl~ : ∀ {Γ α} {t : Term Γ α} → t ~ t
 refl~ {t = var ∈Γ} = varcong ∈Γ
 
+cong≡vr : ∀ {Γ α} {v₁ v₂ : α ∈ Γ} → v₁ ≡ v₂ → var v₁ ~ var v₂
+cong≡vr refl = varcong _
+
 cong-[] : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Δ ▹ Γ} →
           t ~ t' → γ ≡ γ' → t [ γ ] ~ t' [ γ' ]
 cong-[] (varcong φ) refl = refl~

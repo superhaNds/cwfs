@@ -50,7 +50,7 @@ data _~~_ where
   assoc    : ∀ {Γ Δ Θ Λ} (γ : Hom Δ Θ) (δ : Hom Γ Δ) (ζ : Hom Λ Γ) →
              (γ ∘ δ) ∘ ζ ~~ γ ∘ (δ ∘ ζ)
   pCons    : ∀ {Δ Θ α} (t : Tm Δ α) (γ : Hom Δ Θ) → p ∘ < γ , t > ~~ γ
-  maps     : ∀ {Γ Δ α} (t : Tm Δ α) (γ : Hom Δ Γ) (δ : Hom Γ Δ) →
+  maps     : ∀ {Γ Δ Θ α} (t : Tm Δ α) (γ : Hom Δ Θ) (δ : Hom Γ Δ) →
              < γ , t > ∘ δ ~~ < γ ∘ δ , t [ δ ] >
   cong-<,> : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Hom Γ Δ} →
              t ~ t' → γ ~~ γ' → < γ , t > ~~ < γ' , t' >
@@ -99,4 +99,12 @@ homε~<> γ = begin
   id {ε} ∘ γ   ≈⟨ cong-∘ id₀ refl~~ ⟩
   <> ∘ γ       ≈⟨ ∘<> γ ⟩
   <>           ∎
+  where open EqR (HmSetoid {_} {_})
+
+surj-<,> : ∀ {Γ Δ α} (γ : Hom Γ (Δ , α)) → γ ~~ < p ∘ γ , q [ γ ] >
+surj-<,> γ = begin
+  γ                     ≈⟨ sym~~ (idL γ) ⟩
+  id ∘ γ                ≈⟨ cong-∘ varp refl~~ ⟩
+  < p , q > ∘ γ         ≈⟨ maps q p γ ⟩
+  < p ∘ γ , q [ γ ] >   ∎
   where open EqR (HmSetoid {_} {_})
