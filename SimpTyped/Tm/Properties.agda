@@ -127,7 +127,7 @@ idL : ∀ {Γ Δ} (ρ : Δ ▹ Γ) → id ⋆ ρ ≡ ρ
 
 p⋆, {Θ = Θ} t = trans (⋆-step Θ id _ t) ∘ idL
 
-sub-p : ∀ {Γ α} (t : Term Γ α) → t [ p {α = α} ] ≡ weaken ⊆-∙ t
+sub-p : ∀ {Γ α β} (t : Term Γ α) → t [ p {α = β} ] ≡ weaken ⊆-∙ t
 sub-p {Γ} t = begin
   t [ p ]                 ≡⟨⟩
   t [ ▹-weaken Γ ⊆-∙ id ] ≡⟨ sym ([]-wk≡ ⊆-∙ t id) ⟩
@@ -135,8 +135,9 @@ sub-p {Γ} t = begin
   weaken ⊆-∙ t            ∎
   where open P.≡-Reasoning
   
-wk-[p] : ∀ {Γ α} (t : Term Γ α) → weaken (step {σ = α} ⊆-refl) t ≡ t [ p ]
-wk-[p] (var ∈Γ) = sym $ sub-p (var ∈Γ)
+wk-[p] : ∀ {Γ α} (t : Term Γ α) →
+         weaken (step {σ = α} ⊆-refl) t ≡ t [ p ]
+wk-[p] t = sym $ sub-p t
 
 idε<> : id {ε} ≡ tt
 idε<> = refl

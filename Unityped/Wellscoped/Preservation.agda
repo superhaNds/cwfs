@@ -53,7 +53,7 @@ module TermApp {T} (l : Lift T Term) where
   ƛ t    / ρ = ƛ (t / ρ ↑)
   t · u  / ρ = (t / ρ) · (u / ρ)
 
-  open Application (record { _/_ = _/_ }) using (_/✶_)
+  open Application (record { _/_ = _/_ }) using (_/✶_ ; _⊙_)
 
   ƛ-/✶-↑✶ : ∀ k {m n t} (ρs : Subs T m n) →
             ƛ t /✶ ρs ↑✶ k ≡ ƛ (t /✶ ρs ↑✶ suc k)
@@ -175,5 +175,19 @@ lookup-preserv (suc x) (t∈ ∷ ⊢ρ) = lookup-preserv x ⊢ρ
 []-preserv (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
 []-preserv (ƛ t∈)    ⊢ρ = ƛ ([]-preserv t∈ (↑-preserv ⊢ρ))
 []-preserv (t∈ · u∈) ⊢ρ = []-preserv t∈ ⊢ρ · []-preserv u∈ ⊢ρ
+
+cons-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
+               {t : Term n} {ρ : Sub Term m n} {σ} →
+               Γ ⊢ t ∈ σ → Δ ▹ Γ ⊢ ρ → (σ ∷ Δ) ▹ Γ ⊢ t ∷ ρ
+cons-preserv t∈ []       = t∈ ∷ []
+cons-preserv t∈ (x ∷ ⊢ρ) = t∈ ∷ cons-preserv x ⊢ρ               
+
+comp-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {E : Ctx k}
+               {ρ : Sub Term m n} {ρ' : Sub Term n k} →
+               Γ ▹ Δ ⊢ ρ → Δ ▹ E ⊢ ρ' → Γ ▹ E ⊢ ρ ⊙ ρ'             
+comp-preserv [] ⊢ρ' = []
+comp-preserv (x ∷ ⊢ρ) ⊢ρ' =
+  cons-preserv ([]-preserv x ⊢ρ')
+               (comp-preserv ⊢ρ ⊢ρ')
 
 open TermLemmas tmLemmas public hiding (var)

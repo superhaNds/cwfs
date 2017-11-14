@@ -22,8 +22,8 @@ data Hom where
   _∘_   : ∀ {Γ Δ Θ} → Hom Γ Θ → Hom Δ Γ → Hom Δ Θ
   <_,_> : ∀ {Γ Δ α} → Hom Γ Δ → Tm Γ α  → Hom Γ (Δ , α)
 
-weaken : ∀ {Γ α β} → Tm Γ α → Tm (Γ , β) α
-weaken t = t [ p ]
+weaken-same : ∀ {Γ α β} → Tm Γ α → Tm (Γ , β) α
+weaken-same = _[ p ]
 
 infix 6 _~_
 infix 6 _~~_
@@ -69,8 +69,8 @@ refl~ {t = t} = trans~ (sym~ (tmId t)) (tmId t)
   ; trans = trans~
   }
 
-TmSetoid : ∀ {Γ α} → Setoid _ _
-TmSetoid {Γ} {α} = record
+TmCwf : ∀ {Γ α} → Setoid _ _
+TmCwf {Γ} {α} = record
   { Carrier = Tm Γ α
   ; _≈_ = _~_
   ; isEquivalence = ~equivr
