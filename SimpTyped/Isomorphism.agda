@@ -50,7 +50,6 @@ cwf∘λ : ∀ {Γ α} (t : Tm-cwf Γ α) → ⟦ ⟪ t ⟫ ⟧ ~ t
   ⟦ var ∈Γ ⟧ [ p ] [ < ⟦ ρ ⟧ˢ , ⟦ t ⟧ > ] ∎
   where open EqR (TmCwf {_})
 
-
 ⟦⟧-∘-dist {Θ = ε} tt σ = sym~~ (∘<> ⟦ σ ⟧ˢ)
 ⟦⟧-∘-dist {Θ = Θ ∙ x} (t , ρ) σ = begin
   < ⟦ ρ ⋆ σ ⟧ˢ , ⟦ t [ σ ]' ⟧ >          ≈⟨ cong-<,> refl~ (⟦⟧-∘-dist ρ σ) ⟩

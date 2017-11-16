@@ -13,6 +13,10 @@ data Fins : Nat → Nat → Set where
   <>    : ∀ {m} → Fins m 0
   <_,_> : ∀ {m n} → Fins m n → Fin m → Fins m (suc n)
 
+map<> : ∀ {m n} (f : Fin m → Term m) → Fins m n → Hom m n
+map<> f <> = <>
+map<> f < is , i > = < map<> f is , f i >
+
 sucs : ∀ {m n} → Fins m n → Fins (suc m) n
 sucs <> = <>
 sucs < is , i > = < (sucs is) , (suc i) >

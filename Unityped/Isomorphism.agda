@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas  #-}
 ---------------------------------------------------------------------------------------------------
 -- Contains the definitions of the bijections between the setoids of wellscoped terms and terms as
 -- a Ucwf. Moreover, a proof that they are inverses of each other, which means the objects
@@ -14,7 +13,7 @@ open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
 open import Unityped.UcwfModel renaming (Term to Tm-cwf ; _[_] to _`[_])
 open import Unityped.Wellscoped
-  renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~ ; cong-[] to cong-[]λ)
+  renaming (Term to Tm-λ ; p to p~ ; p′ to p′~ ; id to id~ ; weakenₛ to weaken~ ; q to q~ ; congSub to cong-[]λ)
   hiding (maps)
 open import Unityped.Projection renaming (var to varPr)
 open import Unityped.Wellscoped.Properties  
@@ -79,26 +78,40 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 
 []-comm (var zero)    (x ∷ σ) = qCons ⟦ x ⟧ ⟦ σ ⟧ˢ
 []-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
-  ⟦ var ι ⟧ `[ p ] `[ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ] ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
-  ⟦ var ι ⟧ `[ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]    ≈⟨ sym~ₜ (cong-[] refl~ₜ (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
-  ⟦ var ι ⟧ `[ ⟦ σ ⟧ˢ ]                    ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
-  ⟦ lookup ι σ ⟧                           ∎
+  ⟦ var ι ⟧ `[ p ] `[ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]
+    ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
+  ⟦ var ι ⟧ `[ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]
+    ≈⟨ sym~ₜ (cong-[] refl~ₜ (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
+  ⟦ var ι ⟧ `[ ⟦ σ ⟧ˢ ]
+    ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
+  ⟦ lookup ι σ ⟧
+    ∎
   where open EqR (TermS {_})
 
 []-comm (t · u) σ = begin
-  app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧                  ≈⟨ cong-app ([]-comm t σ) refl~ₜ ⟩
-  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u [ σ ] ⟧)        ≈⟨ cong-app refl~ₜ ([]-comm u σ) ⟩
-  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ˢ ])  ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ˢ ⟩
-  app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ˢ ]                  ∎
+  app ⟦ t [ σ ] ⟧ ⟦ u [ σ ] ⟧
+    ≈⟨ cong-app ([]-comm t σ) refl~ₜ ⟩
+  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u [ σ ] ⟧)
+    ≈⟨ cong-app refl~ₜ ([]-comm u σ) ⟩
+  app (⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]) (⟦ u ⟧ `[ ⟦ σ ⟧ˢ ])
+    ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ˢ ⟩
+  app ⟦ t ⟧ ⟦ u ⟧ `[ ⟦ σ ⟧ˢ ]
+    ∎
   where open EqR (TermS {_})
 
 []-comm (ƛ t) σ = begin
-  lam ⟦ t [ ↑ₛ σ ] ⟧                          ≈⟨ cong-lam $ []-comm t (↑ₛ σ) ⟩
-  lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ˢ , q > ]) ≈⟨ cong-lam $ cong-[] refl~ₜ help ⟩
-  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])        ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (⟦⟧-∘-distₚ σ p~)) ⟩ 
-  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])   ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (cong-∘ refl~ₕ (sym~ₕ $ p~⟦p⟧))) ⟩ 
-  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ p , q > ])         ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
-  lam ⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]                       ∎
+  lam ⟦ t [ ↑ₛ σ ] ⟧
+    ≈⟨ cong-lam $ []-comm t (↑ₛ σ) ⟩
+  lam (⟦ t ⟧ `[ < ⟦ map weaken~ σ ⟧ˢ , q > ])
+    ≈⟨ cong-lam $ cong-[] refl~ₜ help ⟩
+  lam (⟦ t ⟧ `[ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])
+    ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (⟦⟧-∘-distₚ σ p~)) ⟩ 
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])
+    ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (cong-∘ refl~ₕ (sym~ₕ $ p~⟦p⟧))) ⟩ 
+  lam (⟦ t ⟧ `[ < ⟦ σ ⟧ˢ ∘ p , q > ])
+    ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
+  lam ⟦ t ⟧ `[ ⟦ σ ⟧ˢ ]
+    ∎
   where open EqR (TermS {_})
         help : < ⟦ map weaken~ σ ⟧ˢ , q > ~ₕ < ⟦ σ ⋆ p~ ⟧ˢ , q >
         help rewrite sym (mapWk-⋆p σ) = refl~ₕ
@@ -116,7 +129,7 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
 
 -- A scope safe term mapped to the cwf world returns the same
 
-ws∘cwf : ∀ {n} (t : Tm-λ n) → t ~ ⟪ ⟦ t ⟧ ⟫
+ws∘cwf : ∀ {n} (t : Tm-λ n) → t ≡ ⟪ ⟦ t ⟧ ⟫
 
 -- A cwf term mapped to a scope safe term returns the same
 
@@ -128,12 +141,12 @@ hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
 
 -- t ∈ Tm-λ n ⇒ ⟪ ⟦ t ⟧ ⟫ ~ t
  
-ws∘cwf (ƛ t) = ξ (ws∘cwf t)
-ws∘cwf (t · u) = apcong (ws∘cwf t) (ws∘cwf u)
-ws∘cwf (var zero) = refl~
-ws∘cwf (var (suc i)) =
-  trans~ (cong≡~ (λ x → x) (sym $ lookup-p i))
-         (cong-[]λ (ws∘cwf (var i)) refl)
+ws∘cwf (ƛ t) = cong-ƛ (ws∘cwf t)
+ws∘cwf (t · u) = cong-ap (ws∘cwf t) (ws∘cwf u)
+ws∘cwf (var zero) = refl
+ws∘cwf (var (suc i))
+  rewrite sym $ lookup-p i
+    = cong (_[ p~ ]) (ws∘cwf (var i))
 
 -- t ∈ Tm-cwf n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
 
@@ -176,3 +189,21 @@ postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ ⟧ˢ
 
 lemmaₚ zero = refl~ₕ
 lemmaₚ (suc n) = obv n
+
+pp=vars : ∀ n → pNorm n ~ₕ ⟦ pp n ⟧ˢ
+
+lemmaFins : ∀ n → ⟦ vrs (pFn n) ⟧ˢ ∘ p ~ₕ ⟦ vrs (sfins (pFn n)) ⟧ˢ
+lemmaFins zero = ∘<> p
+lemmaFins (suc n) = begin
+  < ⟦ vrs (sfins (pFn n)) ⟧ˢ , q `[ p ] > ∘ p              ≈⟨ maps (q `[ p ]) ⟦ vrs (sfins (sfins (idFin n))) ⟧ˢ p ⟩
+  < ⟦ vrs (sfins (pFn n)) ⟧ˢ ∘ p , q `[ p ] `[ p ] >       ≈⟨ {!!} ⟩
+  < ⟦ vrs (sfins (sfins (pFn n))) ⟧ˢ , (q `[ p ]) `[ p ] > ∎
+  where open EqR (HomS {_} {_})
+
+pp=vars zero = refl~ₕ
+pp=vars (suc n) = begin
+  < vars (sucs (sucs (idFins n))) , q `[ p ] >      ≈⟨ cong-<,> refl~ₜ (sym~ₕ (var-lemma (sucs (idFins n)))) ⟩
+  < vars (sucs (idFins n)) ∘ p , q `[ p ] >         ≈⟨ cong-<,> refl~ₜ (cong-∘ (pp=vars n) refl~ₕ) ⟩
+  < ⟦ vrs (sfins (idFin n)) ⟧ˢ ∘ p , q `[ p ] >     ≈⟨ cong-<,> refl~ₜ (lemmaFins n) ⟩
+  < ⟦ vrs (sfins (sfins (idFin n))) ⟧ˢ , q `[ p ] > ∎
+  where open EqR (HomS {_} {_})

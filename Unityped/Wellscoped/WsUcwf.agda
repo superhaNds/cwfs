@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas  #-}
 -------------------------------------------------------------------------------
 -- Proofs of the equational laws of a ucwf and a λβ-ucwf for the wellscoped
 -- terms.
@@ -40,7 +39,7 @@ t[id] (ƛ t) = begin
   ƛ t               ∎
   where open P.≡-Reasoning
 
-t[id]~ : ∀ {n} (t : Term n) → t [ id ] ~ t
+{-t[id]~ : ∀ {n} (t : Term n) → t [ id ] ~ t
 t[id]~ (var i) rewrite lookup-id i = varcong i
 t[id]~ (t · u) = apcong (t[id]~ t) (t[id]~ u)
 t[id]~ (ƛ t) = begin
@@ -48,7 +47,7 @@ t[id]~ (ƛ t) = begin
   ƛ (t [ p' ∙ q ]) ≈⟨ cong≡~ (λ x → ƛ (t [ x ∙ q ])) (sym p=p') ⟩
   ƛ (t [ p ∙ q ])  ≈⟨ ξ (t[id]~ t) ⟩
   ƛ t              ∎
-  where open EqR (TermSetoid {_})
+  where open EqR (TermSetoid {_})-}
   
 -- Substituting in a composition is applying the substitution to the first and then the second
 
@@ -61,13 +60,13 @@ t[id]~ (ƛ t) = begin
 []-asso (ƛ t) ρ σ = trans (cong (ƛ ∘ t [_]) (↑ₛ-dist ρ σ))
                             (cong ƛ ([]-asso t (↑ₛ ρ) (↑ₛ σ)))
 
-[]-asso~ : ∀ {m n k} (t : Term n) (ρ : Subst m n) (σ : Subst k m) →
+{-[]-asso~ : ∀ {m n k} (t : Term n) (ρ : Subst m n) (σ : Subst k m) →
            t [ ρ ⋆ σ ] ~ t [ ρ ] [ σ ]
 []-asso~ (var zero) (x ∷ ρ) σ = refl~
 []-asso~ (var (suc i)) (x ∷ ρ) σ = []-asso~ (var i) ρ σ
 []-asso~ (t · u) ρ σ = apcong ([]-asso~ t ρ σ) ([]-asso~ u ρ σ)
 []-asso~ (ƛ t) ρ σ = trans~ (ξ (cong-[] {t = t} refl~ (↑ₛ-dist ρ σ)))
-                            (ξ ([]-asso~ t (↑ₛ ρ) (↑ₛ σ)))
+                            (ξ ([]-asso~ t (↑ₛ ρ) (↑ₛ σ)))-}
 
 -- identity sub of zero
 
@@ -119,14 +118,32 @@ p⋆Cons t σ = trans (p∘-lookup (σ ∙ t)) (map-lookup-↑ (σ ∙ t))
 
 -- Substituting the De Bruijn zero variable takes the last assumption
 
-q[] : ∀ {m n} (t : Term m) (σ : Subst m n) → q [ σ ∙ t ] ~ t
-q[] _ _ = refl~
+q[] : ∀ {m n} (t : Term m) (σ : Subst m n) → q [ σ ∙ t ] ≡ t
+q[] _ _ = refl
 
 -- Composing with a cons (by definition)
 
 maps : ∀ {m n} (t : Term n) (σ : Subst n m) (γ : Subst m n) →
        (σ ∙ t) ⋆ γ ≡ (σ ⋆ γ) ∙ t [ γ ]
 maps t σ γ = refl
+
+-- Congruence rules
+
+congSub : ∀ {n m} {t t' : Term n} {ρ ρ' : Subst m n} → t ≡ t' → ρ ≡ ρ' → t [ ρ ] ≡ t' [ ρ' ]
+congSub refl refl = refl
+
+cong-∙ : ∀ {n m} {t t' : Term m} {ρ ρ' : Subst m n} → t ≡ t' → ρ ≡ ρ' → ρ ∙ t ≡ ρ' ∙ t'
+cong-∙ refl refl = refl
+
+cong-⋆ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →
+         ρ ≡ σ → ρ' ≡ σ' → ρ ⋆ ρ' ≡ σ ⋆ σ'
+cong-⋆ refl refl = refl
+
+cong-ƛ : ∀ {n} {t t' : Term (suc n)} → t ≡ t' → ƛ t ≡ ƛ t'
+cong-ƛ refl = refl
+
+cong-ap : ∀ {n} {t t' u u' : Term n} → t ≡ t' → u ≡ u' → t · u ≡ t' · u'
+cong-ap refl refl = refl
 
 ----------------------------------------------------------------------------------
 -- Terms form a pure ucwf
@@ -135,7 +152,7 @@ Tm-ucwf : Ucwf
 Tm-ucwf = record
             { Term  = Term
             ; Hom   = Subst
-            ; _~ₜ_  = _~_
+            ; _~ₜ_  = _≡_
             ; _~ₕ_  = _≡_
             ; id    = id
             ; <>    = []
@@ -150,37 +167,42 @@ Tm-ucwf = record
             ; idL   = ∘-lid
             ; idR   = ∘-rid
             ; assoc = ⋆-asso
-            ; terId = t[id]~
+            ; terId = t[id]
             ; pCons = p⋆Cons
             ; qCons = q[]
-            ; clos  = []-asso~
+            ; clos  = []-asso
             ; maps  = maps
             ; cong-<,> = cong-∙
-            ; cong-[_] = cong-[]
+            ; cong-[_] = congSub
             ; cong-∘   = cong-⋆
             }
 
 ------------------------------------------------------------------------------------
--- Term is also a Ucwf with lambda - application and with β - η
+-- Term is also a Ucwf with lambda - application
 
-η′ : ∀ {n} (t : Term n) → ƛ (t [ p ] · q) ~ t
-η′ t = trans~ (cong≡~ (λ x → ƛ (x · q)) (sym $ wk-[p] t)) (η t) 
+abs : ∀ {n m} (t : Term (1 + n)) (σ : Subst m n) → ƛ t [ σ ] ≡ ƛ (t [ (σ ⋆ p) ∙ q ])
+abs t σ = sym (cong (λ x → ƛ (t [ x ∙ q ])) (mapWk-⋆p σ))
 
-abs : ∀ {n m} (t : Term (1 + n)) (σ : Subst m n) → ƛ t [ σ ] ~ ƛ (t [ (σ ⋆ p) ∙ q ])
-abs t σ = sym~ $ cong≡~ (λ x → ƛ (t [ x ∙ q ] )) (mapWk-⋆p σ)
+appSub : ∀ {n m} (t u : Term n) (ρ : Subst m n) → t [ ρ ] · u [ ρ ] ≡ (t · u) [ ρ ]
+appSub t u ρ = refl 
 
 Tm-λ-ucwf : Lambda-ucwf
 Tm-λ-ucwf = record { ucwf   = Tm-ucwf
                    ; ƛ      = ƛ
                    ; _·_    = _·_
-                   ; cong-ƛ = ξ
-                   ; cong-· = apcong
-                   ; app    = λ _ _ _ → refl~
+                   ; cong-ƛ = cong-ƛ
+                   ; cong-· = cong-ap
+                   ; app    = appSub
                    ; abs    = abs
                    }
+{-
+η′ : ∀ {n} (t : Term n) → ƛ (t [ p ] · q) ~ t
+η′ t = trans~ (cong≡~ (λ x → ƛ (x · q)) (sym $ wk-[p] t)) (η t) 
+
 
 Tm-λβη-ucwf : Lambda-βη-ucwf
 Tm-λβη-ucwf = record { lambda-ucwf = Tm-λ-ucwf
                      ; β   = β
                      ; η   = η′
                      }
+-}

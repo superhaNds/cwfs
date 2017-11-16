@@ -54,6 +54,10 @@ t ≈⟨⟩ t~u = t~u
 cong≡~ : ∀ {n} {A : Set} {t u} (f : A → Term n) → t ≡ u → f t ~ f u
 cong≡~ f refl = refl~
 
+subst≡ : ∀ {n} {t u : Term n} → t ≡ u → t ~ u
+subst≡ refl = refl~
+
+{-
 cong-[] : ∀ {m n} {t t' : Term n} {ρ ρ' : Subst m n} →
           t ~ t' → ρ ≡ ρ' → t [ ρ ] ~ t' [ ρ' ]
 cong-[] (varcong i) refl = refl~
@@ -90,3 +94,4 @@ cong-∙ (trans~ t~t' t~t'') refl =
         (cong-∙ t~t'' refl)
 cong-∙ (β t u) refl = {!!}
 cong-∙ (η t) refl = {!!}
+-}

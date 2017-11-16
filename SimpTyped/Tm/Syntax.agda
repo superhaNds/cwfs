@@ -47,7 +47,7 @@ weaken-same : ∀ {Γ α β} (t : Term Γ α) → Term (Γ ∙ β) α
 weaken-same = _[ p ]
 
 p' : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
-p' {Γ} {α} = proj₂ id
+p' = proj₂ id
 
 infix 20 _⋆_
 
@@ -81,27 +81,13 @@ Tm~β {Γ} {α} = record
   ; _≈_ = _~_
   ; isEquivalence = ~eq }
 
-cong≡vr : ∀ {Γ α} {v₁ v₂ : α ∈ Γ} → v₁ ≡ v₂ → var v₁ ~ var v₂
-cong≡vr refl = varcong _
-
-cong≡~ : ∀ {Γ α} {A : Set} {t t'} (f : A → Term Γ α) →
-         t ≡ t' → f t ~ f t'
-cong≡~ f refl = refl~          
-
-subst≡ : ∀ {Γ α} {t t' : Term Γ α} → t ≡ t' → t ~ t'
-subst≡ t = cong≡~ (λ x → x) t
-
 cong-[] : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Δ ▹ Γ} →
-          t ~ t' → γ ≡ γ' → t [ γ ] ~ t' [ γ' ]
-cong-[] (varcong φ) refl = refl~
-cong-[] (sym~ t~t') refl = sym~ (cong-[] t~t' refl)
-cong-[] (trans~ t~t' t~t'') refl = trans~ (cong-[] t~t' refl) (cong-[] t~t'' refl)
+          t ≡ t' → γ ≡ γ' → t [ γ ] ≡ t' [ γ' ]
+cong-[] refl refl = refl
 
 cong-, : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Γ ▹ Δ} →
-         t ~ t' → γ ≡ γ' → (t , γ) ≡ (t' , γ')
-cong-, (varcong φ) refl = refl
-cong-, (sym~ t~t') refl = sym (cong-, t~t' refl)
-cong-, (trans~ t~t' t~t'') refl = trans (cong-, t~t' refl) (cong-, t~t'' refl)
+         t ≡ t' → γ ≡ γ' → (t , γ) ≡ (t' , γ')
+cong-, refl refl = refl
 
 cong-⋆ : ∀ {Γ Δ Θ} {γ δ : Δ ▹ Θ} {γ' δ' : Γ ▹ Δ} →
          γ ≡ δ → γ' ≡ δ' → γ ⋆ γ' ≡ δ ⋆ δ'

@@ -15,9 +15,6 @@ open import SimpTyped.Scwf
 wk-refl : ∀ {Γ α} (t : Term Γ α) → weaken ⊆-refl t ≡ t
 wk-refl (var ∈Γ) = var-eq (sub-in-refl ∈Γ)
 
-wk-refl~ : ∀ {Γ α} (t : Term Γ α) → weaken ⊆-refl t ~ t
-wk-refl~ (var ∈Γ) = cong≡vr (sub-in-refl ∈Γ)
-
 wk-sub-refl : ∀ {Δ} Γ (ρ : Δ ▹ Γ) → ▹-weaken Γ (⊆-refl) ρ ≡ ρ
 wk-sub-refl ε tt            = refl
 wk-sub-refl (Γ ∙ x) (t , ρ) = cong₂ _,_ (wk-refl t) (wk-sub-refl Γ ρ)
@@ -36,12 +33,12 @@ id=<pq> {Γ ∙ x} = refl
 ⋆-<> : ∀ {Γ Δ} (ρ : Γ ▹ Δ) → [] {Γ} ⋆ ρ ≡ [] {Γ}
 ⋆-<> _ = refl
 
-q[] : ∀ {Γ Δ α} (t : Term Γ α) (ρ : Γ ▹ Δ) → q [ t , ρ ] ~ t
-q[] t ρ = refl~
+q[] : ∀ {Γ Δ α} (t : Term Γ α) (ρ : Γ ▹ Δ) → q [ t , ρ ] ≡ t
+q[] t ρ = refl
 
 tk-weaken : ∀ {Γ Δ Θ α} (φ : α ∈ Γ) (i : Δ ⊆ Θ) (ρ : Δ ▹ Γ) →
-            weaken i (tkVar φ ρ) ~ tkVar φ (▹-weaken Γ i ρ)
-tk-weaken here i ρ = refl~
+            weaken i (tkVar φ ρ) ≡ tkVar φ (▹-weaken Γ i ρ)
+tk-weaken here i ρ = refl
 tk-weaken (there φ) i (t , ρ) = tk-weaken φ i ρ            
 
 simp-refl : ∀ (Γ {Δ} : Ctx) (ρ : Δ ▹ Γ) → simp ⊆-refl ρ ≡ ρ
@@ -49,21 +46,17 @@ simp-refl ε tt = refl
 simp-refl (Γ ∙ x) (t , ρ) = cong (t ,_) (simp-refl Γ ρ)
 
 []-wk : ∀ {Γ Δ N α} (φ : Δ ⊆ N) (t : Term Γ α) (ρ : Δ ▹ Γ) →
-        weaken φ (t [ ρ ]) ~ t [ ▹-weaken Γ φ ρ ]
+        weaken φ (t [ ρ ]) ≡ t [ ▹-weaken Γ φ ρ ]
 []-wk φ (var ∈Γ) ρ = tk-weaken ∈Γ φ ρ
-
-postulate
-  []-wk≡ : ∀ {Γ Δ N α} (φ : Δ ⊆ N) (t : Term Γ α) (ρ : Δ ▹ Γ) →
-           weaken φ (t [ ρ ]) ≡ t [ ▹-weaken Γ φ ρ ]
 
 wk-⋆ : ∀ (Γ {Δ} {E} {Θ} : Ctx) (φ : E ⊆ Θ) (ρ : Δ ▹ Γ) (σ : E ▹ Δ) →
        ρ ⋆ (▹-weaken Δ φ σ) ≡ ▹-weaken Γ φ (ρ ⋆ σ)
 wk-⋆ ε       φ ρ       σ = refl
-wk-⋆ (Γ ∙ x) φ (t , ρ) σ = cong-, (sym~ ([]-wk φ t σ)) (wk-⋆ Γ φ ρ σ)
+wk-⋆ (Γ ∙ x) φ (t , ρ) σ = cong-, (sym ([]-wk φ t σ)) (wk-⋆ Γ φ ρ σ)
 
 tk-⋆ : ∀ {Γ Δ Θ α} (φ : α ∈ Γ) (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) →
-       (tkVar φ ρ) [ σ ] ~ tkVar φ (ρ ⋆ σ)
-tk-⋆ here ρ σ = refl~
+       (tkVar φ ρ) [ σ ] ≡ tkVar φ (ρ ⋆ σ)
+tk-⋆ here ρ σ = refl
 tk-⋆ (there φ) (t , ρ) σ = tk-⋆ φ ρ σ
 
 tk-in : ∀ {Γ Δ Θ α} (φ : Γ ⊆ Δ) (v : α ∈ Γ) (ρ : Θ ▹ Δ) →
@@ -112,9 +105,6 @@ tkVar-id {Γ = Γ ∙ x} (there v) =
 t[id] : ∀ {Γ α} (t : Term Γ α) → t [ id ] ≡ t
 t[id] (var ∈Γ) = tkVar-id ∈Γ
 
-t[id]~ : ∀ {Γ α} (t : Term Γ α) → t [ id ] ~ t
-t[id]~ t rewrite t[id] t = refl~
-
 idR : ∀ {Γ Δ} (ρ : Γ ▹ Δ) → ρ ⋆ id ≡ ρ
 idR {Δ = ε}     tt      = refl
 idR {Δ = Δ ∙ x} (t , ρ) =
@@ -130,7 +120,7 @@ p⋆, {Θ = Θ} t = trans (⋆-step Θ id _ t) ∘ idL
 sub-p : ∀ {Γ α β} (t : Term Γ α) → t [ p {α = β} ] ≡ weaken ⊆-∙ t
 sub-p {Γ} t = begin
   t [ p ]                 ≡⟨⟩
-  t [ ▹-weaken Γ ⊆-∙ id ] ≡⟨ sym ([]-wk≡ ⊆-∙ t id) ⟩
+  t [ ▹-weaken Γ ⊆-∙ id ] ≡⟨ sym ([]-wk ⊆-∙ t id) ⟩
   weaken ⊆-∙ (t [ id ] )  ≡⟨ cong (weaken ⊆-∙) (t[id] t) ⟩ 
   weaken ⊆-∙ t            ∎
   where open P.≡-Reasoning
@@ -149,11 +139,6 @@ idL {Γ ∙ α} (t , ρ) = cong (t ,_) (p⋆, t ρ)
           t [ γ ⋆ δ ] ≡ t [ γ ] [ δ ]
 []-asso (var here) γ δ = refl
 []-asso (var (there ∈Γ)) (u , γ) δ = []-asso (var ∈Γ) γ δ            
-
-[]-asso~ : ∀ {Γ Δ Θ α} (t : Term Δ α) (γ : Γ ▹ Δ) (δ : Θ ▹ Γ) →
-          t [ γ ⋆ δ ] ~ t [ γ ] [ δ ]
-[]-asso~ (var here) γ δ = refl~
-[]-asso~ (var (there ∈Γ)) (u , γ) δ = []-asso~ (var ∈Γ) γ δ            
 
 ⋆-asso : ∀ {Γ Δ Θ Λ} (γ : Δ ▹ Θ) (δ : Γ ▹ Δ) (ζ : Λ ▹ Γ) →
          (γ ⋆ δ) ⋆ ζ ≡ γ ⋆ (δ ⋆ ζ)
@@ -174,7 +159,7 @@ TermScwf = record
              ; ε        = ε
              ; Tm       = Term
              ; Hom      = _▹_
-             ; _~_      = _~_
+             ; _~_      = _≡_
              ; _~~_     = _≡_
              ; <>       = tt
              ; id       = id
@@ -189,10 +174,10 @@ TermScwf = record
              ; idL      = idL
              ; idR      = idR
              ; assoc    = ⋆-asso
-             ; tmId     = t[id]~
+             ; tmId     = t[id]
              ; pCons    = p⋆,
              ; q[]      = q[]
-             ; clos     = []-asso~
+             ; clos     = []-asso
              ; maps     = maps
              ; cong-[]  = cong-[]
              ; cong-<,> = cong-,

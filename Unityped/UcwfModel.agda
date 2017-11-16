@@ -46,10 +46,6 @@ p′ : (m n : Nat) → Hom (m + n) n
 p′ zero n    = id
 p′ (suc m) n = p′ m n ∘ p
 
-p′′ : (m n : Nat) → Hom (m + n) n
-p′′ zero n = id
-p′′ (suc m) n rewrite P.sym (NatP.+-suc m n) = p ∘ p′′ m (1 + n)
-
 record Homable (H : Nat → Nat → Set) : Set where
   field
     id-able  : (m : Nat) → H m m
@@ -190,9 +186,6 @@ hom0~<> ts = begin
 
 p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
 p′0~<> {m} = hom0~<> (p′ m 0)
-
-p′′0~<> : ∀ {m} → p′′ m 0 ~ₕ <>
-p′′0~<> {m} = hom0~<> (p′′ m 0)
 
 eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p ∘ ts , q [ ts ] >
 eta ts = begin

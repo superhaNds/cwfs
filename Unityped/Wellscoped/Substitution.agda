@@ -136,19 +136,26 @@ p' = map (λ t → ren t pR) id
 p : ∀ {n} → Subst (1 + n) n
 p = tabulate (λ x → var (suc x))
 
-idFin : ∀ n → Ren n n
-idFin zero = []
-idFin (suc n) = zero ∷ map suc (idFin n)
-
 sfins : ∀ {m n} → Ren m n → Ren (suc m) n
 sfins [] = []
 sfins (i ∷ ρ) = suc i ∷ sfins ρ
 
+idFin : ∀ n → Ren n n
+idFin zero = []
+idFin (suc n) = zero ∷ sfins (idFin n)
+
 pFn : ∀ n → Ren (suc n) n
 pFn n = sfins (idFin n)
 
+vrs : ∀ {n m} (is : Ren m n) → Subst m n
+vrs [] = []
+vrs (i ∷ is) = (var i) ∷ (vrs is)
+
+pp' : ∀ n → Subst (1 + n) n
+pp' n = map var (pFn n)
+
 pp : ∀ n → Subst (1 + n) n
-pp n = map var (pFn n)
+pp = vrs ∘ pFn
 
 -- Another version of weakening
 

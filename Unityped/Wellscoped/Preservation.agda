@@ -31,17 +31,24 @@ data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
 
   var : ∀ {i} → Γ ⊢ var i ∈ Vec.lookup i Γ
   
-  ƛ   : ∀ {t σ τ} →
+  ƛ   : ∀ {t α β} →
   
-          σ Vec.∷ Γ ⊢ t ∈ τ →
+          α Vec.∷ Γ ⊢ t ∈ β →
           ----------------------
-              Γ ⊢ ƛ t ∈ σ ⇒ τ
+              Γ ⊢ ƛ t ∈ α ⇒ β
               
-  _·_ : ∀ {t₁ t₂ σ τ} →
+  _·_ : ∀ {t u σ τ} →
   
-          Γ ⊢ t₁ ∈ σ ⇒ τ → Γ ⊢ t₂ ∈ σ →
+          Γ ⊢ t ∈ σ ⇒ τ → Γ ⊢ u ∈ σ →
           ------------------------------
-                Γ ⊢ t₁ · t₂ ∈ τ
+                Γ ⊢ t · u ∈ τ
+
+⊢vr0 : ∀ {n α} {Γ : Ctx n} → α Vec.∷ Γ ⊢ q ∈ α
+⊢vr0 = var
+
+⊢vrn : ∀ {n α β} {i : Fin n} {Γ : Ctx n} → Γ ⊢ var i ∈ β →
+       α ∷ Γ ⊢ var (suc i) ∈ β
+⊢vrn var = var
 
 module TermApp {T} (l : Lift T Term) where
   open Lift l hiding (var)

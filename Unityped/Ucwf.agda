@@ -27,28 +27,28 @@ record Ucwf : Set₁ where
     _~ₕ_   : ∀ {m n} → Rel (Hom m n) lzero
 
     -- operator symbols
-    id     : {ν : Nat} → Hom ν ν
-    <>     : {μ : Nat} → Hom μ 0
-    p      : {ν : Nat} → Hom (suc ν) ν
-    q      : {ν : Nat} → Term (suc ν)
-    _∘_    : {μ ν k : Nat} → Hom ν k → Hom μ ν → Hom μ k
-    _[_]   : {μ ν : Nat} → Term ν → Hom μ ν → Term μ
-    <_,_>  : {μ ν : Nat} → Hom μ ν → Term μ → Hom μ (suc ν)
+    id     : {n : Nat} → Hom n n
+    <>     : {m : Nat} → Hom m 0
+    p      : {n : Nat} → Hom (suc n) n
+    q      : {n : Nat} → Term (suc n)
+    _∘_    : {m n k : Nat} → Hom n k → Hom m n → Hom m k
+    _[_]   : {m n : Nat} → Term n → Hom m n → Term m
+    <_,_>  : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
 
     -- axioms
     id₀   : id {0} ~ₕ <>
-    ∘<>   : ∀ {μ ν : Nat} (ts : Hom μ ν) → <> ∘ ts ~ₕ <> 
-    varp  : ∀ {ν : Nat} → id {suc ν} ~ₕ < p , q >
-    idL   : ∀ {μ ν : Nat} (ts : Hom μ ν) → id ∘ ts ~ₕ ts
-    idR   : ∀ {μ ν : Nat} (ts : Hom μ ν) → ts ∘ id ~ₕ ts
-    assoc : ∀ {μ ν κ ι : Nat} (ts : Hom ν κ) (us : Hom μ ν) (vs : Hom ι μ) →
+    ∘<>   : ∀ {m n : Nat} (ts : Hom m n) → <> ∘ ts ~ₕ <> 
+    varp  : ∀ {n : Nat} → id {suc n} ~ₕ < p , q >
+    idL   : ∀ {m n : Nat} (ts : Hom m n) → id ∘ ts ~ₕ ts
+    idR   : ∀ {m n : Nat} (ts : Hom m n) → ts ∘ id ~ₕ ts
+    assoc : ∀ {m n κ ι : Nat} (ts : Hom n κ) (us : Hom m n) (vs : Hom ι m) →
              (ts ∘ us) ∘ vs ~ₕ ts ∘ (us ∘ vs)
-    terId : ∀ {μ ν : Nat} (t : Term ν) → t [ id ] ~ₜ t
-    pCons : ∀ {μ ν κ : Nat} → (t : Term ν) → (ts : Hom ν κ) → p ∘ < ts , t > ~ₕ ts
-    qCons : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) → q [ < ts , t > ] ~ₜ t
-    clos  : ∀ {μ ν κ : Nat} (t : Term ν) (ts : Hom μ ν) (us : Hom κ μ) →
+    terId : ∀ {m n : Nat} (t : Term n) → t [ id ] ~ₜ t
+    pCons : ∀ {m n κ : Nat} → (t : Term n) → (ts : Hom n κ) → p ∘ < ts , t > ~ₕ ts
+    qCons : ∀ {m n : Nat} (t : Term n) (ts : Hom n m) → q [ < ts , t > ] ~ₜ t
+    clos  : ∀ {m n κ : Nat} (t : Term n) (ts : Hom m n) (us : Hom κ m) →
              t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
-    maps  : ∀ {μ ν : Nat} (t : Term ν) (ts : Hom ν μ) (us : Hom μ ν) →
+    maps  : ∀ {m n : Nat} (t : Term n) (ts : Hom n m) (us : Hom m n) →
              < ts , t > ∘ us ~ₕ < ts ∘ us , t [ us ] >
              
     -- congruence rules for operators
@@ -76,12 +76,12 @@ record Lambda-ucwf : Set₁ where
   open Ucwf ucwf public
   
   field
-    ƛ   : {ν : Nat} → Term (suc ν) → Term ν
-    _·_ : {ν : Nat} → Term ν → Term ν → Term ν
-    cong-ƛ : ∀ {ν} {t u : Term (suc ν)} → t ~ₜ u → ƛ t ~ₜ ƛ u
-    cong-· : ∀ {ν} {t u t′ u′ : Term ν} → t ~ₜ t′ → u ~ₜ u′ → t · u ~ₜ t′ · u′
-    app : {ν μ : Nat} (t u : Term ν) (ts : Hom μ ν) → (t [ ts ]) · (u [ ts ]) ~ₜ (t · u) [ ts ]
-    abs : {ν μ : Nat} (t : Term (suc ν)) (ts : Hom μ ν) → ƛ t [ ts ] ~ₜ ƛ (t [ ⇑ ts ])
+    ƛ   : {n : Nat} → Term (suc n) → Term n
+    _·_ : {n : Nat} → Term n → Term n → Term n
+    cong-ƛ : ∀ {n} {t u : Term (suc n)} → t ~ₜ u → ƛ t ~ₜ ƛ u
+    cong-· : ∀ {n} {t u t′ u′ : Term n} → t ~ₜ t′ → u ~ₜ u′ → t · u ~ₜ t′ · u′
+    app : {n m : Nat} (t u : Term n) (ts : Hom m n) → (t [ ts ]) · (u [ ts ]) ~ₜ (t · u) [ ts ]
+    abs : {n m : Nat} (t : Term (suc n)) (ts : Hom m n) → ƛ t [ ts ] ~ₜ ƛ (t [ ⇑ ts ])
 
 -- Extending the ucwf with lambdas up to β and η
 
@@ -92,6 +92,6 @@ record Lambda-βη-ucwf : Set₁ where
   open Lambda-ucwf lambda-ucwf public
 
   field
-    β   : {ν : Nat} (t : Term (suc ν)) (u : Term ν) → ƛ t · u ~ₜ t [ < id , u > ]
-    η   : {ν : Nat} (t : Term ν) → ƛ (weaken t · q) ~ₜ t
+    β   : {n : Nat} (t : Term (suc n)) (u : Term n) → ƛ t · u ~ₜ t [ < id , u > ]
+    η   : {n : Nat} (t : Term n) → ƛ (weaken t · q) ~ₜ t
     
