@@ -12,8 +12,10 @@ data Tm : Ctx → Ty → Set
 data Hom : Ctx → Ctx → Set
 
 data Tm where
-  q    : ∀ {Γ α} → Tm (Γ , α) α
+  q    : ∀ {Γ α}   → Tm (Γ , α) α
   _[_] : ∀ {Γ Δ α} → Tm Γ α  → Hom Δ Γ → Tm Δ α
+  lam  : ∀ {Γ α β} → Tm (Γ , α) β → Tm Γ (α ⇒ β)
+  app  : ∀ {Γ α β} → Tm Γ (α ⇒ β) → Tm Γ α → Tm Γ β
 
 data Hom where
   <>    : ∀ {Γ} → Hom Γ ε
@@ -36,8 +38,15 @@ data _~_ where
   q[]     : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Hom Γ Δ) → q [ < γ , t > ] ~ t
   clos    : ∀ {Γ Δ Θ α} (t : Tm Δ α) (γ : Hom Γ Δ) (δ : Hom Θ Γ) →
             t [ γ ∘ δ ] ~ t [ γ ] [ δ ]
+  appCm   : ∀ {Γ Δ α β} (t : Tm Γ (α ⇒ β)) (u : Tm Γ α) (γ : Hom Δ Γ) →
+            app (t [ γ ]) (u [ γ ]) ~ app t u [ γ ]
+  lamCm   : ∀ {Γ Δ α β} (t : Tm (Γ , α) β) (γ : Hom Δ Γ) →
+            lam t [ γ ] ~ lam (t [ < γ ∘ p , q > ])
   cong-[] : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Hom Δ Γ} →
             t ~ t' → γ ~~ γ' → t [ γ ] ~ t' [ γ' ]
+  cong-app  : ∀ {Γ α β} {t t' : Tm Γ (α ⇒ β)} {u u' : Tm Γ α} →
+            t ~ t' → u ~ u' → app t u ~ app t' u'
+  cong-lam : ∀ {Γ α β} {t t' : Tm (Γ , α) β} → t ~ t' → lam t ~ lam t'
   sym~    : ∀ {Γ α} {t t' : Tm Γ α} → t ~ t' → t' ~ t
   trans~  : ∀ {Γ α} {t t' t'' : Tm Γ α} → t ~ t' → t' ~ t'' → t ~ t''
 

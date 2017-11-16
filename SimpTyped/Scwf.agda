@@ -49,3 +49,18 @@ record Scwf : Set₁ where
                t ~ t' → γ ~~ γ' → < γ , t > ~~ < γ' , t' >
     cong-∘ : ∀ {Γ Δ Θ} {γ δ : Hom Δ Θ} {γ' δ' : Hom Γ Δ} →
              γ ~~ δ → γ' ~~ δ' → γ ∘ γ' ~~ δ ∘ δ'
+
+record Lambda-scwf : Set₁ where
+  infix 10 _·_
+
+  field scwf : Scwf
+
+  open Scwf scwf public
+
+  field
+    _`→_ : Ty → Ty → Ty
+    ƛ   : ∀ {Γ α β} → Tm (Γ , α) β → Tm Γ (α `→ β)
+    _·_ : ∀ {Γ α β} → Tm Γ (α `→ β) → Tm Γ α → Tm Γ β
+    cong-ƛ : ∀ {Γ α β} {t t' : Tm (Γ , α) β} → t ~ t' → ƛ t ~ ƛ t'
+    cong-· : ∀ {Γ α β} {t t' : Tm Γ (α `→ β)} {u u' : Tm Γ α} →
+             t ~ t' → u ~ u' → t · u ~ t' · u'

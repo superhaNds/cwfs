@@ -8,15 +8,18 @@ open import SimpTyped.Context
 open import Function using (_$_ ; _∘_)
 open import Data.Product using (_×_ ; proj₁ ; proj₂ ; _,_)
 open import Data.Unit using (⊤ ; tt)
-open import Relation.Binary
+open import Relation.Binary hiding (_⇒_)
 
+infix 10 _·_
 data Term (Γ : Ctx) : Ty → Set where
   var : ∀ {α} (∈Γ : α ∈ Γ) → Term Γ α
-  --_·_ : ∀ {α β} → Term Γ (α ⇒ β) → Term Γ α → Term Γ β
-  --ƛ   : ∀ α {β} → Term (Γ , α) β → Term Γ α → Term Γ (α ⇒ β)
+  _·_ : ∀ {α β} → Term Γ (α ⇒ β) → Term Γ α → Term Γ β
+  ƛ   : ∀ {α β} → Term (Γ ∙ α) β → Term Γ (α ⇒ β)
 
 weaken : ∀ {α} {Γ Δ : Ctx} (φ : Γ ⊆ Δ) (t : Term Γ α) → Term Δ α
 weaken φ (var ∈Γ) = var (sub-in φ ∈Γ)
+weaken φ (t · u)  = weaken φ t · weaken φ u
+weaken φ (ƛ t)    = ƛ (weaken (pop! φ) t)
 
 q : ∀ {Γ α} → Term (Γ ∙ α) α
 q = var here
@@ -34,11 +37,13 @@ id {ε}     = tt
 id {Γ ∙ α} = var here , ▹-weaken Γ ⊆-∙ id
 
 tkVar : ∀ {Γ Δ α} (∈Γ : α ∈ Γ) (ρ : Δ ▹ Γ) → Term Δ α
-tkVar here (t , ρ)       = t
+tkVar here       (t , ρ) = t
 tkVar (there ∈Γ) (t , ρ) = tkVar ∈Γ ρ
 
 _[_] : ∀ {Γ Δ α} → Term Γ α → Δ ▹ Γ → Term Δ α
-var ∈Γ [ ρ ] = tkVar ∈Γ ρ
+var ∈Γ [ ρ ]  = tkVar ∈Γ ρ
+(t · u) [ ρ ] = t [ ρ ] · u [ ρ ]
+ƛ t [ ρ ]     = ƛ (t [ (var here , ▹-weaken _ ⊆-∙ ρ) ])
 
 p : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
 p {Γ} = ▹-weaken Γ ⊆-∙ id
@@ -60,27 +65,6 @@ simp base     ρ       = tt
 simp (step φ) (t , ρ) = simp φ ρ
 simp (pop! φ) (t , ρ) = t , simp φ ρ
 
-infix 6 _~_
-data _~_ {Γ α} : (t₁ t₂ : Term Γ α) → Set where
-  varcong : (φ : α ∈ Γ) → var φ ~ var φ
-  sym~ : ∀ {t t'} → t ~ t' → t' ~ t
-  trans~ : ∀ {t₁ t₂ t₃} → t₁ ~ t₂ → t₂ ~ t₃ → t₁ ~ t₃
-
-refl~ : ∀ {Γ α} {t : Term Γ α} → t ~ t
-refl~ {t = var ∈Γ} = varcong ∈Γ
-
-~eq : ∀ {Γ α} → IsEquivalence (_~_ {Γ} {α})
-~eq = record
-  { refl = refl~
-  ; sym = sym~
-  ; trans = trans~ }
-
-Tm~β : ∀ {Γ α} → Setoid _ _
-Tm~β {Γ} {α} = record
-  { Carrier = Term Γ α
-  ; _≈_ = _~_
-  ; isEquivalence = ~eq }
-
 cong-[] : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Δ ▹ Γ} →
           t ≡ t' → γ ≡ γ' → t [ γ ] ≡ t' [ γ' ]
 cong-[] refl refl = refl
@@ -98,3 +82,13 @@ var-eq refl = refl
 
 var-eq-inv : ∀ {Γ α} {φ₁ φ₂ : α ∈ Γ} → var φ₁ ≡ var φ₂ → φ₁ ≡ φ₂
 var-eq-inv refl = refl
+
+ƛ-eq : ∀ {Γ α β} {t t' : Term (Γ ∙ α) β} → t ≡ t' → ƛ t ≡ ƛ t'
+ƛ-eq refl = refl
+
+ƛ-eq-inv : ∀ {Γ α β} {t t' : Term (Γ ∙ α) β} → ƛ t ≡ ƛ t' → t ≡ t'
+ƛ-eq-inv refl = refl
+
+app-eq : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
+          t ≡ t' → u ≡ u' → t · u ≡ t' · u'
+app-eq refl refl = refl          
