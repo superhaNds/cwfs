@@ -189,21 +189,3 @@ postulate obv : ∀ n → pNorm (suc n) ~ₕ ⟦ p~ ⟧ˢ
 
 lemmaₚ zero = refl~ₕ
 lemmaₚ (suc n) = obv n
-
-pp=vars : ∀ n → pNorm n ~ₕ ⟦ pp n ⟧ˢ
-
-lemmaFins : ∀ n → ⟦ vrs (pFn n) ⟧ˢ ∘ p ~ₕ ⟦ vrs (sfins (pFn n)) ⟧ˢ
-lemmaFins zero = ∘<> p
-lemmaFins (suc n) = begin
-  < ⟦ vrs (sfins (pFn n)) ⟧ˢ , q `[ p ] > ∘ p              ≈⟨ maps (q `[ p ]) ⟦ vrs (sfins (sfins (idFin n))) ⟧ˢ p ⟩
-  < ⟦ vrs (sfins (pFn n)) ⟧ˢ ∘ p , q `[ p ] `[ p ] >       ≈⟨ {!!} ⟩
-  < ⟦ vrs (sfins (sfins (pFn n))) ⟧ˢ , (q `[ p ]) `[ p ] > ∎
-  where open EqR (HomS {_} {_})
-
-pp=vars zero = refl~ₕ
-pp=vars (suc n) = begin
-  < vars (sucs (sucs (idFins n))) , q `[ p ] >      ≈⟨ cong-<,> refl~ₜ (sym~ₕ (var-lemma (sucs (idFins n)))) ⟩
-  < vars (sucs (idFins n)) ∘ p , q `[ p ] >         ≈⟨ cong-<,> refl~ₜ (cong-∘ (pp=vars n) refl~ₕ) ⟩
-  < ⟦ vrs (sfins (idFin n)) ⟧ˢ ∘ p , q `[ p ] >     ≈⟨ cong-<,> refl~ₜ (lemmaFins n) ⟩
-  < ⟦ vrs (sfins (sfins (idFin n))) ⟧ˢ , q `[ p ] > ∎
-  where open EqR (HomS {_} {_})

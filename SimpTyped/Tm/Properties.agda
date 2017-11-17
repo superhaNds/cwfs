@@ -135,5 +135,13 @@ wk-[p] : ∀ {Γ α} (t : Term Γ α) →
          weaken (step {σ = α} ⊆-refl) t ≡ t [ p ]
 wk-[p] t = sym $ sub-p t
 
+▹-weaken-⋆-p : ∀ {Γ Δ α} (ρ : Δ ▹ Γ) → ρ ⋆ p {α = α} ≡ ▹-weaken Γ ⊆-∙ ρ
+▹-weaken-⋆-p {ε} tt = refl
+▹-weaken-⋆-p {Γ ∙ α} (t , ρ) = begin
+  t [ p ] , ρ ⋆ p                 ≡⟨ cong (_, ρ ⋆ p) (sub-p t) ⟩
+  weaken ⊆-∙ t , ρ ⋆ p            ≡⟨ cong (weaken ⊆-∙ t ,_) (▹-weaken-⋆-p ρ) ⟩
+  weaken ⊆-∙ t , ▹-weaken Γ ⊆-∙ ρ ∎
+  where open P.≡-Reasoning
+
 idε<> : id {ε} ≡ tt
 idε<> = refl

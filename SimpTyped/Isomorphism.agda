@@ -5,14 +5,14 @@ open import SimpTyped.Tm.Syntax
   renaming (Term to Tm-λ ; q to q~ ; weaken to weaken~ ; _[_] to _[_]'
   ; p to p~ ; id to id~ ; cong-[] to cong-[]')
 open import SimpTyped.Context
-open import SimpTyped.Tm.Properties renaming (maps to maps~ ; q[] to q[]~)
+open import SimpTyped.Tm.Properties
 open import SimpTyped.Context
+open import SimpTyped.Type
 open import Function using (_$_ ; flip)
 import Relation.Binary.EqReasoning as EqR
 open import Relation.Binary.PropositionalEquality as P hiding ([_] ; cong-app)
 open import Data.Product using (_,_)
 open import Data.Unit using (⊤ ; tt)
-
 
 ⟦_⟧  : ∀ {Γ α} → Tm-λ Γ α → Tm-cwf Γ α
 ⟪_⟫  : ∀ {Γ α} → Tm-cwf Γ α → Tm-λ Γ α
@@ -48,6 +48,8 @@ cwf∘λ : ∀ {Γ α} (t : Tm-cwf Γ α) → ⟦ ⟪ t ⟫ ⟧ ~ t
 ⟦⟧-∘-dist : ∀ {Γ Δ Θ} (ρ : Δ ▹ Θ) (σ : Γ ▹ Δ) →
             ⟦ ρ ⋆ σ ⟧ˢ ~~ ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ
 
+postulate ⟦⟧-∘-distₚ : ∀ {Γ Δ Θ} (ρ : Δ ▹ Θ) (σ : Γ ▹ Δ) → ⟦ ρ ⋆ σ ⟧ˢ ~~ ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ
+
 []-comm {ε} (var ()) tt
 []-comm (var here) (t , ρ) = sym~ (q[] ⟦ t ⟧ ⟦ ρ ⟧ˢ)
 []-comm (var (there ∈Γ)) (t , ρ) = begin
@@ -70,8 +72,17 @@ cwf∘λ : ∀ {Γ α} (t : Tm-cwf Γ α) → ⟦ ⟪ t ⟫ ⟧ ~ t
   app ⟦ t ⟧ ⟦ u ⟧ [ ⟦ ρ ⟧ˢ ]
     ∎
   where open EqR (TmCwf {_})
-[]-comm (ƛ t) ρ = {!!}  
-
+[]-comm {Γ} (ƛ {α = γ} t) ρ = begin
+  lam ⟦ t [ var here , ▹-weaken Γ ⊆-∙ ρ ]' ⟧    ≈⟨ cong-lam ([]-comm t (var here , ▹-weaken Γ ⊆-∙ ρ)) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ▹-weaken Γ ⊆-∙ ρ ⟧ˢ , q > ]) ≈⟨ cong-lam (cong-[] refl~ (help)) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⋆ p~ ⟧ˢ , q > ])           ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (⟦⟧-∘-distₚ ρ p~))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])      ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (cong-∘ refl~~ {!!}))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ p , q > ])            ≈⟨ sym~ (lamCm ⟦ t ⟧ ⟦ ρ ⟧ˢ) ⟩
+  lam ⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]                          ∎
+  where open EqR (TmCwf {_})
+        help : < ⟦ ▹-weaken Γ (⊆-∙ {a = γ}) ρ ⟧ˢ , q > ~~ < ⟦ ρ ⋆ p~ ⟧ˢ , q >
+        help rewrite ▹-weaken-⋆-p {Γ} {α = γ} ρ = refl~~
+  
 ⟦⟧-∘-dist {Θ = ε} tt σ = sym~~ (∘<> ⟦ σ ⟧ˢ)
 ⟦⟧-∘-dist {Θ = Θ ∙ x} (t , ρ) σ = begin
   < ⟦ ρ ⋆ σ ⟧ˢ , ⟦ t [ σ ]' ⟧ >
