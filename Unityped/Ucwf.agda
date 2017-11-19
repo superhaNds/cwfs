@@ -68,13 +68,10 @@ record Ucwf : Set₁ where
 -- Extending the pure ucwf with lambdas and applications
 
 record Lambda-ucwf : Set₁ where
-  infix 10 _·_
-  
+  infix 10 _·_ 
   field
-    ucwf : Ucwf
-    
-  open Ucwf ucwf public
-  
+    ucwf : Ucwf   
+  open Ucwf ucwf public  
   field
     ƛ   : {n : Nat} → Term (suc n) → Term n
     _·_ : {n : Nat} → Term n → Term n → Term n

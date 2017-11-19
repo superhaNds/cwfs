@@ -91,10 +91,13 @@ id = tabulate var
 weakenₛ : ∀ {m} → Term m → Term (1 + m)
 weakenₛ = flip ren pR
 
+weaken-subst : ∀ {m n} → Subst m n → Subst (1 + m) n
+weaken-subst = map weakenₛ
+
 -- The weakening substitution for terms
 
 ↑ₛ_ : ∀ {m n} → Subst m n → Subst (1 + m) (1 + n)
-↑ₛ_ = (q ∷_) ∘ map weakenₛ 
+↑ₛ_ = (q ∷_) ∘ weaken-subst
 
 -- The substitution operation, which is a meta level operation
 

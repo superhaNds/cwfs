@@ -55,10 +55,10 @@ abstract
 
   lookup-p' : ∀ {n} i → lookup i (p' {n}) ≡ var (suc i)
   lookup-p' {n} i = begin
-    lookup i (map weakenₛ id)      ≡⟨ sym (lookupMap _ i (id {n})) ⟩
-    weakenₛ (lookup i (id {n}))    ≡⟨ cong weakenₛ (lookup-id i) ⟩
-    weakenₛ (var i)                ≡⟨ wkVar i ⟩
-    var (suc i)                    ∎
+    lookup i (weaken-subst id)    ≡⟨ sym (lookupMap _ i (id {n})) ⟩
+    weakenₛ (lookup i (id {n}))   ≡⟨ cong weakenₛ (lookup-id i) ⟩
+    weakenₛ (var i)               ≡⟨ wkVar i ⟩
+    var (suc i)                   ∎
 
   lookup-p : ∀ {n} i → lookup i (p {n}) ≡ var (suc i)
   lookup-p i = begin
@@ -212,7 +212,7 @@ abstract
   wk-[p] (t · u) = cong₂ _·_ (wk-[p] t) (wk-[p] u)
   wk-[p] (ƛ t)   = cong ƛ (renλ t)
 
-  mapWk-⋆p : ∀ {m n} (σ : Subst m n) → σ ⋆ p ≡ map weakenₛ σ
+  mapWk-⋆p : ∀ {m n} (σ : Subst m n) → σ ⋆ p ≡ weaken-subst σ
   mapWk-⋆p [] = refl
   mapWk-⋆p (x ∷ σ) = trans (cong (_∷ σ ⋆ p) (sym $ wk-[p] x))
                            (cong (weakenₛ x ∷_) (mapWk-⋆p σ))
@@ -220,3 +220,8 @@ abstract
   p′0=[] : ∀ {m} → p′ m 0 ≡ []
   p′0=[] {zero}  = refl
   p′0=[] {suc m} = refl
+
+  lookup-wk : ∀ {m n} (i : Fin n) (ρ : Subst m n) →
+              weakenₛ (lookup i ρ) ≡ lookup i (weaken-subst ρ)
+  lookup-wk zero (x ∷ ρ) = refl
+  lookup-wk (suc i) (x ∷ ρ) = lookup-wk i ρ            

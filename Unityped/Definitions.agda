@@ -5,7 +5,7 @@ open import Data.Fin
 open import Relation.Binary using (IsEquivalence ; Setoid)
 open import Data.Vec hiding ([_])
 import Relation.Binary.EqReasoning as EqR
-import Relation.Binary.PropositionalEquality as P
+open import Relation.Binary.PropositionalEquality as P hiding ([_])
 
 
 -- the ucwf combinator language
@@ -84,6 +84,9 @@ HomS {n} {m} =
   record { Carrier = Hom m n
          ; _≈_ = _~~_
          ; isEquivalence = ~~equiv }
+         
+cong-≡ : ∀ {m n} {A : Set} {t u} (f : A → Hom m n) → t ≡ u → f t ~~ f u
+cong-≡ f refl = refl~~
 
 hom-0~<> : ∀ {n} (ts : Hom n 0) → ts ~~ <>
 hom-0~<> ts = trans~~
@@ -146,13 +149,57 @@ data Fins : Nat → Nat → Set where
   <>    : ∀ {m} → Fins m 0
   <_,_> : ∀ {m n} → Fins m n → Fin m → Fins m (suc n)
 
+lookup-fn : ∀ {m n} → Fin n → Fins m n → Fin m
+lookup-fn zero < is , x > = x
+lookup-fn (suc i) < is , x > = lookup-fn i is
+
+tab : ∀ {n m} → (Fin n → Fin m) → Fins m n
+tab {zero} f = <>
+tab {suc n} f = < (tab (λ x → f (suc x))) , (f zero) >
+
+idFins' : ∀ {n} → Fins n n
+idFins' = tab (λ x → x)
+
+lookup∘tab : ∀ {m n} (f : Fin n → Fin m) (i : Fin n) →
+                  lookup-fn i (tab f) ≡ f i
+lookup∘tab f zero = refl
+lookup∘tab f (suc i) = lookup∘tab (λ z → f (suc z)) i
+
+
+
+
+
+ren2fins : ∀ {m n} → Ren m n → Fins m n
+ren2fins [] = <>
+ren2fins (x ∷ ρ) = < ren2fins ρ , x >
+
+fins2ren : ∀ {m n} → Fins m n → Ren m n
+fins2ren <> = []
+fins2ren < is , x > = x ∷ fins2ren is
+
+fins~ren : ∀ {m n} (is : Fins m n) → ren2fins (fins2ren is) ≡ is
+fins~ren <> = refl
+fins~ren < is , x > = cong (λ z → < z , x >) (fins~ren is)
+
+ren~fins : ∀ {m n} (ρ : Ren m n) → fins2ren (ren2fins ρ) ≡ ρ
+ren~fins [] = refl
+ren~fins (x ∷ ρ) = cong (_∷_ x) (ren~fins ρ)
+
+
+mapFins : ∀ {n m k} (is : Fins m n) (f : Fin m → Fin k) → Fins k n
+mapFins <> f = <>
+mapFins < is , x > f = < mapFins is f , f x >
+
 sucs : ∀ {m n} → Fins m n → Fins (suc m) n
-sucs <> = <>
-sucs < is , i > = < (sucs is) , (suc i) >
+sucs is = mapFins is suc
 
 idFins : ∀ n → Fins n n
+idFins n = tab (λ x → x)
+{-
 idFins zero = <>
 idFins (suc n) = < sucs (idFins n) , zero >
+
+-}
 
 pFins : ∀ n → Fins (suc n) n
 pFins n = sucs (idFins n)
@@ -163,3 +210,41 @@ vars < is , i > = < vars is , varCwf i >
 
 pNorm : ∀ n → Hom (suc n) n
 pNorm n = vars (pFins n)
+
+
+mapT : ∀ {n m} (f : Fin m → Tm-cwf m) (is : Fins m n) → Hom m n
+mapT f <> = <>
+mapT f < is , x > = < mapT f is , f x >
+
+mapTT : ∀ {n m} (f : Fin m → Tm m) (is : Fins m n) → Subst m n
+mapTT f <> = []
+mapTT f < is , x > = f x ∷ mapTT f is
+
+mapV : ∀ {n m k} (ρ : Ren m n) (f : Fin m → Fin k) → Ren k n
+mapV [] f = []
+mapV (x ∷ ρ) f = f x ∷ mapV ρ f
+
+pn' : ∀ n → Hom (suc n) n
+pn' n = vars (mapFins (idFins n) suc)
+
+kkk : ∀ {m n} (is : Ren m n) → ren2fins (sucRen is) ≡ sucs (ren2fins is)
+kkk [] = refl
+kkk (x ∷ is) = cong (λ z → < z , suc x >) (kkk is)
+
+tvars : ∀ {m n} → Fins m n → Subst m n
+tvars <> = []
+tvars < is , x > = (var x) ∷ tvars is
+
+pp : ∀ n → Subst (suc n) n
+pp n = mapTT var (pFins n)
+
+
+tabulate-∘ : ∀ {n m k}
+             (f : Fin m → Fin k) (g : Fin n → Fin m) →
+             tab (λ x → f (g x)) ≡ mapFins (tab g) f
+tabulate-∘ {zero} f g = refl
+tabulate-∘ {suc n} f g = cong (<_, f (g zero) >) (tabulate-∘ f (λ z → g (suc z)))
+
+`p : ∀ n → Subst (suc n) n
+`p n = tvars (pFins n)
+

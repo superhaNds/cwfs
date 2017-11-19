@@ -41,11 +41,12 @@ idL {Γ ∙ α} (t , ρ) = cong (t ,_) (p⋆, t ρ)
 []-asso (var here) γ δ = refl
 []-asso (var (there ∈Γ)) (u , γ) δ = []-asso (var ∈Γ) γ δ            
 []-asso (t · u) γ δ = cong₂ _·_ ([]-asso t γ δ) ([]-asso u γ δ)
-[]-asso {Γ} {Δ} (ƛ t) γ δ = sym $
-  cong ƛ (trans (
+[]-asso {Γ} {Δ} (ƛ t) γ δ = sym $ cong ƛ $ trans (
      sym ([]-asso t (var here , ▹-weaken Γ (step ⊆-refl) γ)
-     (var here , ▹-weaken Δ (step ⊆-refl) δ))) (cong (λ x → t [ var here , x ])
-     (trans (⋆-step Γ γ (▹-weaken Δ ⊆-∙ δ) (var here)) (wk-⋆ Γ ⊆-∙ γ δ))))
+                    (var here , ▹-weaken Δ (step ⊆-refl) δ)))
+     ((cong (t [_] ∘ (var here ,_))
+            (trans (⋆-step Γ γ (▹-weaken Δ ⊆-∙ δ) (var here))
+                   (wk-⋆ Γ ⊆-∙ γ δ))))
 
 ⋆-asso : ∀ {Γ Δ Θ Λ} (γ : Δ ▹ Θ) (δ : Γ ▹ Δ) (ζ : Λ ▹ Γ) →
          (γ ⋆ δ) ⋆ ζ ≡ γ ⋆ (δ ⋆ ζ)
@@ -56,7 +57,7 @@ idL {Γ ∙ α} (t , ρ) = cong (t ,_) (p⋆, t ρ)
 
 maps : {Γ Δ : Ctxt Ty} {α : Ty} (t : Term Δ α) (γ : Δ ▹ Γ) (δ : Γ ▹ Δ) →
        ((t [ δ ]) , γ ⋆ δ) ≡ ((t [ δ ]) , γ ⋆ δ)
-maps = λ t γ δ → refl       
+maps = λ _ _ _ → refl       
 
 TermScwf : Scwf
 TermScwf = record

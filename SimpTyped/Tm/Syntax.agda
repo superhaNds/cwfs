@@ -43,7 +43,7 @@ tkVar (there ∈Γ) (t , ρ) = tkVar ∈Γ ρ
 _[_] : ∀ {Γ Δ α} → Term Γ α → Δ ▹ Γ → Term Δ α
 var ∈Γ [ ρ ]  = tkVar ∈Γ ρ
 (t · u) [ ρ ] = t [ ρ ] · u [ ρ ]
-ƛ t [ ρ ]     = ƛ (t [ (var here , ▹-weaken _ ⊆-∙ ρ) ])
+ƛ t [ ρ ]     = ƛ (t [ var here , ▹-weaken _ ⊆-∙ ρ ])
 
 p : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
 p {Γ} = ▹-weaken Γ ⊆-∙ id
@@ -54,7 +54,7 @@ weaken-same = _[ p ]
 p' : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
 p' = proj₂ id
 
-infix 20 _⋆_
+infix 10 _⋆_
 
 _⋆_ : ∀ {Γ Δ Θ} → Γ ▹ Θ → Δ ▹ Γ → Δ ▹ Θ
 _⋆_ {Θ = ε}     ρ       σ = tt
@@ -94,4 +94,12 @@ var-eq-inv refl = refl
 
 app-eq : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
           t ≡ t' → u ≡ u' → t · u ≡ t' · u'
-app-eq refl refl = refl          
+app-eq refl refl = refl
+
+app-eq-invl : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
+              t · u ≡ t' · u' → t ≡ t'
+app-eq-invl refl = refl
+
+app-eq-invr : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
+              t · u ≡ t' · u' → u ≡ u'
+app-eq-invr refl = refl              
