@@ -214,3 +214,37 @@ lm-p n = trans~ₕ (vars-map (pFins n)) (sym~ₕ (⟦map⟧~map (pFins n)))
 lemmaₚ n rewrite sym (pp=p~ n) =
   trans~ₕ (vars-map (pFins n))
           (sym~ₕ (⟦map⟧~map (pFins n)))
+
+
+{-
+mapcwf : ∀ {m n} → (f : Fin m → Tm-cwf m) → Ren m n → Hom m n
+mapcwf f [] = <>
+mapcwf f (x ∷ is) = < mapcwf f is , f x >
+
+
+pnm : ∀ {n} → Hom (suc n) n
+pnm {n} = mapcwf varCwf pR
+
+
+prop1 : ∀ {m n} (r : Ren m n) → ⟦ map var r ⟧ˢ ~ₕ mapcwf varCwf r
+prop1 [] = trans~ₕ (sym~ₕ (idR <>)) (∘<> id)
+prop1 (x ∷ r) = cong-<,> refl~ₜ (prop1 r)
+
+vr-lm : ∀ {m n} (r : Ren m n) → (mapcwf varCwf r) ∘ p ~ₕ mapcwf varCwf (map suc r)
+vr-lm [] = ∘<> p
+vr-lm (x ∷ r) = begin
+  < mapcwf varCwf r , varCwf x > ∘ p ≈⟨ maps (varCwf x) (mapcwf varCwf r) p ⟩
+  < mapcwf varCwf r ∘ p , varCwf x [ p ] > ≈⟨ cong-<,> refl~ₜ (vr-lm r) ⟩
+  < mapcwf varCwf (map suc r) , varCwf x [ p ] > ∎
+  where open EqR (HomS {_} {_})
+
+pnmvars : ∀ n → p ~ₕ pnm {n}
+pnmvars zero = hom0~<> p
+pnmvars (suc n) = begin
+  p ≈⟨ eta p ⟩
+  < p ∘ p , q [ p ] > ≈⟨ cong-<,> refl~ₜ (cong-∘ (pnmvars n) refl~ₕ) ⟩
+  _ ≈⟨ cong-<,> refl~ₜ (vr-lm pR) ⟩
+  _ ≈⟨ {!!} ⟩
+  {!!} ∎
+  where open EqR (HomS {_} {_})
+-}

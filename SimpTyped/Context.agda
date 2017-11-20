@@ -28,33 +28,6 @@ data _⊆_ {A : Set} : Ctxt A → Ctxt A → Set where
 
 ⊆-∙ : {A : Set} {Γ : Ctxt A} {a : A} → Γ ⊆ (Γ ∙ a)
 ⊆-∙ = step ⊆-refl
-
-{-
-  ⊆-same-r : ∀ {A : Set} {Γ Δ : Con A} (pr : Γ ⊆ Δ) → ⊆-trans pr (same Δ) ≡ pr
-  ⊆-same-r base = refl
-  ⊆-same-r (step inc) = cong step (⊆-same-r inc)
-  ⊆-same-r (pop! inc) = cong pop! (⊆-same-r inc)
-
-  ⊆-same-swap : ∀ {A : Set} {Γ Δ : Con A} (pr : Γ ⊆ Δ) → ⊆-trans pr (same Δ) ≡ ⊆-trans (same Γ) pr
-  ⊆-same-swap pr = trans (⊆-same-r pr) (sym (⊆-same-l pr))
-
-  ⊆-step-l : ∀ {A : Set} {Γ Δ Ε} {σ : A} (pr₁ : Γ ⊆ Δ) (pr₂ : Δ ⊆ Ε) →
-             step {A} {Γ} {Ε} {σ} (⊆-trans pr₁ pr₂) ≡ ⊆-trans (step pr₁) (pop! pr₂)
-  ⊆-step-l base pr₂ = refl
-  ⊆-step-l (step pr₁) pr₂ = refl
-  ⊆-step-l (pop! pr₁) pr₂ = refl
-
-  ⊆-step-r : ∀ {A : Set} {Γ Δ Ε} {σ : A} (pr₁ : Γ ⊆ Δ) (pr₂ : Δ ⊆ Ε) →
-             step {A} {Γ} {Ε} {σ} (⊆-trans pr₁ pr₂) ≡ ⊆-trans pr₁ (step pr₂)
-  ⊆-step-r base pr₂ = refl
-  ⊆-step-r (step pr₁) pr₂ = refl
-  ⊆-step-r (pop! pr₁) pr₂ = refl
-
-  ⊆-step-same : ∀ {A : Set} {Γ Δ} {σ : A} (pr : Γ ⊆ Δ) →
-                step {A} {Γ} {Δ} {σ} (⊆-trans (same Γ) pr) ≡ ⊆-trans pr (step (same Δ))
-⊆-step-same pr = trans (cong step (sym (⊆-same-swap pr))) (⊆-step-r pr (same _))
-
--}
 infix 10 _∈_
 
 data _∈_ {A : Set} (a : A) : Ctxt A → Set where

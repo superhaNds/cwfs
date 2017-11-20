@@ -8,8 +8,8 @@ open import Data.Product
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Unit
 open import Function using (_∘_ ; _$_)
-open import Data.Vec as Vec
-open import Relation.Binary.PropositionalEquality
+open import Data.Vec as Vec hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Wellscoped.Syntax
 open ≡-Reasoning
 
@@ -53,27 +53,27 @@ data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
 module TermApp {T} (l : Lift T Term) where
   open Lift l hiding (var)
 
-  infix 8 _/_
+  infix 8 _[_]
 
-  _/_ : ∀ {m n} → Term m → Sub T m n → Term n
-  var i  / ρ = lift (lookup i ρ)
-  ƛ t    / ρ = ƛ (t / ρ ↑)
-  t · u  / ρ = (t / ρ) · (u / ρ)
+  _[_] : ∀ {m n} → Term m → Sub T m n → Term n
+  var i  [ ρ ] = lift (lookup i ρ)
+  ƛ t    [ ρ ] = ƛ (t [ ρ ↑ ])
+  t · u  [ ρ ] = (t [ ρ ]) · (u [ ρ ])
 
-  open Application (record { _/_ = _/_ }) using (_/✶_ ; _⊙_)
+  open Application (record { _/_ = _[_] }) using (_/✶_ ; _⊙_)
 
   ƛ-/✶-↑✶ : ∀ k {m n t} (ρs : Subs T m n) →
             ƛ t /✶ ρs ↑✶ k ≡ ƛ (t /✶ ρs ↑✶ suc k)
   ƛ-/✶-↑✶ k ε        = refl
-  ƛ-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (ƛ-/✶-↑✶ k ρs) refl
+  ƛ-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _[_] (ƛ-/✶-↑✶ k ρs) refl
 
   ·-/✶-↑✶ : ∀ k {m n t₁ t₂} (ρs : Subs T m n) →
             t₁ · t₂ /✶ ρs ↑✶ k ≡ (t₁ /✶ ρs ↑✶ k) · (t₂ /✶ ρs ↑✶ k)
   ·-/✶-↑✶ k ε        = refl
-  ·-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _/_ (·-/✶-↑✶ k ρs) refl
+  ·-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _[_] (·-/✶-↑✶ k ρs) refl
 
 tmSubst : TermSubst Term
-tmSubst = record { var = var; app = TermApp._/_ }
+tmSubst = record { var = var; app = TermApp._[_] }
 
 open TermSubst tmSubst hiding (var)
 
