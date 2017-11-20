@@ -2,54 +2,105 @@ module Unityped.Projection where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin
+open import Function as F using (_$_ ; id)
 import Relation.Binary.EqReasoning as EqR
-open import Unityped.UcwfModel
+import Relation.Binary.PropositionalEquality as P
 
-var : ∀ {n} (i : Fin n) → Term n
-var zero    = q
-var (suc i) = var i [ p ]
+module Fins where
 
-data Fins : Nat → Nat → Set where
-  <>    : ∀ {m} → Fins m 0
-  <_,_> : ∀ {m n} → Fins m n → Fin m → Fins m (suc n)
+  data Fins : Nat → Nat → Set where
+    <>    : ∀ {m} → Fins m 0
+    <_,_> : ∀ {m n} → Fins m n → Fin m → Fins m (suc n)
+  
+  mapFins : ∀ {n m k} (is : Fins m n) (f : Fin m → Fin k) → Fins k n
+  mapFins <>         f = <>
+  mapFins < is , x > f = < mapFins is f , f x >
+  
+  tab : ∀ {n m} → (Fin n → Fin m) → Fins m n
+  tab {zero}  f = <>
+  tab {suc n} f = < (tab (λ x → f (suc x))) , (f zero) >
 
-map<> : ∀ {m n} (f : Fin m → Term m) → Fins m n → Hom m n
-map<> f <> = <>
-map<> f < is , i > = < map<> f is , f i >
+  sucs : ∀ {m n} → Fins m n → Fins (suc m) n
+  sucs is = mapFins is suc
 
-sucs : ∀ {m n} → Fins m n → Fins (suc m) n
-sucs <> = <>
-sucs < is , i > = < (sucs is) , (suc i) >
+  idFins : ∀ n → Fins n n
+  idFins n = tab id
 
-idFins : ∀ n → Fins n n
-idFins zero = <>
-idFins (suc n) = < sucs (idFins n) , zero >
+  pFins : ∀ n → Fins (suc n) n
+  pFins n = sucs (idFins n)
 
-pFins : ∀ n → Fins (suc n) n
-pFins n = sucs (idFins n)
+  lookup-fn : ∀ {m n} → Fin n → Fins m n → Fin m
+  lookup-fn zero    < is , x > = x
+  lookup-fn (suc i) < is , x > = lookup-fn i is
 
-vars : ∀ {n m} (is : Fins m n) → Hom m n
-vars <> = <>
-vars < is , i > = < vars is , var i >
+  idFins' : ∀ {n} → Fins n n
+  idFins' = tab id
 
-pNorm : ∀ n → Hom (suc n) n
-pNorm n = vars (pFins n)
+  lookup∘tab : ∀ {m n} (f : Fin n → Fin m) (i : Fin n) →
+               lookup-fn i (tab f) P.≡ f i
+  lookup∘tab f zero = P.refl
+  lookup∘tab f (suc i) = lookup∘tab (λ z → f (suc z)) i
 
-var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~ₕ vars (sucs is)
-var-lemma <> = ∘<> p
-var-lemma < is , i > = begin
-  < vars is , var i > ∘ p           ≈⟨ maps (var i) (vars is) p ⟩
-  < vars is ∘ p , var i [ p ] >     ≈⟨ cong-<,> refl~ₜ (var-lemma is) ⟩
-  < vars (sucs is) , var (suc i) >  ≈⟨ refl~ₕ ⟩
-  vars (sucs < is , i > )           ∎
-  where open EqR (HomS {_} {_})
+  tabulate-∘ : ∀ {n m k}
+               (f : Fin m → Fin k) (g : Fin n → Fin m) →
+               tab (λ x → f (g x)) P.≡ mapFins (tab g) f
+  tabulate-∘ {zero} f g = P.refl
+  tabulate-∘ {suc n} f g = P.cong (<_, f (g zero) >) (tabulate-∘ f (λ z → g (suc z)))
 
-p~vars : ∀ n → p ~ₕ pNorm n
-p~vars zero = hom0~<> (p {0})
-p~vars (suc n) = begin
-  p                                           ≈⟨ eta p ⟩
-  < p ∘ p , q [ p ] >                         ≈⟨ cong-<,> refl~ₜ (cong-∘ (p~vars n) (refl~ₕ)) ⟩
-  < vars (pFins n) ∘ p , q [ p ] >            ≈⟨ cong-<,> refl~ₜ (var-lemma (sucs (idFins n))) ⟩
-  < vars (sucs (pFins n)) , q [ p ] >         ≈⟨ refl~ₕ ⟩
-  < vars (sucs (sucs (idFins n))) , q [ p ] > ∎
-  where open EqR (HomS {_} {_})
+open Fins
+
+module PProof where
+
+  open import Unityped.UcwfModel renaming (Term to Tm-cwf)
+
+  varCwf : ∀ {n} (i : Fin n) → Tm-cwf n
+  varCwf zero    = q
+  varCwf (suc i) = varCwf i [ p ]
+
+  vars : ∀ {n m} (is : Fins m n) → Hom m n
+  vars <>         = <>
+  vars < is , i > = < vars is , varCwf i >
+
+  pNorm : ∀ n → Hom (suc n) n
+  pNorm n = vars (pFins n)
+
+  mapT : ∀ {n m} (f : Fin m → Tm-cwf m) (is : Fins m n) → Hom m n
+  mapT f <>         = <>
+  mapT f < is , x > = < mapT f is , f x >
+  
+  vars-map : ∀ {m n} (is : Fins m n) → vars is ~ₕ mapT varCwf is
+  vars-map <>         = refl~ₕ
+  vars-map < is , x > = cong-<,> refl~ₜ (vars-map is)
+
+  var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~ₕ vars (sucs is)
+  var-lemma <>         = ∘<> p
+  var-lemma < is , i > = begin
+    < vars is , varCwf i > ∘ p
+      ≈⟨ maps (varCwf i) (vars is) p ⟩
+    < vars is ∘ p , varCwf i [ p ] >
+      ≈⟨ cong-<,> refl~ₜ (var-lemma is) ⟩
+    < vars (sucs is) , varCwf (suc i) >
+      ≈⟨ refl~ₕ ⟩
+    vars (sucs < is , i > )
+      ∎
+    where open EqR (HomS {_} {_})
+
+  help : ∀ {n} → _~ₕ_ {m = n} (vars (mapFins (mapFins (tab (λ z → z)) suc) suc))
+                              (vars (mapFins (tab suc) suc))
+  help {n} rewrite P.sym (tabulate-∘ {n} suc (λ x → x)) = refl~ₕ
+
+  p~vars : ∀ n → p ~ₕ pNorm n
+  p~vars zero    = hom0~<> (p {0})
+  p~vars (suc n) = begin
+    p
+      ≈⟨ eta p ⟩
+    < p ∘ p , q [ p ] >
+      ≈⟨ cong-<,> refl~ₜ (cong-∘ (p~vars n) (refl~ₕ)) ⟩
+    < vars (mapFins (tab F.id) suc) ∘ p , q [ p ] >
+      ≈⟨ cong-<,> refl~ₜ (var-lemma (mapFins (tab F.id) suc)) ⟩
+    < vars (mapFins (mapFins (tab F.id) suc) suc) , q [ p ] >
+      ≈⟨ cong-<,> refl~ₜ help ⟩
+    < vars (mapFins (tab suc) suc) , q [ p ] >
+      ∎
+    where open EqR (HomS {_} {_})
+    

@@ -15,6 +15,7 @@ open import Relation.Binary using (IsEquivalence ; Setoid)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Star using (Star; ε; _◅_)
 open import Unityped.Wellscoped.Syntax
+import Unityped.Projection as Pr
 open ≡-Reasoning
 
 -------------------------------------------------------------
@@ -88,11 +89,11 @@ id = tabulate var
 
 -- Weakening a term is renaming it in the projection sub for Fin
 
-weakenₛ : ∀ {m} → Term m → Term (1 + m)
-weakenₛ = flip ren pR
+weaken : ∀ {m} → Term m → Term (1 + m)
+weaken = flip ren pR
 
 weaken-subst : ∀ {m n} → Subst m n → Subst (1 + m) n
-weaken-subst = map weakenₛ
+weaken-subst = map weaken
 
 -- The weakening substitution for terms
 
@@ -139,27 +140,6 @@ p' = map (λ t → ren t pR) id
 p : ∀ {n} → Subst (1 + n) n
 p = tabulate (λ x → var (suc x))
 
-sfins : ∀ {m n} → Ren m n → Ren (suc m) n
-sfins [] = []
-sfins (i ∷ ρ) = suc i ∷ sfins ρ
-
-idFin : ∀ n → Ren n n
-idFin zero = []
-idFin (suc n) = zero ∷ sfins (idFin n)
-
-pFn : ∀ n → Ren (suc n) n
-pFn n = sfins (idFin n)
-
-vrs : ∀ {n m} (is : Ren m n) → Subst m n
-vrs [] = []
-vrs (i ∷ is) = (var i) ∷ (vrs is)
-
-pp' : ∀ n → Subst (1 + n) n
-pp' n = map var (pFn n)
-
-pp : ∀ n → Subst (1 + n) n
-pp = vrs ∘ pFn
-
 -- Another version of weakening
 
 weaken' : ∀ {m} → Term m → Term (1 + m)
@@ -170,3 +150,34 @@ weaken' t = t [ p ]
 p′ : ∀ m n → Subst (m + n) n
 p′ zero    n = id
 p′ (suc m) n = p′ m n ⋆ p
+
+-------------------------------------------------------------------------------------------
+-- Some utilities for the proving the p lemma for the isomoprhism
+
+open Pr.Fins
+
+mapTT : ∀ {n m} (f : Fin m → Term m) (is : Fins m n) → Subst m n
+mapTT f <>         = []
+mapTT f < is , x > = f x ∷ mapTT f is
+
+pp : ∀ n → Subst (suc n) n
+pp n = mapTT var (pFins n)
+
+abstract
+
+  lookup-fn-map : ∀ {m n} (i : Fin n) (is : Fins m n) (f : Fin m → Term m) →
+                  lookup i (mapTT f is) ≡ f (lookup-fn i is)
+  lookup-fn-map zero    < is , x > f = refl
+  lookup-fn-map (suc i) < is , x > f = lookup-fn-map i is f
+
+  lookup-fn-pf : ∀ {n} (i : Fin n) → lookup-fn i (pFins n) ≡ suc i
+  lookup-fn-pf i = begin
+    lookup-fn i (mapFins (tab (λ z → z)) suc) ≡⟨ cong (lookup-fn i) (sym (tabulate-∘ suc (λ z → z))) ⟩
+    lookup-fn i (tab (λ x → suc x))           ≡⟨ lookup∘tab suc i ⟩
+    suc i                                     ∎
+
+  lookup-mapTT : ∀ {n} (i : Fin n) → lookup i (mapTT var (pFins n)) ≡ var (suc i)
+  lookup-mapTT i = begin
+    lookup i (mapTT var (pFins _)) ≡⟨ lookup-fn-map i (pFins _) var ⟩
+    var (lookup-fn i (pFins _))    ≡⟨ cong var (lookup-fn-pf i) ⟩
+    var (suc i)                    ∎

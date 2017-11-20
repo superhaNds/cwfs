@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------
 -- Properties and lemmata required for proving the laws of a Ucwf for the well-scoped
--- lambda calculus terms.
+-- lambda calculus terms and other.
 -----------------------------------------------------------------------------------------
 
 module Unityped.Wellscoped.Properties where
@@ -47,7 +47,7 @@ abstract
     lookup i (tabulate suc)  ≡⟨ lookup∘tabulate suc i ⟩
     suc i                    ∎
 
-  wkVar : ∀ {n} i → weakenₛ {n} (var i) ≡ var (suc i)
+  wkVar : ∀ {n} i → weaken {n} (var i) ≡ var (suc i)
   wkVar i = begin
     ren (var i) pR     ≡⟨⟩
     var (lookup i pR)  ≡⟨ cong var (lookup-pR i) ⟩
@@ -55,10 +55,10 @@ abstract
 
   lookup-p' : ∀ {n} i → lookup i (p' {n}) ≡ var (suc i)
   lookup-p' {n} i = begin
-    lookup i (weaken-subst id)    ≡⟨ sym (lookupMap _ i (id {n})) ⟩
-    weakenₛ (lookup i (id {n}))   ≡⟨ cong weakenₛ (lookup-id i) ⟩
-    weakenₛ (var i)               ≡⟨ wkVar i ⟩
-    var (suc i)                   ∎
+    lookup i (weaken-subst id)   ≡⟨ sym (lookupMap _ i (id {n})) ⟩
+    weaken (lookup i (id {n}))   ≡⟨ cong weaken (lookup-id i) ⟩
+    weaken (var i)               ≡⟨ wkVar i ⟩
+    var (suc i)                  ∎
 
   lookup-p : ∀ {n} i → lookup i (p {n}) ≡ var (suc i)
   lookup-p i = begin
@@ -78,6 +78,9 @@ abstract
     _         ≡⟨ cong (_∷ xs) (φ zero) ⟩
     _         ≡⟨ sym (cong (_∷_ y) (allEqLookup ys xs (sym ∘ φ ∘ suc))) ⟩
     y ∷ ys    ∎
+
+  pp=p~ : ∀ n → pp n ≡ p {n}
+  pp=p~ n = allEqLookup (pp n) p (λ i → trans (lookup-mapTT i) (sym (lookup-p i)))
 
   p=p' : ∀ {n} → p {n} ≡ p' {n}
   p=p' = allEqLookup p p' p-lookup-eq
@@ -187,13 +190,13 @@ abstract
   ↑ₛ-dist : ∀ {m n k} (ts : Subst m n) (us : Subst k m) → ↑ₛ (ts ⋆ us) ≡ (↑ₛ ts) ⋆ (↑ₛ us)
   ↑ₛ-dist ts us = begin
     ↑ₛ (ts ⋆ us)                                 ≡⟨⟩
-    q ∷ map (λ t → ren t pR) (map (_[ us ]) ts)  ≡⟨ cong (q ∷_) (sym (map-∘ _ _ ts)) ⟩
-    q ∷ map (λ t → ren (t [ us ]) pR) ts         ≡⟨ cong (q ∷_) (map-cong (sym ∘ ⋆r-asso us pR) ts) ⟩
-    q ∷ map (_[ us ⋆r pR ]) ts                   ≡⟨ cong (q ∷_) (map-cong (λ x → cong (x [_])
-                                                                              (⋆pR-↑ₛ us)) ts) ⟩
-    q ∷ map (_[ pR r⋆ (↑ₛ us) ]) ts              ≡⟨ cong (q ∷_) (map-cong (r⋆-asso _ _) ts) ⟩
-    q ∷ map (_[ ↑ₛ us ] ∘ flip ren pR) ts        ≡⟨ cong (q ∷_) (map-∘ _ _ ts) ⟩
-    q ∷ map (_[ ↑ₛ us ]) (map (flip ren pR) ts)  ≡⟨⟩
+    map (λ t → ren t pR) (map (_[ us ]) ts) ∙ q  ≡⟨ cong (_∙ q) (sym (map-∘ _ _ ts)) ⟩
+    map (λ t → ren (t [ us ]) pR) ts ∙ q         ≡⟨ cong (_∙ q) (map-cong (sym ∘ ⋆r-asso us pR) ts) ⟩
+    map (_[ us ⋆r pR ]) ts  ∙ q                  ≡⟨ cong (_∙ q) (map-cong (λ x → cong (x [_])
+                                                                          (⋆pR-↑ₛ us)) ts) ⟩
+    map (_[ pR r⋆ (↑ₛ us) ]) ts ∙ q              ≡⟨ cong (_∙ q) (map-cong (r⋆-asso _ _) ts) ⟩
+    map (_[ ↑ₛ us ] ∘ flip ren pR) ts ∙ q        ≡⟨ cong (_∙ q) (map-∘ _ _ ts) ⟩
+    map (_[ ↑ₛ us ]) (map (flip ren pR) ts) ∙ q  ≡⟨⟩
     map (_[ ↑ₛ us ]) (↑ₛ ts)                     ≡⟨⟩
     (↑ₛ ts) ⋆ (↑ₛ us)                            ∎
 
@@ -207,7 +210,7 @@ abstract
   postulate 
     renλ : ∀ {n} (t : Term (1 + n)) → ren t (↑ pR) ≡ t [ ↑ₛ p ]
 
-  wk-[p] : ∀ {n} (t : Term n) → weakenₛ t ≡ t [ p {n} ]
+  wk-[p] : ∀ {n} (t : Term n) → weaken t ≡ t [ p {n} ]
   wk-[p] (var ι) = trans (wkVar ι) (sym $ var[p] ι)
   wk-[p] (t · u) = cong₂ _·_ (wk-[p] t) (wk-[p] u)
   wk-[p] (ƛ t)   = cong ƛ (renλ t)
@@ -215,13 +218,13 @@ abstract
   mapWk-⋆p : ∀ {m n} (σ : Subst m n) → σ ⋆ p ≡ weaken-subst σ
   mapWk-⋆p [] = refl
   mapWk-⋆p (x ∷ σ) = trans (cong (_∷ σ ⋆ p) (sym $ wk-[p] x))
-                           (cong (weakenₛ x ∷_) (mapWk-⋆p σ))
+                           (cong (weaken x ∷_) (mapWk-⋆p σ))
 
   p′0=[] : ∀ {m} → p′ m 0 ≡ []
   p′0=[] {zero}  = refl
   p′0=[] {suc m} = refl
 
   lookup-wk : ∀ {m n} (i : Fin n) (ρ : Subst m n) →
-              weakenₛ (lookup i ρ) ≡ lookup i (weaken-subst ρ)
+              weaken (lookup i ρ) ≡ lookup i (weaken-subst ρ)
   lookup-wk zero (x ∷ ρ) = refl
   lookup-wk (suc i) (x ∷ ρ) = lookup-wk i ρ            
