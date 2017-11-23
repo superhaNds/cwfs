@@ -152,8 +152,8 @@ Tm-ucwf : Ucwf
 Tm-ucwf = record
             { Term  = Term
             ; Hom   = Subst
-            ; _~ₜ_  = _≡_
-            ; _~ₕ_  = _≡_
+            ; _~_  = _≡_
+            ; _~~_  = _≡_
             ; id    = id
             ; <>    = []
             ; p     = p

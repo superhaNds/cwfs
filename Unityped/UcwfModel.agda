@@ -82,127 +82,127 @@ p2 m n = p2-go (plus-homable-hom n) m
 ------------------------------------------------------------------------------------
 -- The inductive relations that specify the Ucwf axioms regardings Homs and terms
 
-infix 10 _~ₜ_
-infix 10 _~ₕ_
+infix 10 _~_
+infix 10 _~~_
 
-data _~ₜ_ : ∀ {n} → Term n → Term n → Set
-data _~ₕ_ : ∀ {n m} → Hom n m → Hom n m → Set
+data _~_ : ∀ {n} → Term n → Term n → Set
+data _~~_ : ∀ {n m} → Hom n m → Hom n m → Set
 
-data _~ₜ_  where
+data _~_  where
 
   -- Ucwf laws
   
-  termId  : ∀ {n} (u : Term n) → u ~ₜ u [ id ]
-  qCons   : ∀ {m n} (t : Term n) (ts : Hom n m) → t ~ₜ q [ < ts , t > ]
-  clos    : ∀ {m n k} (t : Term n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~ₜ  (t [ ts ])[ us ]
+  termId  : ∀ {n} (u : Term n) → u ~ u [ id ]
+  qCons   : ∀ {m n} (t : Term n) (ts : Hom n m) → t ~ q [ < ts , t > ]
+  clos    : ∀ {m n k} (t : Term n) (ts : Hom k n) (us : Hom m k) → t [ ts ∘ us ] ~  (t [ ts ])[ us ]
 
   -- β and η
   
-  β       : ∀ {n} (t : Term (suc n)) (u : Term n) → app (lam t) u ~ₜ t [ < id , u > ]
-  η       : ∀ {n} (t : Term n) → lam (app (t [ p ]) q) ~ₜ t
+  β       : ∀ {n} (t : Term (suc n)) (u : Term n) → app (lam t) u ~ t [ < id , u > ]
+  η       : ∀ {n} (t : Term n) → lam (app (t [ p ]) q) ~ t
 
   -- Substituting an application
   
   appCm   : ∀ {n m} (t : Term n) (u : Term n) (ts : Hom m n) →
-            app (t [ ts ]) (u [ ts ]) ~ₜ app t u [ ts ]
+            app (t [ ts ]) (u [ ts ]) ~ app t u [ ts ]
             
   -- Substituting a lambda expression
   
-  lamCm   : ∀ {n m} (t : Term (suc n)) (ts : Hom m n) → lam t [ ts ] ~ₜ lam (t [ ⇑ ts ])
+  lamCm   : ∀ {n m} (t : Term (suc n)) (ts : Hom m n) → lam t [ ts ] ~ lam (t [ ⇑ ts ])
 
   -- Symmetry, transitivity, and congruence
   
-  sym~ₜ    : ∀ {n} {u u′ : Term n} → u ~ₜ u′ → u′ ~ₜ u
-  trans~ₜ  : ∀ {m} {t u v : Term m} → t ~ₜ u → u ~ₜ v → t ~ₜ v
-  cong-app  : ∀ {n} {t u t′ u′ : Term n} → t ~ₜ t′ → u ~ₜ u′ → app t u ~ₜ app t′ u′
-  cong-[] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
-  cong-lam    : ∀ {n} {t u : Term (1 + n)} → t ~ₜ u → lam t ~ₜ lam u
+  sym~    : ∀ {n} {u u′ : Term n} → u ~ u′ → u′ ~ u
+  trans~  : ∀ {m} {t u v : Term m} → t ~ u → u ~ v → t ~ v
+  cong-app  : ∀ {n} {t u t′ u′ : Term n} → t ~ t′ → u ~ u′ → app t u ~ app t′ u′
+  cong-[] : ∀ {m n} {t u : Term n} {ts us : Hom m n} → t ~ u → ts ~~ us → t [ ts ] ~ u [ us ]
+  cong-lam    : ∀ {n} {t u : Term (1 + n)} → t ~ u → lam t ~ lam u
 
-refl~ₜ : ∀ {n} {u : Term n} → u ~ₜ u
-refl~ₜ = trans~ₜ (termId _) (sym~ₜ (termId _))
+refl~ : ∀ {n} {u : Term n} → u ~ u
+refl~ = trans~ (termId _) (sym~ (termId _))
 
-data _~ₕ_ where
+data _~~_ where
 
   -- Ucwf laws
   
-  id₀     : id {0} ~ₕ <>
-  ∘<>     : ∀ {m n} (ts : Hom m n) → (<> ∘ ts) ~ₕ <>
-  varp    : ∀ {n} → id {suc n} ~ₕ < p , q >
-  idL     : ∀ {m n} (ts : Hom m n) → id ∘ ts ~ₕ ts
-  idR     : ∀ {m n} (ts : Hom m n) → ts ∘ id ~ₕ ts
+  id₀     : id {0} ~~ <>
+  ∘<>     : ∀ {m n} (ts : Hom m n) → (<> ∘ ts) ~~ <>
+  varp    : ∀ {n} → id {suc n} ~~ < p , q >
+  idL     : ∀ {m n} (ts : Hom m n) → id ∘ ts ~~ ts
+  idR     : ∀ {m n} (ts : Hom m n) → ts ∘ id ~~ ts
   assoc   : ∀ {m n k p} (ts : Hom n k) (us : Hom m n) (vs : Hom p m) →
-            (ts ∘ us) ∘ vs  ~ₕ ts ∘ (us ∘ vs)
-  pCons   : ∀ {m n} (u : Term m) (us : Hom m n) → us ~ₕ p ∘ < us , u >
+            (ts ∘ us) ∘ vs  ~~ ts ∘ (us ∘ vs)
+  pCons   : ∀ {m n} (u : Term m) (us : Hom m n) → us ~~ p ∘ < us , u >
   maps    : ∀ {m n k} (t : Term n) (ts : Hom n k) (us : Hom m n) →
-            < ts , t > ∘ us  ~ₕ < ts ∘ us , t [ us ] >
+            < ts , t > ∘ us  ~~ < ts ∘ us , t [ us ] >
 
   -- Symmetry, transitivity, and congruence
   
-  sym~ₕ    : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~ₕ t → t ~ₕ h
-  trans~ₕ  : ∀ {m n} {h t v : Hom m n} → h ~ₕ t → t ~ₕ v → h ~ₕ v
+  sym~~    : ∀ {m n} {h : Hom m n} {t : Hom m n} → h ~~ t → t ~~ h
+  trans~~  : ∀ {m n} {h t v : Hom m n} → h ~~ t → t ~~ v → h ~~ v
   cong-<,> : ∀ {m n} {t u : Term m} {ts us : Hom m n} →
-             t ~ₜ u → ts ~ₕ us → < ts , t > ~ₕ < us , u >
+             t ~ u → ts ~~ us → < ts , t > ~~ < us , u >
   cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
-             ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs             
+             ts ~~ vs → us ~~ zs → ts ∘ us ~~ vs ∘ zs             
 
 ------------------------------------------------------------------------------------
 -- The relations are equivalence ones, plus setoid instances
 
-refl~ₕ : ∀ {n m} {h : Hom m n} → h ~ₕ h
-refl~ₕ = trans~ₕ (sym~ₕ (idL _)) (idL _)
+refl~~ : ∀ {n m} {h : Hom m n} → h ~~ h
+refl~~ = trans~~ (sym~~ (idL _)) (idL _)
 
-~ₜequiv : ∀ {n} → IsEquivalence (_~ₜ_ {n})
-~ₜequiv = record { refl  = refl~ₜ
-                 ; sym   = sym~ₜ
-                 ; trans = trans~ₜ }
+~equiv : ∀ {n} → IsEquivalence (_~_ {n})
+~equiv = record { refl  = refl~
+                 ; sym   = sym~
+                 ; trans = trans~ }
 
 TermS : ∀ {n} → Setoid _ _
 TermS {n} =
   record { Carrier = Term n
-         ; _≈_ = _~ₜ_
-         ; isEquivalence = ~ₜequiv }
+         ; _≈_ = _~_
+         ; isEquivalence = ~equiv }
 
-~ₕequiv : ∀ {n m} → IsEquivalence (_~ₕ_ {n} {m})
-~ₕequiv = record { refl  = refl~ₕ
-                 ; sym   = sym~ₕ
-                 ; trans = trans~ₕ }
+~~equiv : ∀ {n m} → IsEquivalence (_~~_ {n} {m})
+~~equiv = record { refl  = refl~~
+                 ; sym   = sym~~
+                 ; trans = trans~~ }
                  
 HomS : ∀ {n m} → Setoid _ _
 HomS {n} {m} =
   record { Carrier = Hom m n
-         ; _≈_ = _~ₕ_
-         ; isEquivalence = ~ₕequiv }
+         ; _≈_ = _~~_
+         ; isEquivalence = ~~equiv }
 
 ------------------------------------------------------------------------------------
 -- Some theorems using the axiomatization
 
-hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~ₕ <>
+hom0~<> : ∀ {n} (ts : Hom n 0) → ts ~~ <>
 hom0~<> ts = begin
-  ts           ≈⟨ sym~ₕ (idL ts) ⟩
-  id {0} ∘ ts  ≈⟨ cong-∘ id₀ refl~ₕ ⟩
+  ts           ≈⟨ sym~~ (idL ts) ⟩
+  id {0} ∘ ts  ≈⟨ cong-∘ id₀ refl~~ ⟩
   <> ∘ ts      ≈⟨ ∘<> ts ⟩ 
   <>           ∎
   where open EqR (HomS {0} {_})
 
-p′0~<> : ∀ {m} → p′ m 0 ~ₕ <>
+p′0~<> : ∀ {m} → p′ m 0 ~~ <>
 p′0~<> {m} = hom0~<> (p′ m 0)
 
-eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~ₕ < p ∘ ts , q [ ts ] >
+eta : ∀ {n m} (ts : Hom m (1 + n)) → ts ~~ < p ∘ ts , q [ ts ] >
 eta ts = begin
-  ts                      ≈⟨ sym~ₕ (idL ts) ⟩
-  id ∘ ts                 ≈⟨ cong-∘ varp refl~ₕ  ⟩
+  ts                      ≈⟨ sym~~ (idL ts) ⟩
+  id ∘ ts                 ≈⟨ cong-∘ varp refl~~  ⟩
   < p , q > ∘ ts          ≈⟨ maps q p ts ⟩
   < p ∘ ts , q [ ts ] >   ∎
   where open EqR (HomS {_} {_})
 
-qLift : ∀ {m n} (ts : Hom m n) → q [ ⇑ ts ] ~ₜ q
-qLift ts = sym~ₜ (qCons q (ts ∘ p))
+qLift : ∀ {m n} (ts : Hom m n) → q [ ⇑ ts ] ~ q
+qLift ts = sym~ (qCons q (ts ∘ p))
 
-qLift₂ : ∀ {m n k} (s : Hom m n) (t : Hom k (suc m)) → q [ (⇑ s) ∘ t ] ~ₜ q [ t ]
+qLift₂ : ∀ {m n k} (s : Hom m n) (t : Hom k (suc m)) → q [ (⇑ s) ∘ t ] ~ q [ t ]
 qLift₂ s t = begin
-  q [ (⇑ s) ∘ t ]                  ≈⟨ refl~ₜ ⟩
-  q [ < s ∘ p , q > ∘ t ]          ≈⟨ cong-[] refl~ₜ (maps q (s ∘ p) t) ⟩
-  q [ < (s ∘ p) ∘ t , q [ t ] > ]  ≈⟨ sym~ₜ (qCons (q [ t ]) ((s ∘ p) ∘ t)) ⟩ 
+  q [ (⇑ s) ∘ t ]                  ≈⟨ refl~ ⟩
+  q [ < s ∘ p , q > ∘ t ]          ≈⟨ cong-[] refl~ (maps q (s ∘ p) t) ⟩
+  q [ < (s ∘ p) ∘ t , q [ t ] > ]  ≈⟨ sym~ (qCons (q [ t ]) ((s ∘ p) ∘ t)) ⟩ 
   q [ t ]                          ∎
   where open EqR (TermS {_})
 
@@ -213,8 +213,8 @@ Tm-Ucwf : Ucwf
 Tm-Ucwf = record
             { Term  = Term
             ; Hom   = Hom
-            ; _~ₜ_  = _~ₜ_
-            ; _~ₕ_  = _~ₕ_
+            ; _~_  = _~_
+            ; _~~_  = _~~_
             ; id    = id
             ; <>    = <>
             ; p     = p
@@ -228,9 +228,9 @@ Tm-Ucwf = record
             ; idL   = idL
             ; idR   = idR
             ; assoc = assoc
-            ; terId = λ t → sym~ₜ (termId t)
-            ; pCons = λ t ts → sym~ₕ (pCons t ts)
-            ; qCons = λ t ts → sym~ₜ (qCons t ts)
+            ; terId = λ t → sym~ (termId t)
+            ; pCons = λ t ts → sym~~ (pCons t ts)
+            ; qCons = λ t ts → sym~ (qCons t ts)
             ; clos  = clos
             ; maps  = maps
             ; cong-<,> = cong-<,>

@@ -8,4 +8,3 @@ module Unityped.Wellscoped where
 open import Unityped.Wellscoped.Syntax public
 open import Unityped.Wellscoped.Substitution public
 open import Unityped.Wellscoped.WsUcwf public
-open import Unityped.Wellscoped.Beta public

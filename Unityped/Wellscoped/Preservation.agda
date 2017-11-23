@@ -4,7 +4,7 @@ open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Product
+open import Data.Product hiding (_,_)
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Unit
 open import Function using (_∘_ ; _$_)
@@ -25,6 +25,9 @@ data Ty : Set where
 Ctx : Nat → Set
 Ctx = Vec.Vec Ty
 
+_,_ : ∀ {n} (Γ : Ctx n) (α : Ty) → Ctx (suc n)
+Γ , α = α Vec.∷ Γ
+
 infix 4 _⊢_∈_
 
 data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
@@ -33,7 +36,7 @@ data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
   
   ƛ   : ∀ {t α β} →
   
-          α Vec.∷ Γ ⊢ t ∈ β →
+          Γ , α ⊢ t ∈ β →
           ----------------------
               Γ ⊢ ƛ t ∈ α ⇒ β
               
@@ -43,11 +46,11 @@ data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
           ------------------------------
                 Γ ⊢ t · u ∈ τ
 
-⊢vr0 : ∀ {n α} {Γ : Ctx n} → α Vec.∷ Γ ⊢ q ∈ α
+⊢vr0 : ∀ {n α} {Γ : Ctx n} → Γ , α ⊢ q ∈ α
 ⊢vr0 = var
 
 ⊢vrn : ∀ {n α β} {i : Fin n} {Γ : Ctx n} → Γ ⊢ var i ∈ β →
-       α ∷ Γ ⊢ var (suc i) ∈ β
+       Γ , α ⊢ var (suc i) ∈ β
 ⊢vrn var = var
 
 module TermApp {T} (l : Lift T Term) where
@@ -105,96 +108,98 @@ tmLemmas = record
       (t₁ /✶₂ ρs₂ ↑✶₂ k) · (t₂ /✶₂ ρs₂ ↑✶₂ k)  ≡⟨ sym (TermApp.·-/✶-↑✶ _ k ρs₂) ⟩
       t₁ · t₂ /✶₂ ρs₂ ↑✶₂ k                    ∎
 
-infixr 5 _∷_
 infix  4 _▹_⊢_
 
-data _▹_⊢_ {n : Nat} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
+data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
 
   []  : ∀ {Δ} → [] ▹ Δ ⊢ []
   
-  _∷_ : ∀ {m} {Γ : Ctx m} {Δ σ t ρ} →
+  ext : ∀ {m} {Γ : Ctx m} {Δ σ t ρ} →
   
           Δ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ →
           -----------------------
-             σ ∷ Γ ▹ Δ ⊢ t ∷ ρ
+             Γ , σ ▹ Δ ⊢ t ∷ ρ
+
+_[_] : {m n : Nat} → Term m → Sub Term m n → Term n
+_[_] = _/_
 
 module Var where
 
-  map-suc-preserv :
-    ∀ {m n Γ Δ σ} (ρ : Sub Fin m n) →
-    Γ ▹ Δ ⊢ Vec.map var ρ → Γ ▹ σ ∷ Δ ⊢ Vec.map var (Vec.map suc ρ)
-  map-suc-preserv []      []         = []
-  map-suc-preserv (x ∷ ρ) (var ∷ ⊢ρ) = var ∷ map-suc-preserv ρ ⊢ρ
-
-  ↑-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Fin m n} →
+  map-suc-preserv : ∀ {m n Γ Δ α} (ρ : Sub Fin m n) →
                     Γ ▹ Δ ⊢ Vec.map var ρ →
-                    σ ∷ Γ ▹ σ ∷ Δ ⊢ Vec.map var (VarSubst._↑ ρ)
-  ↑-preserv ⊢ρ = var ∷ map-suc-preserv _ ⊢ρ
+                    Γ ▹ α ∷ Δ ⊢ Vec.map var (Vec.map suc ρ)
+  map-suc-preserv []      []           = []
+  map-suc-preserv (x ∷ ρ) (ext var ⊢ρ) = ext var (map-suc-preserv ρ ⊢ρ)
+
+  ↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Fin m n} →
+              Γ ▹ Δ ⊢ Vec.map var ρ →
+              Γ , α ▹ Δ , α ⊢ Vec.map var (VarSubst._↑ ρ)
+  ↑-preserv ⊢ρ = ext var (map-suc-preserv _ ⊢ρ)
 
   id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ Vec.map var VarSubst.id
   id-preserv {Γ = []}    = []
   id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-  wk-preserv : ∀ {n} {Γ : Ctx n} {σ} →
-                 Γ ▹ σ ∷ Γ ⊢ Vec.map var VarSubst.wk
+  wk-preserv : ∀ {n} {Γ : Ctx n} {α} →
+               Γ ▹ Γ , α ⊢ Vec.map var VarSubst.wk
   wk-preserv = map-suc-preserv VarSubst.id id-preserv
 
-  lookup-preserv :
-    ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x ρ →
-    Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ var (lookup x ρ) ∈ lookup x Γ
-  lookup-preserv zero    (y ∷ ρ) (var ∷ ⊢ρ) = var
-  lookup-preserv (suc x) (y ∷ ρ) (var ∷ ⊢ρ) = lookup-preserv x ρ ⊢ρ
+  lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x ρ →
+                   Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ var (lookup x ρ) ∈ lookup x Γ
+  lookup-preserv zero    (_ ∷ _) (ext var _) = var
+  lookup-preserv (suc x) (_ ∷ ρ) (ext var ⊢ρ) = lookup-preserv x ρ ⊢ρ
 
-  []-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
-                Γ ⊢ t ∈ σ → Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ t /Var ρ ∈ σ
+  []-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ} →
+               Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ t /Var ρ ∈ α
   []-preserv (var {i}) ⊢ρ = lookup-preserv i _ ⊢ρ
-  []-preserv (ƛ t∈)        ⊢ρ = ƛ ([]-preserv t∈ (↑-preserv ⊢ρ))
-  []-preserv (t₁∈ · t₂∈)   ⊢ρ = []-preserv t₁∈ ⊢ρ · []-preserv t₂∈ ⊢ρ
+  []-preserv (ƛ t)     ⊢ρ = ƛ ([]-preserv t (↑-preserv ⊢ρ))
+  []-preserv (t · u)   ⊢ρ = []-preserv t ⊢ρ · []-preserv u ⊢ρ
 
-weaken-preserv : ∀ {n Γ σ τ} {t : Term n} → Γ ⊢ t ∈ τ → σ ∷ Γ ⊢ weaken t ∈ τ
-weaken-preserv t∈ = Var.[]-preserv t∈ Var.wk-preserv
+weaken-preserv : ∀ {n Γ α β} {t : Term n} →
+                 Γ ⊢ t ∈ β → Γ , α ⊢ weaken t ∈ β
+weaken-preserv t = Var.[]-preserv t Var.wk-preserv
 
-map-weaken-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
-                       Γ ▹ Δ ⊢ ρ → Γ ▹ σ ∷ Δ ⊢ Vec.map weaken ρ
-map-weaken-preserv []        = []
-map-weaken-preserv (t∈ ∷ ⊢ρ) =
-  weaken-preserv t∈ ∷ map-weaken-preserv ⊢ρ
+map-weaken-preserv : ∀ {m n Γ Δ α} {ρ : Sub Term m n} →
+                     Γ ▹ Δ ⊢ ρ → Γ ▹ Δ , α ⊢ Vec.map weaken ρ
+map-weaken-preserv []         = []
+map-weaken-preserv (ext t ⊢ρ) =
+  ext (weaken-preserv t) (map-weaken-preserv ⊢ρ)
 
-↑-preserv : ∀ {m n Γ Δ σ} {ρ : Sub Term m n} →
-              Γ ▹ Δ ⊢ ρ → σ ∷ Γ ▹ σ ∷ Δ ⊢ ρ ↑
-↑-preserv ⊢ρ = var ∷ map-weaken-preserv ⊢ρ
+↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Term m n} →
+            Γ ▹ Δ ⊢ ρ → Γ , α ▹ Δ , α ⊢ ρ ↑
+↑-preserv ⊢ρ = ext var (map-weaken-preserv ⊢ρ)
 
 id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ id
 id-preserv {Γ = []}    = []
 id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-p-preserv : ∀ {n σ} {Γ : Ctx n} → Γ ▹ σ ∷ Γ ⊢ Vec.map weaken id
+p-preserv : ∀ {n α} {Γ : Ctx n} → Γ ▹ Γ , α ⊢ Vec.map weaken id
 p-preserv {Γ = []}    = []
 p-preserv {Γ = x ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
 
-lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x {ρ} →
-                   Γ ▹ Δ ⊢ ρ → Δ ⊢ lookup x ρ ∈ lookup x Γ
-lookup-preserv zero    (t∈ ∷ ⊢ρ) = t∈
-lookup-preserv (suc x) (t∈ ∷ ⊢ρ) = lookup-preserv x ⊢ρ
+lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} i {ρ} →
+                 Γ ▹ Δ ⊢ ρ → Δ ⊢ lookup i ρ ∈ lookup i Γ
+lookup-preserv zero    (ext t ⊢ρ) = t
+lookup-preserv (suc x) (ext t ⊢ρ) = lookup-preserv x ⊢ρ
 
-[]-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {σ t ρ} →
-               Γ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ → Δ ⊢ t / ρ ∈ σ
-[]-preserv (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
-[]-preserv (ƛ t∈)    ⊢ρ = ƛ ([]-preserv t∈ (↑-preserv ⊢ρ))
-[]-preserv (t∈ · u∈) ⊢ρ = []-preserv t∈ ⊢ρ · []-preserv u∈ ⊢ρ
+subst-lemma : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ} →
+              Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ → Δ ⊢ t [ ρ ] ∈ α
+subst-lemma (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
+subst-lemma (ƛ t)     ⊢ρ = ƛ (subst-lemma t (↑-preserv ⊢ρ))
+subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 
-cons-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
-               {t : Term n} {ρ : Sub Term m n} {σ} →
-               Γ ⊢ t ∈ σ → Δ ▹ Γ ⊢ ρ → (σ ∷ Δ) ▹ Γ ⊢ t ∷ ρ
-cons-preserv t∈ []       = t∈ ∷ []
-cons-preserv t∈ (x ∷ ⊢ρ) = t∈ ∷ cons-preserv x ⊢ρ               
+∙-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
+            {t : Term n} {ρ : Sub Term m n} {α} →
+            Γ ⊢ t ∈ α → Δ ▹ Γ ⊢ ρ → Δ , α ▹ Γ ⊢ t ∷ ρ
+∙-preserv t []         = ext t []
+∙-preserv t (ext x ⊢ρ) = ext t (∙-preserv x ⊢ρ)
 
-comp-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {E : Ctx k}
-               {ρ : Sub Term m n} {ρ' : Sub Term n k} →
-               Γ ▹ Δ ⊢ ρ → Δ ▹ E ⊢ ρ' → Γ ▹ E ⊢ ρ ⊙ ρ'             
-comp-preserv [] ⊢ρ' = []
-comp-preserv (x ∷ ⊢ρ) ⊢ρ' =
-  cons-preserv ([]-preserv x ⊢ρ')
-               (comp-preserv ⊢ρ ⊢ρ')
+⋆-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {E : Ctx k}
+            {ρ : Sub Term m n} {ρ' : Sub Term n k} →
+            Γ ▹ Δ ⊢ ρ → Δ ▹ E ⊢ ρ' → Γ ▹ E ⊢ ρ ⊙ ρ'             
+⋆-preserv []         _   = []
+⋆-preserv (ext x ⊢ρ) ⊢ρ' =
+  ∙-preserv (subst-lemma x ⊢ρ')
+            (⋆-preserv ⊢ρ ⊢ρ')
 
 open TermLemmas tmLemmas public hiding (var)

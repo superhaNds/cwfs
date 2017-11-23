@@ -61,39 +61,39 @@ import Relation.Binary.EqReasoning as EqR
 
 -- Auxiliary props
 
-lemmaₚ : ∀ n → PProof.pNorm n ~ₕ ⟦ p~ ⟧ˢ
+lemmaₚ : ∀ n → PProof.pNorm n ~~ ⟦ p~ ⟧ˢ
   
-p~⟦p⟧ : ∀ {n} → p ~ₕ ⟦ p~ ⟧ˢ
-p~⟦p⟧ {n} = sym~ₕ $ trans~ₕ (sym~ₕ $ lemmaₚ n)
-                            (sym~ₕ (PProof.p~vars n))
+p~⟦p⟧ : ∀ {n} → p ~~ ⟦ p~ ⟧ˢ
+p~⟦p⟧ {n} = sym~~ $ trans~~ (sym~~ $ lemmaₚ n)
+                            (sym~~ (PProof.p~vars n))
 
 -- Interpreting a composition distributes
 
-postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ˢ ~ₕ ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ
+postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ˢ ~~ ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ
 
-⟦⟧-∘-dist : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ˢ ~ₕ ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ
+⟦⟧-∘-dist : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) → ⟦ σ ⋆ γ ⟧ˢ ~~ ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ
 
 -- Interpreting a substitution commutes
 
-[]-comm : ∀ {m n} (t : Tm-λ n) (σ : Subst m n) → ⟦ t [ σ ]~ ⟧ ~ₜ ⟦ t ⟧ [ ⟦ σ ⟧ˢ ]
+[]-comm : ∀ {m n} (t : Tm-λ n) (σ : Subst m n) → ⟦ t [ σ ]~ ⟧ ~ ⟦ t ⟧ [ ⟦ σ ⟧ˢ ]
 
 []-comm (var zero)    (x ∷ σ) = qCons ⟦ x ⟧ ⟦ σ ⟧ˢ
-[]-comm (var (suc ι)) (x ∷ σ) = sym~ₜ $ begin
+[]-comm (var (suc ι)) (x ∷ σ) = sym~ $ begin
   ⟦ var ι ⟧ [ p ] [ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]
-    ≈⟨ sym~ₜ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
+    ≈⟨ sym~ (clos ⟦ var ι ⟧ p < ⟦ σ ⟧ˢ , ⟦ x ⟧ >) ⟩
   ⟦ var ι ⟧ [ p ∘ < ⟦ σ ⟧ˢ , ⟦ x ⟧ > ]
-    ≈⟨ sym~ₜ (cong-[] refl~ₜ (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
+    ≈⟨ sym~ (cong-[] refl~ (pCons ⟦ x ⟧ ⟦ σ ⟧ˢ)) ⟩
   ⟦ var ι ⟧ [ ⟦ σ ⟧ˢ ]
-    ≈⟨ sym~ₜ ([]-comm (var ι) σ) ⟩
+    ≈⟨ sym~ ([]-comm (var ι) σ) ⟩
   ⟦ lookup ι σ ⟧
     ∎
   where open EqR (TermS {_})
 
 []-comm (t · u) σ = begin
   app ⟦ t [ σ ]~ ⟧ ⟦ u [ σ ]~ ⟧
-    ≈⟨ cong-app ([]-comm t σ) refl~ₜ ⟩
+    ≈⟨ cong-app ([]-comm t σ) refl~ ⟩
   app (⟦ t ⟧ [ ⟦ σ ⟧ˢ ]) (⟦ u [ σ ]~ ⟧)
-    ≈⟨ cong-app refl~ₜ ([]-comm u σ) ⟩
+    ≈⟨ cong-app refl~ ([]-comm u σ) ⟩
   app (⟦ t ⟧ [ ⟦ σ ⟧ˢ ]) (⟦ u ⟧ [ ⟦ σ ⟧ˢ ])
     ≈⟨ appCm ⟦ t ⟧ ⟦ u ⟧ ⟦ σ ⟧ˢ ⟩
   app ⟦ t ⟧ ⟦ u ⟧ [ ⟦ σ ⟧ˢ ]
@@ -104,27 +104,27 @@ postulate ⟦⟧-∘-distₚ : ∀ {m n k} (σ : Subst n k) (γ : Subst m n) →
   lam ⟦ t [ ↑ₛ σ ]~ ⟧
     ≈⟨ cong-lam $ []-comm t (↑ₛ σ) ⟩
   lam (⟦ t ⟧ [ < ⟦ map weaken~ σ ⟧ˢ , q > ])
-    ≈⟨ cong-lam $ cong-[] refl~ₜ help ⟩
+    ≈⟨ cong-lam $ cong-[] refl~ help ⟩
   lam (⟦ t ⟧ [ < ⟦ σ ⋆ p~ ⟧ˢ , q > ])
-    ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (⟦⟧-∘-distₚ σ p~)) ⟩ 
+    ≈⟨ cong-lam $ cong-[] refl~ (cong-<,> refl~ (⟦⟧-∘-distₚ σ p~)) ⟩ 
   lam (⟦ t ⟧ [ < ⟦ σ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])
-    ≈⟨ cong-lam $ cong-[] refl~ₜ (cong-<,> refl~ₜ (cong-∘ refl~ₕ (sym~ₕ $ p~⟦p⟧))) ⟩ 
+    ≈⟨ cong-lam $ cong-[] refl~ (cong-<,> refl~ (cong-∘ refl~~ (sym~~ $ p~⟦p⟧))) ⟩ 
   lam (⟦ t ⟧ [ < ⟦ σ ⟧ˢ ∘ p , q > ])
-    ≈⟨ sym~ₜ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
+    ≈⟨ sym~ (lamCm ⟦ t ⟧ ⟦ σ ⟧ˢ) ⟩
   lam ⟦ t ⟧ [ ⟦ σ ⟧ˢ ]
     ∎
   where open EqR (TermS {_})
-        help : < ⟦ map weaken~ σ ⟧ˢ , q > ~ₕ < ⟦ σ ⋆ p~ ⟧ˢ , q >
-        help rewrite sym (mapWk-⋆p σ) = refl~ₕ
+        help : < ⟦ map weaken~ σ ⟧ˢ , q > ~~ < ⟦ σ ⋆ p~ ⟧ˢ , q >
+        help rewrite sym (mapWk-⋆p σ) = refl~~
 
-⟦⟧-∘-dist [] γ = sym~ₕ (∘<> ⟦ γ ⟧ˢ)
+⟦⟧-∘-dist [] γ = sym~~ (∘<> ⟦ γ ⟧ˢ)
 ⟦⟧-∘-dist (t ∷ σ) γ = begin
   < ⟦ σ ⋆ γ ⟧ˢ , ⟦ t [ γ ]~ ⟧ >
-    ≈⟨ cong-<,> refl~ₜ (⟦⟧-∘-dist σ γ) ⟩ 
+    ≈⟨ cong-<,> refl~ (⟦⟧-∘-dist σ γ) ⟩ 
   < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t [ γ ]~ ⟧ >
-    ≈⟨ cong-<,> ([]-comm t γ) refl~ₕ ⟩
+    ≈⟨ cong-<,> ([]-comm t γ) refl~~ ⟩
   < ⟦ σ ⟧ˢ ∘ ⟦ γ ⟧ˢ , ⟦ t ⟧ [ ⟦ γ ⟧ˢ ] >
-    ≈⟨ sym~ₕ (maps ⟦ t ⟧ ⟦ σ ⟧ˢ ⟦ γ ⟧ˢ) ⟩
+    ≈⟨ sym~~ (maps ⟦ t ⟧ ⟦ σ ⟧ˢ ⟦ γ ⟧ˢ) ⟩
   < ⟦ σ ⟧ˢ , ⟦ t ⟧ > ∘ ⟦ γ ⟧ˢ
     ∎
   where open EqR (HomS {_} {_})
@@ -138,11 +138,11 @@ ws∘cwf : ∀ {n} (t : Tm-λ n) → t ≡ ⟪ ⟦ t ⟧ ⟫
 
 -- A cwf term mapped to a scope safe term returns the same
 
-cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ₜ ⟦ ⟪ t ⟫ ⟧
+cwf∘ws : ∀ {n} (t : Tm-cwf n) → t ~ ⟦ ⟪ t ⟫ ⟧
 
 -- A Hom mapped to a vector substitution returns the same
 
-hom∘sub : ∀ {m n} (h : Hom m n) → h ~ₕ ⟦ ⟪ h ⟫ʰ ⟧ˢ
+hom∘sub : ∀ {m n} (h : Hom m n) → h ~~ ⟦ ⟪ h ⟫ʰ ⟧ˢ
 
 -- A vector substitution mapped to a hom returns the same
 
@@ -159,13 +159,13 @@ ws∘cwf (var (suc i))
 
 -- t ∈ Tm-cwf n ⇒ ⟦ ⟪ t ⟫ ⟧ ~ t
 
-cwf∘ws q = refl~ₜ
+cwf∘ws q = refl~
 cwf∘ws (lam t) = cong-lam (cwf∘ws t) 
 cwf∘ws (app t u) = cong-app (cwf∘ws t) (cwf∘ws u)
-cwf∘ws (t [ us ]) = sym~ₜ $ begin
+cwf∘ws (t [ us ]) = sym~ $ begin
   ⟦ ⟪ t ⟫ [ ⟪ us ⟫ʰ ]~ ⟧      ≈⟨ []-comm ⟪ t ⟫ ⟪ us ⟫ʰ ⟩
-  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]  ≈⟨ sym~ₜ (cong-[] (cwf∘ws t) refl~ₕ) ⟩
-  t [ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]          ≈⟨ sym~ₜ (cong-[] refl~ₜ (hom∘sub us)) ⟩
+  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]  ≈⟨ sym~ (cong-[] (cwf∘ws t) refl~~) ⟩
+  t [ ⟦ ⟪ us ⟫ʰ ⟧ˢ ]          ≈⟨ sym~ (cong-[] refl~ (hom∘sub us)) ⟩
   t [ us ]                    ∎
   where open EqR (TermS {_})
 
@@ -174,23 +174,23 @@ cwf∘ws (t [ us ]) = sym~ₜ $ begin
 hom∘sub (id {zero}) = id₀
 hom∘sub (id {suc m}) = begin
   id {1 + m}                ≈⟨ varp ⟩
-  < p , q >                 ≈⟨ cong-<,> refl~ₜ (hom∘sub p) ⟩ 
+  < p , q >                 ≈⟨ cong-<,> refl~ (hom∘sub p) ⟩ 
   < ⟦ p~ ⟧ˢ , q >           ∎
   where open EqR (HomS {_} {_})
 
-hom∘sub (γ ∘ δ) = sym~ₕ $ begin
+hom∘sub (γ ∘ δ) = sym~~ $ begin
   ⟦ ⟪ γ ⟫ʰ ⋆ ⟪ δ ⟫ʰ ⟧ˢ       ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫ʰ ⟪ δ ⟫ʰ ⟩
-  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ  ≈⟨ sym~ₕ (cong-∘ (hom∘sub γ) refl~ₕ) ⟩ 
-  γ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ            ≈⟨ sym~ₕ (cong-∘ refl~ₕ (hom∘sub δ)) ⟩ 
+  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ  ≈⟨ sym~~ (cong-∘ (hom∘sub γ) refl~~) ⟩ 
+  γ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ            ≈⟨ sym~~ (cong-∘ refl~~ (hom∘sub δ)) ⟩ 
   γ ∘ δ                      ∎
   where open EqR (HomS {_} {_})
  
 hom∘sub p = p~⟦p⟧
 
-hom∘sub <> = refl~ₕ
+hom∘sub <> = refl~~
 hom∘sub < γ , x > = begin
-  < γ , x >                    ≈⟨ cong-<,> refl~ₜ (hom∘sub γ) ⟩
-  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , x >          ≈⟨ cong-<,> (cwf∘ws x) refl~ₕ ⟩ 
+  < γ , x >                    ≈⟨ cong-<,> refl~ (hom∘sub γ) ⟩
+  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , x >          ≈⟨ cong-<,> (cwf∘ws x) refl~~ ⟩ 
   < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >  ∎
   where open EqR (HomS {_} {_})
 
@@ -204,16 +204,16 @@ open Fins
 open PProof
 
 ⟦map⟧~map : ∀ {m n} (is : Fins m n)
-          → ⟦ mapTT var is ⟧ˢ ~ₕ mapT varCwf is
-⟦map⟧~map <>         = refl~ₕ
-⟦map⟧~map < is , x > = cong-<,> refl~ₜ (⟦map⟧~map is)
+          → ⟦ mapTT var is ⟧ˢ ~~ mapT varCwf is
+⟦map⟧~map <>         = refl~~
+⟦map⟧~map < is , x > = cong-<,> refl~ (⟦map⟧~map is)
 
-lm-p : ∀ n → vars (pFins n) ~ₕ ⟦ mapTT var (pFins n) ⟧ˢ
-lm-p n = trans~ₕ (vars-map (pFins n)) (sym~ₕ (⟦map⟧~map (pFins n)))
+lm-p : ∀ n → vars (pFins n) ~~ ⟦ mapTT var (pFins n) ⟧ˢ
+lm-p n = trans~~ (vars-map (pFins n)) (sym~~ (⟦map⟧~map (pFins n)))
 
 lemmaₚ n rewrite sym (pp=p~ n) =
-  trans~ₕ (vars-map (pFins n))
-          (sym~ₕ (⟦map⟧~map (pFins n)))
+  trans~~ (vars-map (pFins n))
+          (sym~~ (⟦map⟧~map (pFins n)))
 
 
 {-
@@ -226,24 +226,24 @@ pnm : ∀ {n} → Hom (suc n) n
 pnm {n} = mapcwf varCwf pR
 
 
-prop1 : ∀ {m n} (r : Ren m n) → ⟦ map var r ⟧ˢ ~ₕ mapcwf varCwf r
-prop1 [] = trans~ₕ (sym~ₕ (idR <>)) (∘<> id)
-prop1 (x ∷ r) = cong-<,> refl~ₜ (prop1 r)
+prop1 : ∀ {m n} (r : Ren m n) → ⟦ map var r ⟧ˢ ~~ mapcwf varCwf r
+prop1 [] = trans~~ (sym~~ (idR <>)) (∘<> id)
+prop1 (x ∷ r) = cong-<,> refl~ (prop1 r)
 
-vr-lm : ∀ {m n} (r : Ren m n) → (mapcwf varCwf r) ∘ p ~ₕ mapcwf varCwf (map suc r)
+vr-lm : ∀ {m n} (r : Ren m n) → (mapcwf varCwf r) ∘ p ~~ mapcwf varCwf (map suc r)
 vr-lm [] = ∘<> p
 vr-lm (x ∷ r) = begin
   < mapcwf varCwf r , varCwf x > ∘ p ≈⟨ maps (varCwf x) (mapcwf varCwf r) p ⟩
-  < mapcwf varCwf r ∘ p , varCwf x [ p ] > ≈⟨ cong-<,> refl~ₜ (vr-lm r) ⟩
+  < mapcwf varCwf r ∘ p , varCwf x [ p ] > ≈⟨ cong-<,> refl~ (vr-lm r) ⟩
   < mapcwf varCwf (map suc r) , varCwf x [ p ] > ∎
   where open EqR (HomS {_} {_})
 
-pnmvars : ∀ n → p ~ₕ pnm {n}
+pnmvars : ∀ n → p ~~ pnm {n}
 pnmvars zero = hom0~<> p
 pnmvars (suc n) = begin
   p ≈⟨ eta p ⟩
-  < p ∘ p , q [ p ] > ≈⟨ cong-<,> refl~ₜ (cong-∘ (pnmvars n) refl~ₕ) ⟩
-  _ ≈⟨ cong-<,> refl~ₜ (vr-lm pR) ⟩
+  < p ∘ p , q [ p ] > ≈⟨ cong-<,> refl~ (cong-∘ (pnmvars n) refl~~) ⟩
+  _ ≈⟨ cong-<,> refl~ (vr-lm pR) ⟩
   _ ≈⟨ {!!} ⟩
   {!!} ∎
   where open EqR (HomS {_} {_})

@@ -13,8 +13,8 @@ open import Relation.Binary
 -- The sorts, operator symbols, and axioms of a ucwf gathered as a record
 
 record Ucwf : Set₁ where
-  infix 4 _~ₜ_
-  infix 4 _~ₕ_
+  infix 4 _~_
+  infix 4 _~~_
   infix 9 _∘_
   
   field
@@ -23,8 +23,8 @@ record Ucwf : Set₁ where
     Hom    : Nat → Nat → Set
 
     -- two relations regarding equality of terms and substitutions
-    _~ₜ_   : ∀ {n} → Rel (Term n) lzero
-    _~ₕ_   : ∀ {m n} → Rel (Hom m n) lzero
+    _~_   : ∀ {n} → Rel (Term n) lzero
+    _~~_   : ∀ {m n} → Rel (Hom m n) lzero
 
     -- operator symbols
     id     : {n : Nat} → Hom n n
@@ -36,28 +36,28 @@ record Ucwf : Set₁ where
     <_,_>  : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
 
     -- axioms
-    id₀   : id {0} ~ₕ <>
-    ∘<>   : ∀ {m n : Nat} (ts : Hom m n) → <> ∘ ts ~ₕ <> 
-    varp  : ∀ {n : Nat} → id {suc n} ~ₕ < p , q >
-    idL   : ∀ {m n : Nat} (ts : Hom m n) → id ∘ ts ~ₕ ts
-    idR   : ∀ {m n : Nat} (ts : Hom m n) → ts ∘ id ~ₕ ts
+    id₀   : id {0} ~~ <>
+    ∘<>   : ∀ {m n : Nat} (ts : Hom m n) → <> ∘ ts ~~ <> 
+    varp  : ∀ {n : Nat} → id {suc n} ~~ < p , q >
+    idL   : ∀ {m n : Nat} (ts : Hom m n) → id ∘ ts ~~ ts
+    idR   : ∀ {m n : Nat} (ts : Hom m n) → ts ∘ id ~~ ts
     assoc : ∀ {m n κ ι : Nat} (ts : Hom n κ) (us : Hom m n) (vs : Hom ι m) →
-             (ts ∘ us) ∘ vs ~ₕ ts ∘ (us ∘ vs)
-    terId : ∀ {m n : Nat} (t : Term n) → t [ id ] ~ₜ t
-    pCons : ∀ {m n κ : Nat} → (t : Term n) → (ts : Hom n κ) → p ∘ < ts , t > ~ₕ ts
-    qCons : ∀ {m n : Nat} (t : Term n) (ts : Hom n m) → q [ < ts , t > ] ~ₜ t
+             (ts ∘ us) ∘ vs ~~ ts ∘ (us ∘ vs)
+    terId : ∀ {m n : Nat} (t : Term n) → t [ id ] ~ t
+    pCons : ∀ {m n κ : Nat} → (t : Term n) → (ts : Hom n κ) → p ∘ < ts , t > ~~ ts
+    qCons : ∀ {m n : Nat} (t : Term n) (ts : Hom n m) → q [ < ts , t > ] ~ t
     clos  : ∀ {m n κ : Nat} (t : Term n) (ts : Hom m n) (us : Hom κ m) →
-             t [ ts ∘  us ] ~ₜ t [ ts ] [ us ]
+             t [ ts ∘  us ] ~ t [ ts ] [ us ]
     maps  : ∀ {m n : Nat} (t : Term n) (ts : Hom n m) (us : Hom m n) →
-             < ts , t > ∘ us ~ₕ < ts ∘ us , t [ us ] >
+             < ts , t > ∘ us ~~ < ts ∘ us , t [ us ] >
              
     -- congruence rules for operators
     cong-<,> : ∀ {m n} {t u : Term m} {ts us : Hom m n} →
-                t ~ₜ u → ts ~ₕ us → < ts , t > ~ₕ < us , u >
+                t ~ u → ts ~~ us → < ts , t > ~~ < us , u >
     cong-[_] : ∀ {m n} {t u : Term n} {ts us : Hom m n} →
-                t ~ₜ u → ts ~ₕ us → t [ ts ] ~ₜ u [ us ]
+                t ~ u → ts ~~ us → t [ ts ] ~ u [ us ]
     cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
-                ts ~ₕ vs → us ~ₕ zs → ts ∘ us ~ₕ vs ∘ zs
+                ts ~~ vs → us ~~ zs → ts ∘ us ~~ vs ∘ zs
   
   ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
   ⇑ ts = < ts ∘ p , q >
@@ -75,10 +75,10 @@ record Lambda-ucwf : Set₁ where
   field
     ƛ   : {n : Nat} → Term (suc n) → Term n
     _·_ : {n : Nat} → Term n → Term n → Term n
-    cong-ƛ : ∀ {n} {t u : Term (suc n)} → t ~ₜ u → ƛ t ~ₜ ƛ u
-    cong-· : ∀ {n} {t u t′ u′ : Term n} → t ~ₜ t′ → u ~ₜ u′ → t · u ~ₜ t′ · u′
-    app : {n m : Nat} (t u : Term n) (ts : Hom m n) → (t [ ts ]) · (u [ ts ]) ~ₜ (t · u) [ ts ]
-    abs : {n m : Nat} (t : Term (suc n)) (ts : Hom m n) → ƛ t [ ts ] ~ₜ ƛ (t [ ⇑ ts ])
+    cong-ƛ : ∀ {n} {t u : Term (suc n)} → t ~ u → ƛ t ~ ƛ u
+    cong-· : ∀ {n} {t u t′ u′ : Term n} → t ~ t′ → u ~ u′ → t · u ~ t′ · u′
+    app : {n m : Nat} (t u : Term n) (ts : Hom m n) → (t [ ts ]) · (u [ ts ]) ~ (t · u) [ ts ]
+    abs : {n m : Nat} (t : Term (suc n)) (ts : Hom m n) → ƛ t [ ts ] ~ ƛ (t [ ⇑ ts ])
 
 -- Extending the ucwf with lambdas up to β and η
 
@@ -89,6 +89,6 @@ record Lambda-βη-ucwf : Set₁ where
   open Lambda-ucwf lambda-ucwf public
 
   field
-    β   : {n : Nat} (t : Term (suc n)) (u : Term n) → ƛ t · u ~ₜ t [ < id , u > ]
-    η   : {n : Nat} (t : Term n) → ƛ (weaken t · q) ~ₜ t
+    β   : {n : Nat} (t : Term (suc n)) (u : Term n) → ƛ t · u ~ t [ < id , u > ]
+    η   : {n : Nat} (t : Term n) → ƛ (weaken t · q) ~ t
     

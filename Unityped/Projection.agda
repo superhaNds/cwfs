@@ -68,38 +68,38 @@ module PProof where
   mapT f <>         = <>
   mapT f < is , x > = < mapT f is , f x >
   
-  vars-map : ∀ {m n} (is : Fins m n) → vars is ~ₕ mapT varCwf is
-  vars-map <>         = refl~ₕ
-  vars-map < is , x > = cong-<,> refl~ₜ (vars-map is)
+  vars-map : ∀ {m n} (is : Fins m n) → vars is ~~ mapT varCwf is
+  vars-map <>         = refl~~
+  vars-map < is , x > = cong-<,> refl~ (vars-map is)
 
-  var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~ₕ vars (sucs is)
+  var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~~ vars (sucs is)
   var-lemma <>         = ∘<> p
   var-lemma < is , i > = begin
     < vars is , varCwf i > ∘ p
       ≈⟨ maps (varCwf i) (vars is) p ⟩
     < vars is ∘ p , varCwf i [ p ] >
-      ≈⟨ cong-<,> refl~ₜ (var-lemma is) ⟩
+      ≈⟨ cong-<,> refl~ (var-lemma is) ⟩
     < vars (sucs is) , varCwf (suc i) >
-      ≈⟨ refl~ₕ ⟩
+      ≈⟨ refl~~ ⟩
     vars (sucs < is , i > )
       ∎
     where open EqR (HomS {_} {_})
 
-  help : ∀ {n} → _~ₕ_ {m = n} (vars (mapFins (mapFins (tab (λ z → z)) suc) suc))
+  help : ∀ {n} → _~~_ {m = n} (vars (mapFins (mapFins (tab (λ z → z)) suc) suc))
                               (vars (mapFins (tab suc) suc))
-  help {n} rewrite P.sym (tabulate-∘ {n} suc (λ x → x)) = refl~ₕ
+  help {n} rewrite P.sym (tabulate-∘ {n} suc (λ x → x)) = refl~~
 
-  p~vars : ∀ n → p ~ₕ pNorm n
+  p~vars : ∀ n → p ~~ pNorm n
   p~vars zero    = hom0~<> (p {0})
   p~vars (suc n) = begin
     p
       ≈⟨ eta p ⟩
     < p ∘ p , q [ p ] >
-      ≈⟨ cong-<,> refl~ₜ (cong-∘ (p~vars n) (refl~ₕ)) ⟩
+      ≈⟨ cong-<,> refl~ (cong-∘ (p~vars n) (refl~~)) ⟩
     < vars (mapFins (tab F.id) suc) ∘ p , q [ p ] >
-      ≈⟨ cong-<,> refl~ₜ (var-lemma (mapFins (tab F.id) suc)) ⟩
+      ≈⟨ cong-<,> refl~ (var-lemma (mapFins (tab F.id) suc)) ⟩
     < vars (mapFins (mapFins (tab F.id) suc) suc) , q [ p ] >
-      ≈⟨ cong-<,> refl~ₜ help ⟩
+      ≈⟨ cong-<,> refl~ help ⟩
     < vars (mapFins (tab suc) suc) , q [ p ] >
       ∎
     where open EqR (HomS {_} {_})
