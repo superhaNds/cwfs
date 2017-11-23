@@ -1,4 +1,4 @@
-module Unityped.Wellscoped.Preservation where
+module Unityped.Wellscoped.Typed.Preservation where
 
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Fin.Substitution
@@ -127,7 +127,7 @@ module Var where
 
   map-suc-preserv : ∀ {m n Γ Δ α} (ρ : Sub Fin m n) →
                     Γ ▹ Δ ⊢ Vec.map var ρ →
-                    Γ ▹ α ∷ Δ ⊢ Vec.map var (Vec.map suc ρ)
+                    Γ ▹ Δ , α ⊢ Vec.map var (Vec.map suc ρ)
   map-suc-preserv []      []           = []
   map-suc-preserv (x ∷ ρ) (ext var ⊢ρ) = ext var (map-suc-preserv ρ ⊢ρ)
 
@@ -175,7 +175,7 @@ id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
 p-preserv : ∀ {n α} {Γ : Ctx n} → Γ ▹ Γ , α ⊢ Vec.map weaken id
 p-preserv {Γ = []}    = []
-p-preserv {Γ = x ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
+p-preserv {Γ = _ ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
 
 lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} i {ρ} →
                  Γ ▹ Δ ⊢ ρ → Δ ⊢ lookup i ρ ∈ lookup i Γ

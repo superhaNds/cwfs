@@ -1,8 +1,9 @@
 module SimpTyped.ScwfComb where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Vec hiding ([_])
+open import Data.List hiding ([_])
 open import Data.Fin
+import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary using (IsEquivalence ; Setoid)
 import Relation.Binary.EqReasoning as EqR
 open import SimpTyped.Context renaming (_∙_ to _,_)
@@ -24,8 +25,12 @@ data Hom where
   _∘_   : ∀ {Γ Δ Θ} → Hom Γ Θ → Hom Δ Γ → Hom Δ Θ
   <_,_> : ∀ {Γ Δ α} → Hom Γ Δ → Tm Γ α  → Hom Γ (Δ , α)
 
-weaken-same : ∀ {Γ α β} → Tm Γ α → Tm (Γ , β) α
+weaken-same : ∀ {Γ α} → Tm Γ α → Tm (Γ , α) α
 weaken-same = _[ p ]
+
+varCwf : ∀ {Γ α} → (α ∈ Γ) → Tm Γ α
+varCwf here      = q
+varCwf (there φ) = varCwf φ [ p ]
 
 infix 6 _~_
 infix 6 _~~_

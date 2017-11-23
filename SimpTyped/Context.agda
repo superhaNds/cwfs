@@ -1,6 +1,7 @@
 module SimpTyped.Context where
 
 open import Relation.Nullary
+open import Data.Nat
 open import Relation.Binary.PropositionalEquality
 open import Function using (_$_ ; _∘_)
 
@@ -14,6 +15,10 @@ data _⊆_ {A : Set} : Ctxt A → Ctxt A → Set where
   base : ε ⊆ ε
   step : ∀ {Γ Δ : Ctxt A} {σ} (φ : Γ ⊆ Δ) → Γ ⊆ (Δ ∙ σ)
   pop! : ∀ {Γ Δ : Ctxt A} {σ} (ψ : Γ ⊆ Δ) → (Γ ∙ σ) ⊆ (Δ ∙ σ)
+
+leng : {A : Set} → Ctxt A → ℕ
+leng ε = 0
+leng (Γ ∙ x) = 1 + leng Γ
 
 ⊆-refl : {A : Set} {Γ : Ctxt A} → Γ ⊆ Γ
 ⊆-refl {Γ = ε}     = base 
@@ -32,10 +37,10 @@ infix 10 _∈_
 
 data _∈_ {A : Set} (a : A) : Ctxt A → Set where
   here  : {Γ : Ctxt A} → a ∈ Γ ∙ a
-  there : {Γ : Ctxt A} {x : A} → a ∈ Γ → a ∈ Γ ∙ x
+  there : {Γ : Ctxt A} {a' : A} → a ∈ Γ → a ∈ Γ ∙ a'
 
 there-eq : {A : Set} {Γ : Ctxt A} {a x : A} {φ ψ : a ∈ Γ} →
-           there {x = x} φ ≡ there {x = x} ψ → φ ≡ ψ
+           there {a' = x} φ ≡ there {a' = x} ψ → φ ≡ ψ
 there-eq refl = refl           
 
 ∈-dec : {A : Set} {Γ : Ctxt A} {a : A} (φ ψ : a ∈ Γ) → Dec (φ ≡ ψ)

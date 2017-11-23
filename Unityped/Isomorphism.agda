@@ -65,7 +65,7 @@ lemmaₚ : ∀ n → PProof.pNorm n ~~ ⟦ p~ ⟧ˢ
   
 p~⟦p⟧ : ∀ {n} → p ~~ ⟦ p~ ⟧ˢ
 p~⟦p⟧ {n} = sym~~ $ trans~~ (sym~~ $ lemmaₚ n)
-                            (sym~~ (PProof.p~vars n))
+                            (sym~~ $ PProof.p~vars n)
 
 -- Interpreting a composition distributes
 
@@ -203,8 +203,8 @@ sub∘hom (x ∷ ρ) = cong₂ _∙_ (sub∘hom ρ) (ws∘cwf x)
 open Fins
 open PProof
 
-⟦map⟧~map : ∀ {m n} (is : Fins m n)
-          → ⟦ mapTT var is ⟧ˢ ~~ mapT varCwf is
+⟦map⟧~map : ∀ {m n} (is : Fins m n) →
+            ⟦ mapTT var is ⟧ˢ ~~ mapT varCwf is
 ⟦map⟧~map <>         = refl~~
 ⟦map⟧~map < is , x > = cong-<,> refl~ (⟦map⟧~map is)
 
@@ -215,16 +215,13 @@ lemmaₚ n rewrite sym (pp=p~ n) =
   trans~~ (vars-map (pFins n))
           (sym~~ (⟦map⟧~map (pFins n)))
 
-
 {-
 mapcwf : ∀ {m n} → (f : Fin m → Tm-cwf m) → Ren m n → Hom m n
 mapcwf f [] = <>
 mapcwf f (x ∷ is) = < mapcwf f is , f x >
 
-
 pnm : ∀ {n} → Hom (suc n) n
 pnm {n} = mapcwf varCwf pR
-
 
 prop1 : ∀ {m n} (r : Ren m n) → ⟦ map var r ⟧ˢ ~~ mapcwf varCwf r
 prop1 [] = trans~~ (sym~~ (idR <>)) (∘<> id)

@@ -2,15 +2,18 @@ module SimpTyped.Tm.Syntax where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Relation.Nullary.Decidable
-open import Relation.Binary.PropositionalEquality as P using (_≡_ ; refl ; sym ; trans ; cong ; cong₂)
+open import Relation.Binary.PropositionalEquality as P
+  using (_≡_ ; refl ; sym ; trans ; cong ; cong₂)
 open import SimpTyped.Type
 open import SimpTyped.Context
 open import Function using (_$_ ; _∘_)
 open import Data.Product using (_×_ ; proj₁ ; proj₂ ; _,_)
 open import Data.Unit using (⊤ ; tt)
 open import Relation.Binary hiding (_⇒_)
+open import Data.List hiding ([_])
 
 infix 10 _·_
+
 data Term (Γ : Ctx) : Ty → Set where
   var : ∀ {α} (∈Γ : α ∈ Γ) → Term Γ α
   _·_ : ∀ {α β} → Term Γ (α ⇒ β) → Term Γ α → Term Γ β
@@ -48,11 +51,8 @@ var ∈Γ [ ρ ]  = tkVar ∈Γ ρ
 p : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
 p {Γ} = ▹-weaken Γ ⊆-∙ id
 
-weaken-same : ∀ {Γ α β} (t : Term Γ α) → Term (Γ ∙ β) α
-weaken-same = _[ p ]
-
-p' : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
-p' = proj₂ id
+weaken-same : ∀ {Γ α} (t : Term Γ α) → Term (Γ ∙ α) α
+weaken-same = weaken ⊆-∙
 
 infix 10 _⋆_
 

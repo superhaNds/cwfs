@@ -18,7 +18,7 @@ module Fins where
   
   tab : ∀ {n m} → (Fin n → Fin m) → Fins m n
   tab {zero}  f = <>
-  tab {suc n} f = < (tab (λ x → f (suc x))) , (f zero) >
+  tab {suc n} f = < (tab (f F.∘ suc)) , (f zero) >
 
   sucs : ∀ {m n} → Fins m n → Fins (suc m) n
   sucs is = mapFins is suc
@@ -85,9 +85,9 @@ module PProof where
       ∎
     where open EqR (HomS {_} {_})
 
-  help : ∀ {n} → _~~_ {m = n} (vars (mapFins (mapFins (tab (λ z → z)) suc) suc))
+  help : ∀ {n} → _~~_ {m = n} (vars (mapFins (mapFins (tab F.id) suc) suc))
                               (vars (mapFins (tab suc) suc))
-  help {n} rewrite P.sym (tabulate-∘ {n} suc (λ x → x)) = refl~~
+  help {n} rewrite P.sym (tabulate-∘ {n} suc F.id) = refl~~
 
   p~vars : ∀ n → p ~~ pNorm n
   p~vars zero    = hom0~<> (p {0})

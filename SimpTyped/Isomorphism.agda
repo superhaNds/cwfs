@@ -19,10 +19,9 @@ open import Data.Unit using (⊤ ; tt)
 ⟪_⟫ʰ : ∀ {Γ Δ} → Hom Δ Γ → Δ ▹ Γ
 ⟦_⟧ˢ : ∀ {Γ Δ} → Δ ▹ Γ → Hom Δ Γ
 
-⟦ var here ⟧       = q
-⟦ var (there ∈Γ) ⟧ = ⟦ var ∈Γ ⟧ [ p ]
-⟦ t · u ⟧          = app ⟦ t ⟧ ⟦ u ⟧
-⟦ ƛ t ⟧            = lam ⟦ t ⟧
+⟦ var ∈Γ ⟧  = varCwf ∈Γ
+⟦ t · u ⟧   = app ⟦ t ⟧ ⟦ u ⟧
+⟦ ƛ t ⟧     = lam ⟦ t ⟧
 
 ⟪ q ⟫       = var here
 ⟪ t [ ρ ] ⟫ = ⟪ t ⟫ [ ⟪ ρ ⟫ʰ ]'
@@ -32,14 +31,16 @@ open import Data.Unit using (⊤ ; tt)
 ⟦_⟧ˢ {ε}     _       = <>
 ⟦_⟧ˢ {Γ ∙ α} (t , ρ) = < ⟦ ρ ⟧ˢ , ⟦ t ⟧ >
 
-⟪ <> ⟫ʰ        = tt 
+⟪ <> ⟫ʰ        = tt
 ⟪ id ⟫ʰ        = id~
-⟪ p ⟫ʰ         = p~
+⟪ p  ⟫ʰ        = p~
 ⟪ γ ∘ γ' ⟫ʰ    = ⟪ γ ⟫ʰ ⋆ ⟪ γ' ⟫ʰ
 ⟪ < γ , t > ⟫ʰ = ⟪ t ⟫ , ⟪ γ ⟫ʰ
 
 hom∘▹ : ∀ {Γ Δ} (γ : Hom Γ Δ) → ⟦ ⟪ γ ⟫ʰ ⟧ˢ ~~ γ
+
 λ∘cwf : ∀ {Γ α} (t : Tm-λ Γ α) → ⟪ ⟦ t ⟧ ⟫ ≡ t
+
 cwf∘λ : ∀ {Γ α} (t : Tm-cwf Γ α) → ⟦ ⟪ t ⟫ ⟧ ~ t
 
 []-comm : ∀ {Γ Δ α} (t : Tm-λ Γ α) (ρ : Δ ▹ Γ) →
@@ -73,12 +74,18 @@ postulate ⟦⟧-∘-distₚ : ∀ {Γ Δ Θ} (ρ : Δ ▹ Θ) (σ : Γ ▹ Δ) 
     ∎
   where open EqR (TmCwf {_})
 []-comm {Γ} (ƛ {α = γ} t) ρ = begin
-  lam ⟦ t [ var here , ▹-weaken Γ ⊆-∙ ρ ]' ⟧    ≈⟨ cong-lam ([]-comm t (var here , ▹-weaken Γ ⊆-∙ ρ)) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ▹-weaken Γ ⊆-∙ ρ ⟧ˢ , q > ]) ≈⟨ cong-lam (cong-[] refl~ (help)) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ⋆ p~ ⟧ˢ , q > ])           ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (⟦⟧-∘-distₚ ρ p~))) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])      ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (cong-∘ refl~~ {!!}))) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ p , q > ])            ≈⟨ sym~ (lamCm ⟦ t ⟧ ⟦ ρ ⟧ˢ) ⟩
-  lam ⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]                          ∎
+  lam ⟦ t [ var here , ▹-weaken Γ ⊆-∙ ρ ]' ⟧
+    ≈⟨ cong-lam ([]-comm t (var here , ▹-weaken Γ ⊆-∙ ρ)) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ▹-weaken Γ ⊆-∙ ρ ⟧ˢ , q > ])
+    ≈⟨ cong-lam (cong-[] refl~ (help)) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⋆ p~ ⟧ˢ , q > ])
+    ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (⟦⟧-∘-distₚ ρ p~))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ ⟦ p~ ⟧ˢ , q > ])
+    ≈⟨ cong-lam (cong-[] refl~ (cong-<,> refl~ (cong-∘ refl~~ {!!}))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ p , q > ])
+    ≈⟨ sym~ (lamCm ⟦ t ⟧ ⟦ ρ ⟧ˢ) ⟩
+  lam ⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]
+    ∎
   where open EqR (TmCwf {_})
         help : < ⟦ ▹-weaken Γ (⊆-∙ {a = γ}) ρ ⟧ˢ , q > ~~ < ⟦ ρ ⋆ p~ ⟧ˢ , q >
         help rewrite ▹-weaken-⋆-p {Γ} {α = γ} ρ = refl~~
@@ -115,10 +122,14 @@ cwf∘λ q = refl~
 cwf∘λ (lam t) = cong-lam (cwf∘λ t)
 cwf∘λ (app t u) = cong-app (cwf∘λ t) (cwf∘λ u)
 cwf∘λ (t [ γ ]) = begin
-  ⟦ ⟪ t ⟫ [ ⟪ γ ⟫ʰ ]' ⟧     ≈⟨ []-comm ⟪ t ⟫ ⟪ γ ⟫ʰ ⟩
-  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ] ≈⟨ cong-[] (cwf∘λ t) refl~~ ⟩
-  t [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ]         ≈⟨ cong-[] refl~ (hom∘▹ γ) ⟩
-  t [ γ ]                   ∎
+  ⟦ ⟪ t ⟫ [ ⟪ γ ⟫ʰ ]' ⟧
+    ≈⟨ []-comm ⟪ t ⟫ ⟪ γ ⟫ʰ ⟩
+  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ]
+    ≈⟨ cong-[] (cwf∘λ t) refl~~ ⟩
+  t [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ]
+    ≈⟨ cong-[] refl~ (hom∘▹ γ) ⟩
+  t [ γ ]
+    ∎
   where open EqR (TmCwf {_})
 
 hom∘▹ <> = refl~~
