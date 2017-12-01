@@ -28,19 +28,21 @@ leng (Γ ∙ x) = 1 + leng Γ
 ⊆-trans base       Δ⊆E        = Δ⊆E
 ⊆-trans (step Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (step Γ⊆Δ) Δ⊆E)
 ⊆-trans (step Γ⊆Δ) (pop! Δ⊆E) = step (⊆-trans Γ⊆Δ Δ⊆E)
+
 ⊆-trans (pop! Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (pop! Γ⊆Δ) Δ⊆E)
 ⊆-trans (pop! Γ⊆Δ) (pop! Δ⊆E) = pop! (⊆-trans Γ⊆Δ Δ⊆E)
 
 ⊆-∙ : {A : Set} {Γ : Ctxt A} {a : A} → Γ ⊆ (Γ ∙ a)
 ⊆-∙ = step ⊆-refl
+
 infix 10 _∈_
 
-data _∈_ {A : Set} (a : A) : Ctxt A → Set where
-  here  : {Γ : Ctxt A} → a ∈ Γ ∙ a
-  there : {Γ : Ctxt A} {a' : A} → a ∈ Γ → a ∈ Γ ∙ a'
+data _∈_ {A : Set} (α : A) : Ctxt A → Set where
+  here  : {Γ : Ctxt A} → α ∈ Γ ∙ α
+  there : {Γ : Ctxt A} {α′ : A} → α ∈ Γ → α ∈ Γ ∙ α′
 
 there-eq : {A : Set} {Γ : Ctxt A} {a x : A} {φ ψ : a ∈ Γ} →
-           there {a' = x} φ ≡ there {a' = x} ψ → φ ≡ ψ
+           there {α′ = x} φ ≡ there {α′ = x} ψ → φ ≡ ψ
 there-eq refl = refl           
 
 ∈-dec : {A : Set} {Γ : Ctxt A} {a : A} (φ ψ : a ∈ Γ) → Dec (φ ≡ ψ)

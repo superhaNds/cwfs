@@ -11,6 +11,7 @@ open import Function using (_∘_ ; _$_)
 open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Wellscoped.Syntax
+open import Unityped.Wellscoped.Typed.Scwf
 open ≡-Reasoning
 
 ------------------------------------------------------
@@ -26,13 +27,13 @@ Ctx : Nat → Set
 Ctx = Vec.Vec Ty
 
 _,_ : ∀ {n} (Γ : Ctx n) (α : Ty) → Ctx (suc n)
-Γ , α = α Vec.∷ Γ
+Γ , α = α ∷ Γ
 
 infix 4 _⊢_∈_
 
 data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
 
-  var : ∀ {i} → Γ ⊢ var i ∈ Vec.lookup i Γ
+  var : ∀ {i} → Γ ⊢ var i ∈ lookup i Γ
   
   ƛ   : ∀ {t α β} →
   
@@ -108,6 +109,34 @@ tmLemmas = record
       (t₁ /✶₂ ρs₂ ↑✶₂ k) · (t₂ /✶₂ ρs₂ ↑✶₂ k)  ≡⟨ sym (TermApp.·-/✶-↑✶ _ k ρs₂) ⟩
       t₁ · t₂ /✶₂ ρs₂ ↑✶₂ k                    ∎
 
+
+SubT : Nat → Nat → Set
+SubT m n = Sub Term n m
+
+Ren : Nat → Nat → Set
+Ren m n = Sub Fin n m
+
+wk-ren : ∀ {m n} → Ren m n → Ren (suc m) n
+wk-ren ρ = Vec.map suc ρ
+
+ren-to-sub : ∀ {m n} → Ren m n → SubT m n
+ren-to-sub ρ = Vec.map var ρ
+
+wk-vars : ∀ {m n} → Ren m n → SubT (suc m) n
+wk-vars = ren-to-sub ∘ wk-ren
+
+_[_] : {m n : Nat} → Term m → SubT n m → Term n
+_[_] = _/_
+
+_∙_ : ∀ {m n} (ρ : SubT m n) (t : Term m) → SubT m (suc n)
+ρ ∙ t = t ∷ ρ
+
+_⋆_ : ∀ {m n k} → SubT n k → SubT m n → SubT m k
+ρ₁ ⋆ ρ₂ = ρ₁ ⊙ ρ₂
+
+p : ∀ {n} → SubT (suc n) n
+p = Vec.map weaken id
+
 infix  4 _▹_⊢_
 
 data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
@@ -118,10 +147,7 @@ data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
   
           Δ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ →
           -----------------------
-             Γ , σ ▹ Δ ⊢ t ∷ ρ
-
-_[_] : {m n : Nat} → Term m → Sub Term m n → Term n
-_[_] = _/_
+             Γ , σ ▹ Δ ⊢ ρ ∙ t
 
 module Var where
 
@@ -173,7 +199,7 @@ id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ id
 id-preserv {Γ = []}    = []
 id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-p-preserv : ∀ {n α} {Γ : Ctx n} → Γ ▹ Γ , α ⊢ Vec.map weaken id
+p-preserv : ∀ {n α} {Γ : Ctx n} → Γ ▹ Γ , α ⊢ p
 p-preserv {Γ = []}    = []
 p-preserv {Γ = _ ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
 
@@ -183,23 +209,44 @@ lookup-preserv zero    (ext t ⊢ρ) = t
 lookup-preserv (suc x) (ext t ⊢ρ) = lookup-preserv x ⊢ρ
 
 subst-lemma : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ} →
-              Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ → Δ ⊢ t [ ρ ] ∈ α
+
+              Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ →
+              -----------------------
+                 Δ ⊢ t [ ρ ] ∈ α
+                 
 subst-lemma (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
 subst-lemma (ƛ t)     ⊢ρ = ƛ (subst-lemma t (↑-preserv ⊢ρ))
 subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 
 ∙-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
             {t : Term n} {ρ : Sub Term m n} {α} →
-            Γ ⊢ t ∈ α → Δ ▹ Γ ⊢ ρ → Δ , α ▹ Γ ⊢ t ∷ ρ
-∙-preserv t []         = ext t []
-∙-preserv t (ext x ⊢ρ) = ext t (∙-preserv x ⊢ρ)
+            Γ ⊢ t ∈ α → Δ ▹ Γ ⊢ ρ → Δ , α ▹ Γ ⊢ ρ ∙ t
+∙-preserv t ⊢ρ = ext t ⊢ρ
 
-⋆-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {E : Ctx k}
-            {ρ : Sub Term m n} {ρ' : Sub Term n k} →
-            Γ ▹ Δ ⊢ ρ → Δ ▹ E ⊢ ρ' → Γ ▹ E ⊢ ρ ⊙ ρ'             
+⋆-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {Θ : Ctx k}
+            {ρ : SubT n m} {ρ' : SubT k n} →
+            Γ ▹ Δ ⊢ ρ → Δ ▹ Θ ⊢ ρ' → Γ ▹ Θ ⊢ ρ ⋆ ρ'             
 ⋆-preserv []         _   = []
 ⋆-preserv (ext x ⊢ρ) ⊢ρ' =
   ∙-preserv (subst-lemma x ⊢ρ')
             (⋆-preserv ⊢ρ ⊢ρ')
 
 open TermLemmas tmLemmas public hiding (var)
+
+{-
+TmScwf : Scwf
+TmScwf = record
+           { Type  = Ty
+           ; RTm   = Term
+           ; Ctxt  = Ctx
+           ; _,_   = _,_
+           ; Subst = SubT
+           ; _⊢_∈_ = _⊢_∈_
+           ; _▹_⊢_ = _▹_⊢_
+           ; sub  = λ { (t Σ., t∈) (ρ Σ., ⊢ρ) → t [ ρ ] Σ., subst-lemma t∈ ⊢ρ }
+           ; <_,_> = λ { (ρ Σ., ⊢ρ) (t Σ., t∈) → ρ ∙ t Σ., ∙-preserv t∈ ⊢ρ }
+           ; _∘_   = λ { (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) → ρ ⋆ σ Σ., ⋆-preserv ⊢ρ ⊢σ }
+           ; p     = p Σ., p-preserv
+           ; q     = q Σ., ⊢vr0
+           }
+-}

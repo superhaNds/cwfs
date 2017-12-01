@@ -1,7 +1,7 @@
 module SimpTyped.ScwfComb where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.List hiding ([_])
+open import Data.Vec hiding ([_] ; _∈_)
 open import Data.Fin
 import Relation.Binary.PropositionalEquality as P
 open import Relation.Binary using (IsEquivalence ; Setoid)

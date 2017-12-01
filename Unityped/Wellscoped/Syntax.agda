@@ -35,7 +35,7 @@ q = vr 0
 -- The identity combinator λx.x
 
 I : Term 0
-I = ƛ q
+I = ƛ (var zero)
 
 -- The K combinator λxy.x
 

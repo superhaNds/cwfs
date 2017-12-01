@@ -22,7 +22,7 @@ abstract
 
   wk-sub-refl : ∀ {Δ} Γ (ρ : Δ ▹ Γ) → ▹-weaken Γ (⊆-refl) ρ ≡ ρ
   wk-sub-refl ε tt            = refl
-  wk-sub-refl (Γ ∙ x) (t , ρ) = cong₂ _,_ (wk-refl t) (wk-sub-refl Γ ρ)
+  wk-sub-refl (Γ ∙ x) (ρ , t) = cong₂ _,_ (wk-sub-refl Γ ρ) (wk-refl t) 
 
   wk-tr : ∀ {Γ Δ Θ α} (φ : Γ ⊆ Δ) (ψ : Δ ⊆ Θ) (t : Term Γ α) →
                weaken ψ (weaken φ t) ≡ weaken (⊆-trans φ ψ) t
@@ -33,22 +33,22 @@ abstract
   tk-weaken : ∀ {Γ Δ Θ α} (φ : α ∈ Γ) (i : Δ ⊆ Θ) (ρ : Δ ▹ Γ) →
               weaken i (tkVar φ ρ) ≡ tkVar φ (▹-weaken Γ i ρ)
   tk-weaken here i ρ = refl
-  tk-weaken (there φ) i (t , ρ) = tk-weaken φ i ρ
+  tk-weaken (there φ) i (ρ , t) = tk-weaken φ i ρ
 
   ▹-wk-simp : ∀ {Γ Δ E Θ} (v₁ : Γ ⊆ Δ) (v₂ : E ⊆ Θ) (ρ : E ▹ Δ) →
               ▹-weaken Γ v₂ (simp v₁ ρ) ≡ simp v₁ (▹-weaken Δ v₂ ρ)
   ▹-wk-simp base      v₂ ρ       = refl
-  ▹-wk-simp (step v₁) v₂ (_ , ρ) = ▹-wk-simp v₁ v₂ ρ
-  ▹-wk-simp (pop! v₁) v₂ (α , ρ) = cong (_,_ (weaken v₂ α)) (▹-wk-simp v₁ v₂ ρ)            
+  ▹-wk-simp (step v₁) v₂ (ρ , _) = ▹-wk-simp v₁ v₂ ρ
+  ▹-wk-simp (pop! v₁) v₂ (ρ , α) = cong (_, weaken v₂ α) (▹-wk-simp v₁ v₂ ρ)
 
   simp-refl : ∀ (Γ {Δ} : Ctx) (ρ : Δ ▹ Γ) → simp ⊆-refl ρ ≡ ρ
   simp-refl ε tt = refl
-  simp-refl (Γ ∙ x) (t , ρ) = cong (t ,_) (simp-refl Γ ρ)
+  simp-refl (Γ ∙ x) (ρ , t) = cong (_, t) (simp-refl Γ ρ)
 
   ▹-wk-2 : ∀ {Δ E Θ} Γ (φ : Δ ⊆ E) (ψ : E ⊆ Θ) (ρ : Δ ▹ Γ) →
            ▹-weaken Γ ψ (▹-weaken Γ φ ρ) ≡ ▹-weaken Γ (⊆-trans φ ψ) ρ
   ▹-wk-2 ε       φ ψ ρ       = refl
-  ▹-wk-2 (Γ ∙ α) φ ψ (t , ρ) = cong₂ _,_ (wk-tr φ ψ t) (▹-wk-2 Γ φ ψ ρ)    
+  ▹-wk-2 (Γ ∙ α) φ ψ (ρ , t) = cong₂ _,_ (▹-wk-2 Γ φ ψ ρ) (wk-tr φ ψ t)
 
   []-wk : ∀ {Γ Δ N α} (φ : Δ ⊆ N) (t : Term Γ α) (ρ : Δ ▹ Γ) →
           weaken φ (t [ ρ ]) ≡ t [ ▹-weaken Γ φ ρ ]
@@ -56,48 +56,48 @@ abstract
   []-wk φ (t · u) ρ = cong₂ _·_ ([]-wk φ t ρ) ([]-wk φ u ρ)
   []-wk {Γ} {Δ} φ (ƛ t) ρ =
     cong ƛ (trans ([]-wk (pop! φ) t
-             (var here , ▹-weaken Γ (step ⊆-refl) ρ))
-      (cong (λ ρ → t [ (var here , ρ) ])
-            (trans (▹-wk-2 Γ (step ⊆-refl) (pop! φ) ρ)
-      (trans (cong (λ x → ▹-weaken Γ x ρ) (⊆-step-refl φ))
-             (sym (▹-wk-2 Γ φ (step ⊆-refl) ρ))))))
+                   (▹-weaken Γ (step ⊆-refl) ρ , var here))
+           (cong (t [_] ∘ (_, var here)) 
+                 (trans (▹-wk-2 Γ (step ⊆-refl) (pop! φ) ρ)
+                        (trans (cong (λ x → ▹-weaken Γ x ρ) (⊆-step-refl φ))
+                        (sym $ ▹-wk-2 Γ φ (step ⊆-refl) ρ)))))
 
   wk-⋆ : ∀ (Γ {Δ} {E} {Θ} : Ctx) (φ : E ⊆ Θ) (ρ : Δ ▹ Γ) (σ : E ▹ Δ) →
          ρ ⋆ (▹-weaken Δ φ σ) ≡ ▹-weaken Γ φ (ρ ⋆ σ)
   wk-⋆ ε       φ ρ       σ = refl
-  wk-⋆ (Γ ∙ x) φ (t , ρ) σ = cong-, (sym ([]-wk φ t σ)) (wk-⋆ Γ φ ρ σ)
+  wk-⋆ (Γ ∙ x) φ (ρ , t) σ = cong-, (sym ([]-wk φ t σ)) (wk-⋆ Γ φ ρ σ)
 
   tk-⋆ : ∀ {Γ Δ Θ α} (φ : α ∈ Γ) (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) →
          (tkVar φ ρ) [ σ ] ≡ tkVar φ (ρ ⋆ σ)
   tk-⋆ here ρ σ = refl
-  tk-⋆ (there φ) (t , ρ) σ = tk-⋆ φ ρ σ
+  tk-⋆ (there φ) (ρ , _) σ = tk-⋆ φ ρ σ
 
   tk-in : ∀ {Γ Δ Θ α} (φ : Γ ⊆ Δ) (v : α ∈ Γ) (ρ : Θ ▹ Δ) →
           tkVar (sub-in φ v) ρ ≡ tkVar v (simp φ ρ)
-  tk-in (step φ) here      (t , ρ) = tk-in φ here ρ
-  tk-in (step φ) (there v) (t , ρ) = tk-in φ (there v) ρ
+  tk-in (step φ) here      (ρ , t) = tk-in φ here ρ
+  tk-in (step φ) (there v) (ρ , t) = tk-in φ (there v) ρ
   tk-in (pop! φ) here      _       = refl
-  tk-in (pop! φ) (there v) (t , ρ) = tk-in φ v ρ
+  tk-in (pop! φ) (there v) (ρ , t) = tk-in φ v ρ
 
   wk-[] : ∀ {Γ Δ Θ α} (v : Γ ⊆ Δ) (t : Term Γ α) (ρ : Θ ▹ Δ) →
           (weaken v t) [ ρ ] ≡ t [ simp v ρ ]
   wk-[] v (var ∈Γ) ρ = tk-in v ∈Γ ρ
   wk-[] v (t · u)  ρ = cong₂ _·_ (wk-[] v t ρ) (wk-[] v u ρ)
   wk-[] {Γ} {Δ} v (ƛ t) ρ = cong ƛ
-    (trans (wk-[] (pop! v) t (var here , ▹-weaken Δ ⊆-∙ ρ))
-           (cong (λ ρ → t [ (var here , ρ) ]) (sym (▹-wk-simp v ⊆-∙ ρ))))
+    (trans (wk-[] (pop! v) t (▹-weaken Δ ⊆-∙ ρ , var here))
+           (cong (λ ρ → t [ ρ , var here ]) (sym (▹-wk-simp v ⊆-∙ ρ))))
 
   ⋆-step : ∀ Γ {Δ} {Θ} {α} → (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) (t : Term Θ α) →
-          (▹-weaken Γ ⊆-∙ ρ) ⋆ (t , σ) ≡ ρ ⋆ σ
+          (▹-weaken Γ ⊆-∙ ρ) ⋆ (σ , t) ≡ ρ ⋆ σ
   ⋆-step ε ρ σ t = refl
-  ⋆-step (Γ ∙ x) (u , ρ) σ t =
-    cong₂ _,_ (trans (wk-[] (step ⊆-refl) u (t , σ))
+  ⋆-step (Γ ∙ x) (ρ , u) σ t =
+    cong₂ _,_ (⋆-step Γ ρ σ t)
+              (trans (wk-[] (step ⊆-refl) u (σ , t))
                      (cong (u [_]) (simp-refl _ σ)))
-              (⋆-step Γ ρ σ t) 
-
+               
   ▹-wk-refl : ∀ Γ {Δ} (ρ : Δ ▹ Γ) → ▹-weaken Γ ⊆-refl ρ ≡ ρ
   ▹-wk-refl ε tt = refl
-  ▹-wk-refl (Γ ∙ x) (t , ρ) = cong₂ _,_ (wk-refl t) (▹-wk-refl Γ ρ)
+  ▹-wk-refl (Γ ∙ _) (ρ , t) = cong₂ _,_ (▹-wk-refl Γ ρ) (wk-refl t)
 
   tkVar-wk-id : ∀ {Γ Δ α} (v : α ∈ Γ) (φ : Γ ⊆ Δ) →
                 tkVar v (▹-weaken Γ φ id) ≡ var (sub-in φ v)
@@ -114,6 +114,29 @@ abstract
     trans (tkVar-wk-id v ⊆-∙)
           (cong (var ∘ there) (sub-in-refl v))
 
+  lim : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) (v : α ∈ Γ) → var (tk∈ v ρ) ≡ tkVar v (▸-to-▹ var ρ)
+  lim {Γ ∙ x} (ρ , t) here      = refl
+  lim {Γ ∙ x} (ρ , t) (there v) = lim ρ v
+
+  postulate tk∈-id : ∀ {Γ α} (v : α ∈ Γ) → tk∈ v idV ≡ v
+  {-tk∈-id {.(_ ∙ _)} here = refl
+  tk∈-id {.(_ ∙ _)} (there v) = {!!}-}
+
+  postulate lim₁ : ∀ {Γ α β} (ρ : Γ ▸ Γ) (v : α ∈ Γ) → tk∈ v (▸-weaken Γ (⊆-∙ {a = β}) ρ) ≡ sub-in ⊆-∙ v
+  {-lim₁ {Γ ∙ x} (ρ , t) here = {!!}
+  lim₁ {Γ ∙ x} (ρ , t) (there v) = {!!}-}
+
+  lim₂ : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) (v : α ∈ Γ) → tk∈ v (▸-weaken Γ (⊆-∙ {a = α}) idV) ≡ there v
+  lim₂ {Γ ∙ _} (ρ , t) here = refl
+  lim₂ {Γ ∙ x} (ρ , t) (there v) = trans (lim₁ idV (there v))
+                                         (cong (there ∘ there) (sub-in-refl v))
+
+  tkVar-idV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (idV {Γ})) ≡ var v
+  tkVar-idV here = refl
+  tkVar-idV {Γ ∙ x} (there v) =
+    trans (sym (lim idV (there v)))
+          (cong var (trans (lim₁ idV v) (cong there (sub-in-refl v))))
+
   t[id] : ∀ {Γ α} (t : Term Γ α) → t [ id ] ≡ t
   t[id] (var ∈Γ) = tkVar-id ∈Γ
   t[id] (t · u)  = cong₂ _·_ (t[id] t) (t[id] u)
@@ -121,9 +144,9 @@ abstract
 
   idR : ∀ {Γ Δ} (ρ : Γ ▹ Δ) → ρ ⋆ id ≡ ρ
   idR {Δ = ε}     tt      = refl
-  idR {Δ = Δ ∙ x} (t , ρ) =
-    trans (cong (t [ id ] ,_) (idR ρ))
-          (cong (_, ρ) (t[id] t))
+  idR {Δ = Δ ∙ x} (ρ , t) =
+    trans (cong (_, t [ id ]) (idR ρ))
+          (cong (ρ ,_) (t[id] t))
 
   sub-p : ∀ {Γ α β} (t : Term Γ α) → t [ p {α = β} ] ≡ weaken ⊆-∙ t
   sub-p {Γ} t = begin
@@ -139,10 +162,10 @@ abstract
 
   ▹-weaken-⋆-p : ∀ {Γ Δ α} (ρ : Δ ▹ Γ) → ρ ⋆ p {α = α} ≡ ▹-weaken Γ ⊆-∙ ρ
   ▹-weaken-⋆-p {ε} tt = refl
-  ▹-weaken-⋆-p {Γ ∙ α} (t , ρ) = begin
-    t [ p ] , ρ ⋆ p                 ≡⟨ cong (_, ρ ⋆ p) (sub-p t) ⟩
-    weaken ⊆-∙ t , ρ ⋆ p            ≡⟨ cong (weaken ⊆-∙ t ,_) (▹-weaken-⋆-p ρ) ⟩
-    weaken ⊆-∙ t , ▹-weaken Γ ⊆-∙ ρ ∎
+  ▹-weaken-⋆-p {Γ ∙ α} (ρ , t) = begin
+    ρ ⋆ p , t [ p ]                 ≡⟨ cong (ρ ⋆ p ,_) (sub-p t) ⟩
+    ρ ⋆ p , weaken ⊆-∙ t            ≡⟨ cong (_, weaken ⊆-∙ t )(▹-weaken-⋆-p ρ) ⟩
+    ▹-weaken Γ ⊆-∙ ρ , weaken ⊆-∙ t ∎
     where open P.≡-Reasoning
 
   idε<> : id {ε} ≡ tt
