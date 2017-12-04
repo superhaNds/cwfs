@@ -11,7 +11,6 @@ open import Function using (_∘_ ; _$_)
 open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Wellscoped.Syntax
-open import Unityped.Wellscoped.Typed.Scwf
 open ≡-Reasoning
 
 ------------------------------------------------------
@@ -37,14 +36,14 @@ data _⊢_∈_ {n} (Γ : Ctx n) : Term n → Ty → Set where
   
   ƛ   : ∀ {t α β} →
   
-          Γ , α ⊢ t ∈ β →
-          ----------------------
-              Γ ⊢ ƛ t ∈ α ⇒ β
+             Γ , α ⊢ t ∈ β →
+           -------------------
+             Γ ⊢ ƛ t ∈ α ⇒ β
               
   _·_ : ∀ {t u σ τ} →
   
-          Γ ⊢ t ∈ σ ⇒ τ → Γ ⊢ u ∈ σ →
-          ------------------------------
+           Γ ⊢ t ∈ σ ⇒ τ → Γ ⊢ u ∈ σ →
+          -----------------------------
                 Γ ⊢ t · u ∈ τ
 
 ⊢vr0 : ∀ {n α} {Γ : Ctx n} → Γ , α ⊢ q ∈ α
@@ -135,11 +134,14 @@ _⋆_ : ∀ {m n k} → SubT n k → SubT m n → SubT m k
 ρ₁ ⋆ ρ₂ = ρ₁ ⊙ ρ₂
 
 p : ∀ {n} → SubT (suc n) n
-p = Vec.map weaken id
+p = wk
+
+wkn : ∀ {n} → Term n → Term (suc n)
+wkn = weaken
 
 infix  4 _▹_⊢_
 
-data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
+data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → SubT n m → Set where
 
   []  : ∀ {Δ} → [] ▹ Δ ⊢ []
   
@@ -148,6 +150,9 @@ data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Term m n → Set where
           Δ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ →
           -----------------------
              Γ , σ ▹ Δ ⊢ ρ ∙ t
+
+--------------------------------------------------------------------------------
+-- Typing rules for scwf
 
 module Var where
 
@@ -209,23 +214,19 @@ lookup-preserv zero    (ext t ⊢ρ) = t
 lookup-preserv (suc x) (ext t ⊢ρ) = lookup-preserv x ⊢ρ
 
 subst-lemma : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ} →
-
-              Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ →
-              -----------------------
-                 Δ ⊢ t [ ρ ] ∈ α
-                 
+              Γ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ → Δ ⊢ t [ ρ ] ∈ α                 
 subst-lemma (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
 subst-lemma (ƛ t)     ⊢ρ = ƛ (subst-lemma t (↑-preserv ⊢ρ))
 subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 
 ∙-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
-            {t : Term n} {ρ : Sub Term m n} {α} →
+              {t : Term n} {ρ : Sub Term m n} {α} →
             Γ ⊢ t ∈ α → Δ ▹ Γ ⊢ ρ → Δ , α ▹ Γ ⊢ ρ ∙ t
 ∙-preserv t ⊢ρ = ext t ⊢ρ
 
-⋆-preserv : ∀ {m n k} {Γ : Ctx m} {Δ : Ctx n} {Θ : Ctx k}
-            {ρ : SubT n m} {ρ' : SubT k n} →
-            Γ ▹ Δ ⊢ ρ → Δ ▹ Θ ⊢ ρ' → Γ ▹ Θ ⊢ ρ ⋆ ρ'             
+⋆-preserv : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
+              {ρ : SubT n k} {σ : SubT m n} →
+            Θ ▹ Γ ⊢ ρ → Γ ▹ Δ ⊢ σ → Θ ▹ Δ ⊢ ρ ⋆ σ
 ⋆-preserv []         _   = []
 ⋆-preserv (ext x ⊢ρ) ⊢ρ' =
   ∙-preserv (subst-lemma x ⊢ρ')
@@ -233,20 +234,38 @@ subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 
 open TermLemmas tmLemmas public hiding (var)
 
-{-
-TmScwf : Scwf
-TmScwf = record
-           { Type  = Ty
-           ; RTm   = Term
-           ; Ctxt  = Ctx
-           ; _,_   = _,_
-           ; Subst = SubT
-           ; _⊢_∈_ = _⊢_∈_
-           ; _▹_⊢_ = _▹_⊢_
-           ; sub  = λ { (t Σ., t∈) (ρ Σ., ⊢ρ) → t [ ρ ] Σ., subst-lemma t∈ ⊢ρ }
-           ; <_,_> = λ { (ρ Σ., ⊢ρ) (t Σ., t∈) → ρ ∙ t Σ., ∙-preserv t∈ ⊢ρ }
-           ; _∘_   = λ { (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) → ρ ⋆ σ Σ., ⋆-preserv ⊢ρ ⊢σ }
-           ; p     = p Σ., p-preserv
-           ; q     = q Σ., ⊢vr0
-           }
--}
+wk-[p] : ∀ {n} (t : Term n) → t [ p ] ≡ wkn t
+wk-[p] t = /-wk {t = t}
+
+------------------------------------------------------------------------------
+-- The sigma pairs of raw term and typing rule
+
+<>-ty : ∀ {m} {Δ : Ctx m} → Σ (SubT m 0) ([] ▹ Δ ⊢_)
+<>-ty = [] Σ., []
+
+<,>-ty : ∀ {m n α} {Γ : Ctx m} {Δ : Ctx n} → Σ (SubT m n) (Δ ▹ Γ ⊢_) → Σ (Term m) (Γ ⊢_∈ α) →
+         Σ (SubT m (suc n)) (Δ , α ▹ Γ ⊢_)
+<,>-ty (ρ Σ., ⊢ρ) (t Σ., t∈) = ρ ∙ t Σ., ext t∈ ⊢ρ
+
+∘-ty : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k} →
+       Σ (SubT n k) (Θ ▹ Γ ⊢_) → Σ (SubT m n) (Γ ▹ Δ ⊢_) → Σ (SubT m k) (Θ ▹ Δ ⊢_)
+∘-ty (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) = ρ ⋆ σ Σ., ⋆-preserv ⊢ρ ⊢σ             
+
+sub-ty : ∀ {m n α} {Δ : Ctx m} {Γ : Ctx n} → Σ (Term n) (Γ ⊢_∈ α) →
+         Σ (SubT m n) (Γ ▹ Δ ⊢_) → Σ (Term m) (Δ ⊢_∈ α)             
+sub-ty (t Σ., t∈) (ρ Σ., ⊢ρ) = t [ ρ ] Σ., subst-lemma t∈ ⊢ρ
+
+p-ty : ∀ {n α} {Γ : Ctx n} → Σ (SubT (suc n) n) (Γ ▹ Γ , α ⊢_)
+p-ty = p Σ., p-preserv
+
+q-ty : ∀ {n α} {Γ : Ctx n} → Σ (Term (suc n)) (Γ , α ⊢_∈ α)
+q-ty = q Σ., ⊢vr0
+
+ƛ-ty : ∀ {n} {Γ : Ctx n} {α β} → Σ (Term (suc n)) (Γ , α ⊢_∈ β) →
+       Σ (Term n) (Γ ⊢_∈ (α ⇒ β))
+ƛ-ty (t Σ., t∈) = ƛ t Σ., ƛ t∈       
+
+app-ty : ∀ {n} {Γ : Ctx n} {α β} → Σ (Term n) (Γ ⊢_∈ (α ⇒ β)) →
+         Σ (Term n) (Γ ⊢_∈ α) → Σ (Term n) (Γ ⊢_∈ β)
+app-ty (t Σ., t∈) (u Σ., u∈) = t · u Σ., t∈ · u∈
+

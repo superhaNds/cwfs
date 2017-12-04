@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas  #-}
 ---------------------------------------------------------------------
 -- A relation for β conversion for the lambda calculus and
 -- setoid definition. The isomorphism between cwf terms and
@@ -32,9 +31,9 @@ data _~βη_  {n : Nat} : (_ _ : Term n) → Set where
   sym~βη    : {t₁ t₂ : Term n} → t₁ ~βη t₂ → t₂ ~βη t₁
   trans~βη  : {t₁ t₂ t₃ : Term n} → t₁ ~βη t₂ → t₂ ~βη t₃ → t₁ ~βη t₃
 
-data _~~βη_ : ∀ {n m} (_ _ : Subst m n) → Set where
-  ⋄   : ∀ {m} {ρ ρ' : Subst m 0} → ρ ~~βη ρ'
-  ext : ∀ {m n} {t u : Term m} {ρ ρ' : Subst m n} →
+data _~~βη_ {m} : ∀ {n} (_ _ : Subst m n) → Set where
+  ⋄   : ∀ {ρ ρ' : Subst m 0} → ρ ~~βη ρ'
+  ext : ∀ {n} {t u : Term m} {ρ ρ' : Subst m n} →
         t ~βη u → ρ ~~βη ρ' → (ρ ∙ t) ~~βη (ρ' ∙ u)
 
 -- Reflexivity is derived giving rise to _~βη_ as an equivalence relation
@@ -51,7 +50,7 @@ sym~~βη ⋄ = ⋄
 sym~~βη (ext x ρ~ρ') = ext (sym~βη x) (sym~~βη ρ~ρ')
 
 trans~~βη : ∀ {m n} {ρ₁ ρ₂ ρ₃ : Subst m n} → ρ₁ ~~βη ρ₂ → ρ₂ ~~βη ρ₃ → ρ₁ ~~βη ρ₃
-trans~~βη ⋄ ρ₂~ρ₃ = ⋄
+trans~~βη ⋄ _ = ⋄
 trans~~βη (ext x ρ₁~ρ₂) (ext y ρ₂~ρ₃) = ext (trans~βη x y) (trans~~βη ρ₁~ρ₂ ρ₂~ρ₃)
 
 ~βηequiv : ∀ {n} → IsEquivalence (_~βη_ {n})
@@ -94,7 +93,7 @@ cong-[] (apcong t~t' t~t'')   ρ~ρ' = apcong (cong-[] t~t' ρ~ρ') (cong-[] t~t
 cong-[] (ξ t~t')              ρ~ρ' = ξ (cong-[] t~t' (cong~~βη ↑ₛ_ ρ~ρ'))
 cong-[] (sym~βη t~t')         ρ~ρ' = sym~βη (cong-[] t~t' (sym~~βη ρ~ρ'))
 cong-[] (trans~βη t~t' t~t'') ρ~ρ' = trans~βη (cong-[] t~t' ρ~ρ') (cong-[] t~t'' refl~~βη)
-cong-[] (β t u) ρ~ρ' = {!!}
+cong-[] {ρ = ρ} {ρ'} (β t u) ρ~ρ' = sym~βη {!!}
 cong-[] (η t) ρ~ρ' = {!!}
 
 cong-⋆ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →

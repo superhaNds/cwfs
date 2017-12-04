@@ -207,6 +207,7 @@ abstract
   var[p] : ∀ {n} (i : Fin n) → var i [ p {n} ] ≡ var (suc i)
   var[p] i = lookup-p i
 
+  -- this lemma lives in the lemmas record for substitution, but it's annoying to get it
   postulate 
     renλ : ∀ {n} (t : Term (1 + n)) → ren t (↑ pR) ≡ t [ ↑ₛ p ]
 

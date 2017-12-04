@@ -7,8 +7,8 @@ open import Data.Fin using (Fin)
 open import Relation.Binary
 
 record Scwf : Set₁ where
-  infix 5 _~_
-  infix 5 _~~_
+  infix 4 _~_
+  infix 4 _~~_
   infix 8 _∘_
   field
     Ty  : Set
@@ -54,13 +54,20 @@ record Lambda-scwf : Set₁ where
   infix 10 _·_
 
   field scwf : Scwf
-
   open Scwf scwf public
 
   field
     _`→_ : Ty → Ty → Ty
+    
     ƛ   : ∀ {Γ α β} → Tm (Γ , α) β → Tm Γ (α `→ β)
     _·_ : ∀ {Γ α β} → Tm Γ (α `→ β) → Tm Γ α → Tm Γ β
-    cong-ƛ : ∀ {Γ α β} {t t' : Tm (Γ , α) β} → t ~ t' → ƛ t ~ ƛ t'
+    
+    appCm : ∀ {Γ Δ α β} (t : Tm Γ (α `→ β)) (u : Tm Γ α) (γ : Hom Δ Γ) →
+            (t · u) [ γ ]  ~ (t [ γ ]) · (u [ γ ])
+    lamCm : ∀ {Γ Δ α β} (t : Tm (Γ , α) β) (γ : Hom Δ Γ) →
+            (ƛ t) [ γ ] ~ ƛ (t [ < γ ∘ p , q > ])
+            
+    cong-ƛ : ∀ {Γ α β} {t t' : Tm (Γ , α) β} →
+             t ~ t' → ƛ t ~ ƛ t'
     cong-· : ∀ {Γ α β} {t t' : Tm Γ (α `→ β)} {u u' : Tm Γ α} →
              t ~ t' → u ~ u' → t · u ~ t' · u'

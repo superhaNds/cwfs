@@ -28,9 +28,12 @@ leng (Γ ∙ x) = 1 + leng Γ
 ⊆-trans base       Δ⊆E        = Δ⊆E
 ⊆-trans (step Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (step Γ⊆Δ) Δ⊆E)
 ⊆-trans (step Γ⊆Δ) (pop! Δ⊆E) = step (⊆-trans Γ⊆Δ Δ⊆E)
-
 ⊆-trans (pop! Γ⊆Δ) (step Δ⊆E) = step (⊆-trans (pop! Γ⊆Δ) Δ⊆E)
 ⊆-trans (pop! Γ⊆Δ) (pop! Δ⊆E) = pop! (⊆-trans Γ⊆Δ Δ⊆E)
+
+⊆-trans-refl : {A : Set} {Γ : Ctxt A} → ⊆-trans {A} {Γ} ⊆-refl ⊆-refl ≡ ⊆-refl
+⊆-trans-refl {Γ = ε} = refl
+⊆-trans-refl {Γ = Γ ∙ x} = cong pop! ⊆-trans-refl
 
 ⊆-∙ : {A : Set} {Γ : Ctxt A} {a : A} → Γ ⊆ (Γ ∙ a)
 ⊆-∙ = step ⊆-refl
