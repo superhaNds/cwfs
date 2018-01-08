@@ -14,7 +14,7 @@ open import Unityped.Ucwf
 open import Unityped.Wellscoped.Properties
 open import Unityped.Wellscoped.Syntax
 open import Unityped.Wellscoped.Substitution
-open import Unityped.Wellscoped.Beta
+-- open import Unityped.Wellscoped.Beta
 import Relation.Binary.EqReasoning as EqR
 
 -------------------------------------------------------------------------------
@@ -129,20 +129,31 @@ maps t σ γ = refl
 
 -- Congruence rules
 
-congSub : ∀ {n m} {t t' : Term n} {ρ ρ' : Subst m n} → t ≡ t' → ρ ≡ ρ' → t [ ρ ] ≡ t' [ ρ' ]
+congSub : ∀ {n m} {t t' : Term n} {ρ ρ' : Subst m n} →
+           t ≡ t' →
+           ρ ≡ ρ' →
+           t [ ρ ] ≡ t' [ ρ' ]
 congSub refl refl = refl
 
-cong-∙ : ∀ {n m} {t t' : Term m} {ρ ρ' : Subst m n} → t ≡ t' → ρ ≡ ρ' → ρ ∙ t ≡ ρ' ∙ t'
+cong-∙ : ∀ {n m} {t t' : Term m} {ρ ρ' : Subst m n} →
+          t ≡ t' →
+          ρ ≡ ρ' →
+          ρ ∙ t ≡ ρ' ∙ t'
 cong-∙ refl refl = refl
 
 cong-⋆ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →
-         ρ ≡ σ → ρ' ≡ σ' → ρ ⋆ ρ' ≡ σ ⋆ σ'
+          ρ ≡ σ →
+          ρ' ≡ σ' →
+          ρ ⋆ ρ' ≡ σ ⋆ σ'
 cong-⋆ refl refl = refl
 
 cong-ƛ : ∀ {n} {t t' : Term (suc n)} → t ≡ t' → ƛ t ≡ ƛ t'
 cong-ƛ refl = refl
 
-cong-ap : ∀ {n} {t t' u u' : Term n} → t ≡ t' → u ≡ u' → t · u ≡ t' · u'
+cong-ap : ∀ {n} {t t' u u' : Term n} →
+           t ≡ t' →
+           u ≡ u' →
+           t · u ≡ t' · u'
 cong-ap refl refl = refl
 
 ----------------------------------------------------------------------------------
@@ -152,7 +163,7 @@ Tm-ucwf : Ucwf
 Tm-ucwf = record
             { Term  = Term
             ; Hom   = Subst
-            ; _~_  = _≡_
+            ; _~_   = _≡_
             ; _~~_  = _≡_
             ; id    = id
             ; <>    = []

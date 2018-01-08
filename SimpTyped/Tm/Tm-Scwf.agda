@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+-- Proof of Scwf axioms for the concrete typed lambda calculus
+-------------------------------------------------------------------------------
 module SimpTyped.Tm.Tm-Scwf where
 
 open import Data.Nat renaming (ℕ to Nat)
@@ -14,20 +17,33 @@ open import SimpTyped.Tm.Properties
 open import SimpTyped.Scwf
 open P.≡-Reasoning
 
+-------------------------------------------------------------------------------
+-- Axiom proofs
+
 id=<pq> : ∀ {Γ α} → id {Γ ∙ α} ≡ (p , q)
 id=<pq> {ε}     = refl
 id=<pq> {Γ ∙ x} = refl
 
+-- a synonym for the terminal object
+
 [] : ∀ {Γ} → Γ ▹ ε
 [] = tt
+
+-- terminal object is a left zero
 
 ⋆-<> : ∀ {Γ Δ} (ρ : Γ ▹ Δ) → [] {Γ} ⋆ ρ ≡ [] {Γ}
 ⋆-<> _ = refl
 
+-- q is the second projection
+
 q[] : ∀ {Γ Δ α} (t : Term Γ α) (ρ : Γ ▹ Δ) → q [ ρ , t ] ≡ t
 q[] t ρ = refl
 
+-- p is the first projection
+
 p⋆, : ∀ {Δ Θ α} (t : Term Δ α) (γ : Δ ▹ Θ) → p ⋆ (γ , t) ≡ γ
+
+-- id is a left identity in composition
 
 idL : ∀ {Γ Δ} (ρ : Δ ▹ Γ) → id ⋆ ρ ≡ ρ
 
@@ -35,6 +51,8 @@ p⋆, {Θ = Θ} t = trans (⋆-step Θ id _ t) ∘ idL
 
 idL {ε}     tt      = refl
 idL {Γ ∙ α} (ρ , t) = cong (_, t) (p⋆, t ρ)
+
+-- associativity of substitution
 
 []-asso : ∀ {Γ Δ Θ α} (t : Term Γ α) (γ : Δ ▹ Γ) (δ : Θ ▹ Δ) →
           t [ γ ⋆ δ ] ≡ t [ γ ] [ δ ]
@@ -48,16 +66,22 @@ idL {Γ ∙ α} (ρ , t) = cong (_, t) (p⋆, t ρ)
             (trans (⋆-step Γ γ (▹-weaken Δ ⊆-∙ δ) (var here))
                    (wk-⋆ Γ ⊆-∙ γ δ))))
 
+-- associativity of composition
+
 ⋆-asso : ∀ {Γ Δ Θ Λ} (γ : Δ ▹ Θ) (δ : Γ ▹ Δ) (ζ : Λ ▹ Γ) →
          (γ ⋆ δ) ⋆ ζ ≡ γ ⋆ (δ ⋆ ζ)
-⋆-asso {Θ = ε} tt δ ζ = refl
+⋆-asso {Θ = ε}     tt      δ ζ = refl
 ⋆-asso {Θ = Θ ∙ _} (γ , t) δ ζ =
   trans (cong ((γ ⋆ δ) ⋆ ζ ,_) (sym ([]-asso t δ ζ)))
         (cong (_, t [ δ ⋆ ζ ]) (⋆-asso γ δ ζ))
 
-maps : {Γ Δ : Ctxt Ty} {α : Ty} (t : Term Δ α) (γ : Δ ▹ Γ) (δ : Γ ▹ Δ) →
-       (γ ⋆ δ , (t [ δ ])) ≡ (γ ⋆ δ , (t [ δ ]))
+-- composition on the right maps to cons
+
+maps : ∀ {Γ Δ} {α : Ty} (t : Term Δ α) (γ : Δ ▹ Γ) (δ : Γ ▹ Δ) →
+        (γ , t) ⋆ δ ≡ (γ ⋆ δ , (t [ δ ]))
 maps = λ _ _ _ → refl       
+
+-- scwf record instantiation
 
 TermScwf : Scwf
 TermScwf = record
@@ -92,9 +116,10 @@ TermScwf = record
              ; cong-∘   = cong-⋆
              }
 
-lamCm : {Γ Δ : Ctxt Ty} {α β : Ty} (t : Term (Γ ∙ α) β) (γ : Δ ▹ Γ) →
-        ƛ (t [ ▹-weaken Γ (step ⊆-refl) γ , var here ]) ≡
-        ƛ (t [ γ ⋆ p , var here ])
+-- here we use the fact that γ ⋆ p is the same as weakening γ
+
+lamCm : ∀ {Γ Δ} {α β} (t : Term (Γ ∙ α) β) (γ : Δ ▹ Γ) →
+         ƛ (t [ ▹-weaken Γ (step ⊆-refl) γ , var here ]) ≡ ƛ (t [ γ ⋆ p , var here ])
 lamCm {α = α} t γ rewrite sym (▹-weaken-⋆-p {α = α} γ)= refl        
 
 TermLamScwf : Lambda-scwf

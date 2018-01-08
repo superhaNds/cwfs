@@ -1,4 +1,7 @@
-module Unityped.Wellscoped.Typed.CtxType where
+---------------------------------------------------------
+-- Types and indexed contexts
+---------------------------------------------------------
+module Typed.CtxType where
 
 open import Data.Nat
 

@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+-- Properties and lemmata needed for various proofs
+-------------------------------------------------------------------------------
 module SimpTyped.Tm.Properties where
 
 open import Data.Nat renaming (ℕ to Nat)
@@ -45,12 +48,16 @@ abstract
   simp-refl ε tt = refl
   simp-refl (Γ ∙ x) (ρ , t) = cong (_, t) (simp-refl Γ ρ)
 
-  ▹-wk-2 : ∀ {Δ E Θ} Γ (φ : Δ ⊆ E) (ψ : E ⊆ Θ) (ρ : Δ ▹ Γ) →
+  ▹-wk-2 : ∀ {Δ E Θ} Γ
+             (φ : Δ ⊆ E)
+             (ψ : E ⊆ Θ)
+             (ρ : Δ ▹ Γ) →
            ▹-weaken Γ ψ (▹-weaken Γ φ ρ) ≡ ▹-weaken Γ (⊆-trans φ ψ) ρ
   ▹-wk-2 ε       φ ψ ρ       = refl
   ▹-wk-2 (Γ ∙ α) φ ψ (ρ , t) = cong₂ _,_ (▹-wk-2 Γ φ ψ ρ) (wk-tr φ ψ t)
 
-  []-wk : ∀ {Γ Δ N α} (φ : Δ ⊆ N) (t : Term Γ α) (ρ : Δ ▹ Γ) →
+  []-wk : ∀ {Γ Δ N α} (φ : Δ ⊆ N)
+            (t : Term Γ α) (ρ : Δ ▹ Γ) →
           weaken φ (t [ ρ ]) ≡ t [ ▹-weaken Γ φ ρ ]
   []-wk φ (var ∈Γ) ρ = tk-weaken ∈Γ φ ρ
   []-wk φ (t · u) ρ = cong₂ _·_ ([]-wk φ t ρ) ([]-wk φ u ρ)
@@ -62,17 +69,20 @@ abstract
                         (trans (cong (λ x → ▹-weaken Γ x ρ) (⊆-step-refl φ))
                         (sym $ ▹-wk-2 Γ φ (step ⊆-refl) ρ)))))
 
-  wk-⋆ : ∀ (Γ {Δ} {E} {Θ} : Ctx) (φ : E ⊆ Θ) (ρ : Δ ▹ Γ) (σ : E ▹ Δ) →
+  wk-⋆ : ∀ (Γ {Δ} {E} {Θ} : Ctx) (φ : E ⊆ Θ)
+           (ρ : Δ ▹ Γ) (σ : E ▹ Δ) →
          ρ ⋆ (▹-weaken Δ φ σ) ≡ ▹-weaken Γ φ (ρ ⋆ σ)
   wk-⋆ ε       φ ρ       σ = refl
   wk-⋆ (Γ ∙ x) φ (ρ , t) σ = cong-, (sym ([]-wk φ t σ)) (wk-⋆ Γ φ ρ σ)
 
-  tk-⋆ : ∀ {Γ Δ Θ α} (φ : α ∈ Γ) (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) →
+  tk-⋆ : ∀ {Γ Δ Θ α} (φ : α ∈ Γ)
+           (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) →
          (tkVar φ ρ) [ σ ] ≡ tkVar φ (ρ ⋆ σ)
   tk-⋆ here ρ σ = refl
   tk-⋆ (there φ) (ρ , _) σ = tk-⋆ φ ρ σ
 
-  tk-in : ∀ {Γ Δ Θ α} (φ : Γ ⊆ Δ) (v : α ∈ Γ) (ρ : Θ ▹ Δ) →
+  tk-in : ∀ {Γ Δ Θ α} (φ : Γ ⊆ Δ)
+            (v : α ∈ Γ) (ρ : Θ ▹ Δ) →
           tkVar (sub-in φ v) ρ ≡ tkVar v (simp φ ρ)
   tk-in (step φ) here      (ρ , t) = tk-in φ here ρ
   tk-in (step φ) (there v) (ρ , t) = tk-in φ (there v) ρ
@@ -87,7 +97,8 @@ abstract
     (trans (wk-[] (pop! v) t (▹-weaken Δ ⊆-∙ ρ , var here))
            (cong (λ ρ → t [ ρ , var here ]) (sym (▹-wk-simp v ⊆-∙ ρ))))
 
-  ⋆-step : ∀ Γ {Δ} {Θ} {α} → (ρ : Δ ▹ Γ) (σ : Θ ▹ Δ) (t : Term Θ α) →
+  ⋆-step : ∀ Γ {Δ} {Θ} {α} (ρ : Δ ▹ Γ)
+            (σ : Θ ▹ Δ) (t : Term Θ α) →
           (▹-weaken Γ ⊆-∙ ρ) ⋆ (σ , t) ≡ ρ ⋆ σ
   ⋆-step ε ρ σ t = refl
   ⋆-step (Γ ∙ x) (ρ , u) σ t =
@@ -142,14 +153,23 @@ abstract
   tk∈-id here      = refl
   tk∈-id (there v) = trans (tk∈-wk-id v (step ⊆-refl)) (cong there (sub-in-refl v))
 
-  tk∈-wk-there : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) (v : α ∈ Γ) → tk∈ v (▸-weaken Γ (⊆-∙ {a = α}) idV) ≡ there v
-  tk∈-wk-there {Γ ∙ _} (ρ , t) here = refl
-  tk∈-wk-there {Γ ∙ x} (ρ , t) (there v) =
+  pVar : ∀ {Γ α} → (Γ ∙ α) ▸ Γ
+  pVar {Γ} = ▸-weaken Γ ⊆-∙ idV
+
+  tk∈-wk-there : ∀ {Γ α} (v : α ∈ Γ) → tk∈ v (pVar {α = α}) ≡ there v
+  tk∈-wk-there {Γ ∙ _} here = refl
+  tk∈-wk-there {Γ ∙ x} (there v) =
     trans (trans (cong (tk∈ v)
      (▸-wk-2 Γ (step ⊆-refl) (step (pop! ⊆-refl)) idV))
      (trans (tk∈-wk-id {Γ} v (step (step (⊆-trans ⊆-refl ⊆-refl))))
       (cong (there ∘ there ∘ flip sub-in v) ⊆-trans-refl))) 
       (cong (there ∘ there) (sub-in-refl v))
+
+  tkVar-pV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (pVar {Γ} {α})) ≡ var (there v)
+  tkVar-pV here = refl
+  tkVar-pV {Γ ∙ x} (there v) =
+    trans (sym (lim pVar (there v)))
+          (cong var (trans (tk∈-wk-there (there v)) refl))
 
   tkVar-idV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (idV {Γ})) ≡ var v
   tkVar-idV here = refl
@@ -158,9 +178,22 @@ abstract
           (cong var (trans (tk∈-wk-id v (step ⊆-refl))
                            (cong there (sub-in-refl v))))
 
-  for-all-tk : ∀ {Γ Δ} (γ γ' : Δ ▹ Γ) (hyp : ∀ {β} (v : β ∈ Γ) → tkVar v γ ≡ tkVar v γ') → γ ≡ γ'
+  tkV-p-map : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (pV {α = α})) ≡ var (there v)
+  tkV-p-map here = refl
+  tkV-p-map {Γ ∙ x} (there v) = trans (sym (lim pV (there v))) (cong var (tk∈-pV-th (there v)))
+
+  for-all-tk : ∀ {Γ Δ} (γ γ' : Δ ▹ Γ) (hyp : ∀ {β} (v : β ∈ Γ) →
+                tkVar v γ ≡ tkVar v γ') → γ ≡ γ'
   for-all-tk {ε} tt tt hyp = refl
-  for-all-tk {Γ ∙ _} (γ , t) (γ' , t') hyp = cong₂ _,_ (for-all-tk γ γ' (hyp ∘ there)) (hyp here)
+  for-all-tk {Γ ∙ _} (γ , t) (γ' , t') hyp =
+    cong₂ _,_ (for-all-tk γ γ' (hyp ∘ there)) (hyp here)
+ 
+  p-tk-same : ∀ {Γ α} (v : α ∈ Γ) →
+               tkVar v (▸-to-▹ (λ {τ} → var) (pV {α = α})) ≡ tkVar v p
+  p-tk-same {Γ} {α} v = sym (trans (tkVar-p v) (sym (tkV-p-map v)))
+  
+  postulate pIsVarP : ∀ {Γ α} → ▸-to-▹ var (pV {Γ} {α}) ≡ p
+  --pIsVarP {Γ} {α} = for-all-tk (▸-to-▹ var (pV {Γ} {α})) p (λ v → {!p-tk-same v!})
   
   t[id] : ∀ {Γ α} (t : Term Γ α) → t [ id ] ≡ t
   t[id] (var ∈Γ) = tkVar-id ∈Γ

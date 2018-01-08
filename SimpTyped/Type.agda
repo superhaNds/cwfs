@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+-- The set of types
+-------------------------------------------------------------------------------
 module SimpTyped.Type where
 
 open import Relation.Binary.PropositionalEquality using (_≡_ ; refl)
@@ -5,6 +8,9 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤)
 open import Function using (_∘_ ; _$_)
 open import SimpTyped.Context
+
+-------------------------------------------------------------------------------
+-- Types
 
 infixr 20 _⇒_
 
@@ -18,6 +24,8 @@ eq⇒₁ refl = refl
 eq⇒₂ : ∀ {α α′ β β′} → α ⇒ β ≡ α′ ⇒ β′ → β ≡ β′
 eq⇒₂ refl = refl
 
+-- Type equality is decidable
+
 _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
 ♭       ≟ ♭       = yes refl
 ♭       ≟ (_ ⇒ _) = no $ λ ()
@@ -30,6 +38,8 @@ _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
 ⟦_⟧ᵀ : (α : Ty) → Set
 ⟦ ♭ ⟧ᵀ       = ⊤
 ⟦ α₁ ⇒ α₂ ⟧ᵀ = ⟦ α₁ ⟧ᵀ → ⟦ α₂ ⟧ᵀ
+
+-- Instantiation of polymorphic context to type
 
 Ctx : Set
 Ctx = Ctxt Ty

@@ -1,9 +1,15 @@
+-------------------------------------------------------------------------------
+-- Contexts with inclusion and membership
+-------------------------------------------------------------------------------
 module SimpTyped.Context where
 
 open import Relation.Nullary
 open import Data.Nat
 open import Relation.Binary.PropositionalEquality
 open import Function using (_$_ ; _∘_)
+
+-------------------------------------------------------------------------------
+-- Polymorphic contexts and inclusion relation
 
 infix 20 _∙_
 
@@ -16,9 +22,9 @@ data _⊆_ {A : Set} : Ctxt A → Ctxt A → Set where
   step : ∀ {Γ Δ : Ctxt A} {σ} (φ : Γ ⊆ Δ) → Γ ⊆ (Δ ∙ σ)
   pop! : ∀ {Γ Δ : Ctxt A} {σ} (ψ : Γ ⊆ Δ) → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 
-leng : {A : Set} → Ctxt A → ℕ
-leng ε = 0
-leng (Γ ∙ x) = 1 + leng Γ
+length : {A : Set} → Ctxt A → ℕ
+length ε = 0
+length (Γ ∙ x) = 1 + length Γ
 
 ⊆-refl : {A : Set} {Γ : Ctxt A} → Γ ⊆ Γ
 ⊆-refl {Γ = ε}     = base 

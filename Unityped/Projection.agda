@@ -1,3 +1,6 @@
+-------------------------------------------------------------------
+-- Proofs for the projection inverse
+-------------------------------------------------------------------
 module Unityped.Projection where
 
 open import Data.Nat renaming (ℕ to Nat)
@@ -5,6 +8,9 @@ open import Data.Fin
 open import Function as F using (_$_ ; id)
 import Relation.Binary.EqReasoning as EqR
 import Relation.Binary.PropositionalEquality as P
+
+-------------------------------------------------------------------
+-- snoc sequences of fins
 
 module Fins where
 
@@ -48,6 +54,9 @@ module Fins where
   tabulate-∘ {suc n} f g = P.cong (<_, f (g zero) >) (tabulate-∘ f (λ z → g (suc z)))
 
 open Fins
+
+-------------------------------------------------------------------
+-- Proof that p is convertible to its normal form
 
 module PProof where
 

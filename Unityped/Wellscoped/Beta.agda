@@ -23,18 +23,40 @@ infix 7 _~βη_
 infix 7 _~~βη_
 
 data _~βη_  {n : Nat} : (_ _ : Term n) → Set where
+
   varcong   : (i : Fin n) → var i ~βη var i
-  apcong    : {t u t′ u′ : Term n} → t ~βη t′ → u ~βη u′ → t · u ~βη t′ · u′
-  ξ         : {t u : Term (1 + n)} → t ~βη u → ƛ t ~βη ƛ u
-  β         : (t : Term (1 + n)) (u : Term n) → ƛ t · u ~βη t [ id ∙ u ]
+  
+  apcong    : {t u t′ u′ : Term n} →
+               t ~βη t′ →
+               u ~βη u′ →
+               t · u ~βη t′ · u′
+               
+  ξ         : {t u : Term (1 + n)} →
+               t ~βη u →
+               ƛ t ~βη ƛ u
+               
+  β         : (t : Term (1 + n)) (u : Term n) →
+               ƛ t · u ~βη t [ id ∙ u ]
+               
   η         : (t : Term n) → ƛ (weaken t · q) ~βη t
-  sym~βη    : {t₁ t₂ : Term n} → t₁ ~βη t₂ → t₂ ~βη t₁
-  trans~βη  : {t₁ t₂ t₃ : Term n} → t₁ ~βη t₂ → t₂ ~βη t₃ → t₁ ~βη t₃
+  
+  sym~βη    : {t₁ t₂ : Term n} →
+               t₁ ~βη t₂ →
+               t₂ ~βη t₁
+               
+  trans~βη  : {t₁ t₂ t₃ : Term n} →
+               t₁ ~βη t₂ →
+               t₂ ~βη t₃ →
+               t₁ ~βη t₃
 
 data _~~βη_ {m} : ∀ {n} (_ _ : Subst m n) → Set where
+
   ⋄   : ∀ {ρ ρ' : Subst m 0} → ρ ~~βη ρ'
+
   ext : ∀ {n} {t u : Term m} {ρ ρ' : Subst m n} →
-        t ~βη u → ρ ~~βη ρ' → (ρ ∙ t) ~~βη (ρ' ∙ u)
+         t ~βη u →
+         ρ ~~βη ρ' →
+         (ρ ∙ t) ~~βη (ρ' ∙ u)
 
 -- Reflexivity is derived giving rise to _~βη_ as an equivalence relation
 
@@ -75,11 +97,15 @@ subst≡ : ∀ {n} {t u : Term n} → t ≡ u → t ~βη u
 subst≡ refl = refl~βη
 
 cong-∙ : ∀ {m n} {t t' : Term n} {ρ ρ' : Subst n m} →
-         t ~βη t' → ρ ~~βη ρ' → (ρ ∙ t) ~~βη (ρ' ∙ t')
+          t ~βη t' →
+          ρ ~~βη ρ' →
+          (ρ ∙ t) ~~βη (ρ' ∙ t')
 cong-∙ t~t' ⋄            = ext t~t' ⋄
 cong-∙ t~t' (ext x ρ~ρ') = ext t~t' (cong-∙ x ρ~ρ')         
 
-lookup-sub : ∀ {m n} {ρ ρ' : Subst m n} (i : Fin n) → ρ ~~βη ρ' → lookup i ρ ~βη lookup i ρ'
+lookup-sub : ∀ {m n} {ρ ρ' : Subst m n} (i : Fin n) →
+              ρ ~~βη ρ' →
+              lookup i ρ ~βη lookup i ρ'
 lookup-sub ()      ⋄
 lookup-sub zero    (ext t~u ρ~ρ') = t~u
 lookup-sub (suc i) (ext _   ρ~ρ') = lookup-sub i ρ~ρ'
@@ -87,17 +113,21 @@ lookup-sub (suc i) (ext _   ρ~ρ') = lookup-sub i ρ~ρ'
 postulate cong~~βη : ∀ {m n k p} {ρ ρ' : Subst m n} (f : Subst m n → Subst k p) → ρ ~~βη ρ' → f ρ ~~βη f ρ' 
 
 cong-[] : ∀ {m n} {t t' : Term n} {ρ ρ' : Subst m n} →
-          t ~βη t' → ρ ~~βη ρ' → t [ ρ ] ~βη t' [ ρ' ]
+           t ~βη t' →
+           ρ ~~βη ρ' →
+           t [ ρ ] ~βη t' [ ρ' ]
 cong-[] (varcong i)           ρ~ρ' = lookup-sub i ρ~ρ'
 cong-[] (apcong t~t' t~t'')   ρ~ρ' = apcong (cong-[] t~t' ρ~ρ') (cong-[] t~t'' ρ~ρ')
 cong-[] (ξ t~t')              ρ~ρ' = ξ (cong-[] t~t' (cong~~βη ↑ₛ_ ρ~ρ'))
 cong-[] (sym~βη t~t')         ρ~ρ' = sym~βη (cong-[] t~t' (sym~~βη ρ~ρ'))
 cong-[] (trans~βη t~t' t~t'') ρ~ρ' = trans~βη (cong-[] t~t' ρ~ρ') (cong-[] t~t'' refl~~βη)
-cong-[] {ρ = ρ} {ρ'} (β t u) ρ~ρ' = sym~βη {!!}
-cong-[] (η t) ρ~ρ' = {!!}
+cong-[] {ρ = ρ} {ρ'} (β t u)  ρ~ρ' = sym~βη {!!}
+cong-[] (η t)                 ρ~ρ' = {!!}
 
 cong-⋆ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →
-         ρ ~~βη σ → ρ' ~~βη σ' → ρ ⋆ ρ' ~~βη σ ⋆ σ'
+          ρ ~~βη σ →
+          ρ' ~~βη σ' →
+          ρ ⋆ ρ' ~~βη σ ⋆ σ'
 cong-⋆ ⋄           ρ'~σ'         = ⋄
 cong-⋆ (ext x ρ~σ) ⋄             = ext (cong-[] x ⋄) (cong-⋆ ρ~σ ⋄)
 cong-⋆ (ext x ρ~σ) (ext y ρ'~σ') = ext (cong-[] x (ext y ρ'~σ')) (cong-⋆ ρ~σ (ext y ρ'~σ'))

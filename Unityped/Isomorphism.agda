@@ -179,20 +179,20 @@ hom∘sub (id {suc m}) = begin
   where open EqR (HomS {_} {_})
 
 hom∘sub (γ ∘ δ) = sym~~ $ begin
-  ⟦ ⟪ γ ⟫ʰ ⋆ ⟪ δ ⟫ʰ ⟧ˢ       ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫ʰ ⟪ δ ⟫ʰ ⟩
-  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ  ≈⟨ sym~~ (cong-∘ (hom∘sub γ) refl~~) ⟩ 
-  γ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ            ≈⟨ sym~~ (cong-∘ refl~~ (hom∘sub δ)) ⟩ 
-  γ ∘ δ                      ∎
+  ⟦ ⟪ γ ⟫ʰ ⋆ ⟪ δ ⟫ʰ ⟧ˢ
+    ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫ʰ ⟪ δ ⟫ʰ ⟩
+  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ
+    ≈⟨ sym~~ (cong-∘ (hom∘sub γ) refl~~) ⟩ 
+  γ ∘ ⟦ ⟪ δ ⟫ʰ ⟧ˢ
+    ≈⟨ sym~~ (cong-∘ refl~~ (hom∘sub δ)) ⟩ 
+  γ ∘ δ
+    ∎
   where open EqR (HomS {_} {_})
  
 hom∘sub p = p~⟦p⟧
 
 hom∘sub <> = refl~~
-hom∘sub < γ , x > = begin
-  < γ , x >                    ≈⟨ cong-<,> refl~ (hom∘sub γ) ⟩
-  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , x >          ≈⟨ cong-<,> (cwf∘ws x) refl~~ ⟩ 
-  < ⟦ ⟪ γ ⟫ʰ ⟧ˢ , ⟦ ⟪ x ⟫ ⟧ >  ∎
-  where open EqR (HomS {_} {_})
+hom∘sub < γ , x > = cong-<,> (cwf∘ws x) (hom∘sub γ)
 
 sub∘hom [] = refl
 sub∘hom (x ∷ ρ) = cong₂ _∙_ (sub∘hom ρ) (ws∘cwf x)
