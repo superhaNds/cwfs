@@ -4,7 +4,7 @@
 -- by the number of free variables in a given term
 ------------------------------------------------------
 
-module Typed.Syntax where
+module Ext-Typed.Syntax where
 
 open import Data.Nat renaming (ℕ to Nat)
 import Data.Vec as Vec
@@ -17,7 +17,7 @@ open import Relation.Nullary.Decidable
 infix 10 _·_
 
 data Term (n : Nat) : Set where
-  var  : (i : Fin n)    → Term n
+  var  : (i : Fin n) → Term n
   _·_  : (t u : Term n) → Term n
   ƛ    : (t : Term (1 + n)) → Term n
 

@@ -3,10 +3,10 @@
 -- theory using directly typed terms. Terms are intrinsically typed
 -- so there is no typing relation on-top.
 -------------------------------------------------------------------------
-module Typed.ScwfInt where
+module Ext-Typed.STyped.ScwfInt where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Typed.CtxType
+open import Ext-Typed.STyped.CtxType
 
 -------------------------------------------------------------------------
 -- Terms and Substitutions as mutually recursive data types

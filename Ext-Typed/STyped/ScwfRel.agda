@@ -2,13 +2,13 @@
 -- A proof of isomorphism between the directly typed scwf and the
 -- extrinsic scwf version based on raw terms with typing rules
 -------------------------------------------------------------------------
-module Typed.ScwfRel where
+module Ext-Typed.STyped.ScwfRel where
 
-open import ScwfExt
+open import Ext-Typed.STyped.ScwfExt
   renaming (Subst to RSubst ; _~_ to _~e_ ; _~~_ to _~~e_ ;
             refl~ to refl~e ; refl~~ to refl~~e)
-open import ScwfInt
-open import CtxType
+open import Ext-Typed.STyped.ScwfInt
+open import Ext-Typed.STyped.CtxType
 open import Data.Product using (Σ ; _,_)
 
 -------------------------------------------------------------------------

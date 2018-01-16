@@ -3,12 +3,12 @@
 -- appropriate explicit typing rules for substitutions and terms
 -- This contrasts the 'intrinsic' way of implementing types
 -------------------------------------------------------------------------
-module Typed.ScwfExt where
+module Ext-Typed.STyped.ScwfExt where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product using (Σ)
 open import Data.Vec hiding ([_])
-open import CtxType
+open import Ext-Typed.STyped.CtxType
 
 -------------------------------------------------------------------------
 -- Raw terms substitutions
@@ -93,6 +93,8 @@ data _▹_⊢_ where
          Δ ⊢ t ∈ α → Γ ▹ Δ ⊢ ρ →
          -------------------------
            Γ , α ▹ Δ ⊢ < ρ , t >
+
+-- example pairing of raw term with typing rule
 
 sub : ∀ {m n α} {Δ : Ctx m} {Γ : Ctx n} → Σ (RTm n) (Γ ⊢_∈ α) →
       Σ (Subst m n) (Γ ▹ Δ ⊢_) → Σ (RTm m) (Δ ⊢_∈ α)             

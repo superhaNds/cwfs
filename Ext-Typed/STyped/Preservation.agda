@@ -3,7 +3,7 @@
 -- for terms and substitutions. Proof that types are preserved and thus
 -- STLC is a simply typed cwf.
 -------------------------------------------------------------------------
-module Typed.Preservation where
+module Ext-Typed.STyped.Preservation where
 
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Fin.Substitution
@@ -15,8 +15,8 @@ open import Data.Unit
 open import Function using (_∘_ ; _$_)
 open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Typed.Syntax
-open import Typed.Raw
+open import Ext-Typed.Syntax
+open import Ext-Typed.Raw
 open ≡-Reasoning
 
 -------------------------------------------------------------------------
