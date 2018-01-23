@@ -7,7 +7,8 @@ open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
-open import Relation.Binary
+open import Relation.Binary using (Rel ; IsEquivalence ; Setoid)
+import Relation.Binary.EqReasoning as EqR
 
 -----------------------------------------------------------------------------
 -- The sorts, operator symbols, and axioms of a ucwf gathered as a record
@@ -25,6 +26,9 @@ record Ucwf : Set₁ where
     -- two relations regarding equality of terms and substitutions
     _~_   : ∀ {n} → Rel (Term n) lzero
     _~~_   : ∀ {m n} → Rel (Hom m n) lzero
+
+    IsEquivT : ∀ {n} → IsEquivalence (_~_ {n})
+    IsEquivH : ∀ {m n} → IsEquivalence (_~~_ {m} {n})
 
     -- operator symbols
     id     : {n : Nat} → Hom n n
@@ -83,12 +87,18 @@ record Ucwf : Set₁ where
                 ts ~~ vs →
                 us ~~ zs →
                 ts ∘ us ~~ vs ∘ zs
-  
+
+  setoidT : ∀ {n} → Setoid _ _
+  setoidT {n} = record { isEquivalence = IsEquivT {n} }
+
+  setoidH : ∀ {m n} → Setoid _ _
+  setoidH {m} {n} = record { isEquivalence = IsEquivH {m} {n} }
+
   ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
   ⇑ ts = < ts ∘ p , q >
 
   weaken : ∀ {m} → Term m → Term (suc m)
-  weaken {m} = _[ p ] 
+  weaken {m} = _[ p ]
 
 -- Extending the pure ucwf with lambdas and applications
 

@@ -3,7 +3,7 @@
 -- contain. Provides a basis for the "extrinsic" approach of implementing
 -- simply typed and dependently typed calculi and the corresponding cwf
 -------------------------------------------------------------------------
-module Ext-Typed.Raw where
+module Ext-Typed.STyped.Raw where
 
 open import Data.Nat
 open import Data.Fin using (Fin ; suc ; zero)
@@ -12,7 +12,7 @@ open import Data.Fin.Substitution.Lemmas
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Ext-Typed.Syntax
+open import Ext-Typed.STyped.Syntax
 open ≡-Reasoning
 
 -------------------------------------------------------------------------

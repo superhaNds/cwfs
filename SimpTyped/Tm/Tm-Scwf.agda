@@ -21,8 +21,7 @@ open P.≡-Reasoning
 -- Axiom proofs
 
 id=<pq> : ∀ {Γ α} → id {Γ ∙ α} ≡ (p , q)
-id=<pq> {ε}     = refl
-id=<pq> {Γ ∙ x} = refl
+id=<pq> = refl
 
 -- a synonym for the terminal object
 

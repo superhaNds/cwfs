@@ -15,8 +15,8 @@ open import Data.Unit
 open import Function using (_∘_ ; _$_)
 open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Ext-Typed.Syntax
-open import Ext-Typed.Raw
+open import Ext-Typed.STyped.Syntax
+open import Ext-Typed.STyped.Raw
 open ≡-Reasoning
 
 -------------------------------------------------------------------------
