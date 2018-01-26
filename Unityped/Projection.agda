@@ -60,56 +60,56 @@ open Fins
 
 module PProof where
 
-  open import Unityped.UcwfModel renaming (Term to Tm-cwf)
+  open import Unityped.UcwfModel renaming (Tm to Tm-cwf)
 
   varCwf : ∀ {n} (i : Fin n) → Tm-cwf n
   varCwf zero    = q
   varCwf (suc i) = varCwf i [ p ]
 
-  vars : ∀ {n m} (is : Fins m n) → Hom m n
+  vars : ∀ {n m} (is : Fins m n) → Sub m n
   vars <>         = <>
   vars < is , i > = < vars is , varCwf i >
 
-  pNorm : ∀ n → Hom (suc n) n
+  pNorm : ∀ n → Sub (suc n) n
   pNorm n = vars (pFins n)
 
-  mapT : ∀ {n m} (f : Fin m → Tm-cwf m) (is : Fins m n) → Hom m n
+  mapT : ∀ {n m} (f : Fin m → Tm-cwf m) (is : Fins m n) → Sub m n
   mapT f <>         = <>
   mapT f < is , x > = < mapT f is , f x >
   
-  vars-map : ∀ {m n} (is : Fins m n) → vars is ~~ mapT varCwf is
-  vars-map <>         = refl~~
-  vars-map < is , x > = cong-<,> refl~ (vars-map is)
+  vars-map : ∀ {m n} (is : Fins m n) → vars is ≋ mapT varCwf is
+  vars-map <>         = refl≋
+  vars-map < is , x > = cong-<,> refl≈ (vars-map is)
 
-  var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ~~ vars (sucs is)
-  var-lemma <>         = ∘<> p
+  var-lemma : ∀ {m n} (is : Fins m n) → vars is ∘ p ≋ vars (sucs is)
+  var-lemma <>         = <>Lzero p
   var-lemma < is , i > = begin
     < vars is , varCwf i > ∘ p
-      ≈⟨ maps (varCwf i) (vars is) p ⟩
+      ≈⟨ compExt (vars is) p (varCwf i) ⟩
     < vars is ∘ p , varCwf i [ p ] >
-      ≈⟨ cong-<,> refl~ (var-lemma is) ⟩
+      ≈⟨ cong-<,> refl≈ (var-lemma is) ⟩
     < vars (sucs is) , varCwf (suc i) >
-      ≈⟨ refl~~ ⟩
+      ≈⟨ refl≋ ⟩
     vars (sucs < is , i > )
       ∎
-    where open EqR (HomS {_} {_})
+    where open EqR (SubSetoid {_} {_})
 
-  help : ∀ {n} → _~~_ {m = n} (vars (mapFins (mapFins (tab F.id) suc) suc))
-                              (vars (mapFins (tab suc) suc))
-  help {n} rewrite P.sym (tabulate-∘ {n} suc F.id) = refl~~
+  help : ∀ {n} → _≋_ {m = n} (vars (mapFins (mapFins (tab F.id) suc) suc))
+                             (vars (mapFins (tab suc) suc))
+  help {n} rewrite P.sym (tabulate-∘ {n} suc F.id) = refl≋
 
-  p~vars : ∀ n → p ~~ pNorm n
-  p~vars zero    = hom0~<> (p {0})
+  p~vars : ∀ n → p ≋ pNorm n
+  p~vars zero    = ter-arrow (p {0})
   p~vars (suc n) = begin
     p
-      ≈⟨ eta p ⟩
+      ≈⟨ surj-<,> p ⟩
     < p ∘ p , q [ p ] >
-      ≈⟨ cong-<,> refl~ (cong-∘ (p~vars n) (refl~~)) ⟩
+      ≈⟨ cong-<,> refl≈ (cong-∘ (p~vars n) (refl≋)) ⟩
     < vars (mapFins (tab F.id) suc) ∘ p , q [ p ] >
-      ≈⟨ cong-<,> refl~ (var-lemma (mapFins (tab F.id) suc)) ⟩
+      ≈⟨ cong-<,> refl≈ (var-lemma (mapFins (tab F.id) suc)) ⟩
     < vars (mapFins (mapFins (tab F.id) suc) suc) , q [ p ] >
-      ≈⟨ cong-<,> refl~ help ⟩
+      ≈⟨ cong-<,> refl≈ help ⟩
     < vars (mapFins (tab suc) suc) , q [ p ] >
       ∎
-    where open EqR (HomS {_} {_})
+    where open EqR (SubSetoid {_} {_})
     

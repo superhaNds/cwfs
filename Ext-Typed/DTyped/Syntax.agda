@@ -4,6 +4,8 @@ open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin
 open import Data.Vec hiding ([_])
 
+infix 10 _·_
+
 data Tm (n : Nat) : Set where
   var : (i : Fin n) → Tm n
   ƛ   : Tm (suc n) → Tm n
@@ -11,8 +13,8 @@ data Tm (n : Nat) : Set where
   Π   : Tm n → Tm (suc n) → Tm n
   U   : Tm n
 
-var₀ : ∀ {n} → Tm (suc n)
-var₀ = var zero
+q : ∀ {n} → Tm (suc n)
+q = var zero
 
 Ren : Nat → Nat → Set
 Ren m n = Vec (Fin m) n
@@ -23,8 +25,8 @@ Subst m n = Vec (Tm m) n
 id : ∀ {n} → Subst n n
 id = tabulate var
 
-_∙_ : ∀ {m n} → Subst m n → Tm m → Subst m (suc n)
-ρ ∙ t = t ∷ ρ
+_,_ : ∀ {m n} → Subst m n → Tm m → Subst m (suc n)
+ρ , t = t ∷ ρ
 
 p : ∀ {n} → Subst (suc n) n
 p = map var (tabulate suc)
@@ -42,18 +44,18 @@ ren U       _ = U
 wk : ∀ {n} → Tm n → Tm (suc n)
 wk t = ren t (tabulate suc)
 
-wk-subst : ∀ {m n} → Subst m n → Subst (suc m) n
-wk-subst = map wk
+wk-sub : ∀ {m n} → Subst m n → Subst (suc m) n
+wk-sub = map wk
 
 ↑_ : ∀ {m n} (ρ : Subst m n) → Subst (suc m) (suc n)
-↑ ρ = wk-subst ρ ∙ var₀
+↑ ρ = wk-sub ρ , q
 
 _[_] : ∀ {m n} (t : Tm n) (ρ : Subst m n) → Tm m
 var i   [ ρ ] = lookup i ρ
 ƛ t     [ ρ ] = ƛ (t [ ↑ ρ ])
-(t · u) [ ρ ] = (t [ ρ ]) · (u [ ρ ])
+(t · u) [ ρ ] = t [ ρ ] · u [ ρ ]
 Π A B   [ ρ ] = Π (A [ ρ ]) (B [ ↑ ρ ])
 U       [ _ ] = U
 
-_⋆_ : ∀ {m n k} → Subst n k → Subst m n → Subst m k
-ρ ⋆ σ = map (_[ σ ]) ρ
+_∘_ : ∀ {m n k} → Subst n k → Subst m n → Subst m k
+ρ ∘ σ = map (_[ σ ]) ρ

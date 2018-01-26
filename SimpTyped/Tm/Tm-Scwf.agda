@@ -7,7 +7,7 @@ open import Data.Nat renaming (ℕ to Nat)
 open import Relation.Nullary.Decidable
 open import Relation.Binary.PropositionalEquality as P
   using (_≡_ ; refl ; sym ; trans ; cong ; cong₂)
-open import Function using (_$_ ; _∘_ ; flip)
+open import Function as F using (_$_ ; flip)
 open import Data.Product using (_×_ ; proj₁ ; proj₂ ; _,_)
 open import Data.Unit using (⊤ ; tt)
 open import SimpTyped.Type
@@ -20,115 +20,112 @@ open P.≡-Reasoning
 -------------------------------------------------------------------------------
 -- Axiom proofs
 
-id=<pq> : ∀ {Γ α} → id {Γ ∙ α} ≡ (p , q)
-id=<pq> = refl
-
--- a synonym for the terminal object
-
-[] : ∀ {Γ} → Γ ▹ ε
-[] = tt
+idExt : ∀ {Γ α} → id {Γ ∙ α} ≡ (p , q)
+idExt = refl
 
 -- terminal object is a left zero
 
-⋆-<> : ∀ {Γ Δ} (ρ : Γ ▹ Δ) → [] {Γ} ⋆ ρ ≡ [] {Γ}
-⋆-<> _ = refl
+ttLzero : ∀ {Γ Δ} (ρ : Sub Γ Δ) → tt ∘ ρ ≡ tt
+ttLzero _ = refl
 
 -- q is the second projection
 
-q[] : ∀ {Γ Δ α} (t : Term Γ α) (ρ : Γ ▹ Δ) → q [ ρ , t ] ≡ t
-q[] t ρ = refl
+qCons : ∀ {Γ Δ α} (t : Tm Γ α) (ρ : Sub Γ Δ) → q [ ρ , t ] ≡ t
+qCons t ρ = refl
 
 -- p is the first projection
 
-p⋆, : ∀ {Δ Θ α} (t : Term Δ α) (γ : Δ ▹ Θ) → p ⋆ (γ , t) ≡ γ
+pCons : ∀ {Δ Θ α} (t : Tm Δ α) (γ : Sub Δ Θ) → p ∘ (γ , t) ≡ γ
 
 -- id is a left identity in composition
 
-idL : ∀ {Γ Δ} (ρ : Δ ▹ Γ) → id ⋆ ρ ≡ ρ
+idL : ∀ {Γ Δ} (ρ : Sub Δ Γ) → id ∘ ρ ≡ ρ
 
-p⋆, {Θ = Θ} t = trans (⋆-step Θ id _ t) ∘ idL
+pCons {Θ = Θ} t = trans (∘-step Θ id _ t) F.∘ idL
 
 idL {ε}     tt      = refl
-idL {Γ ∙ α} (ρ , t) = cong (_, t) (p⋆, t ρ)
+idL {Γ ∙ α} (ρ , t) = cong (_, t) (pCons t ρ)
 
 -- associativity of substitution
 
-[]-asso : ∀ {Γ Δ Θ α} (t : Term Γ α) (γ : Δ ▹ Γ) (δ : Θ ▹ Δ) →
-          t [ γ ⋆ δ ] ≡ t [ γ ] [ δ ]
-[]-asso (var here) γ δ = refl
-[]-asso (var (there ∈Γ)) (γ , u) δ = []-asso (var ∈Γ) γ δ            
-[]-asso (t · u) γ δ = cong₂ _·_ ([]-asso t γ δ) ([]-asso u γ δ)
-[]-asso {Γ} {Δ} (ƛ t) γ δ = sym $ cong ƛ $ trans (
-     sym ([]-asso t (▹-weaken Γ (step ⊆-refl) γ , var here)
-                    (▹-weaken Δ (step ⊆-refl) δ , var here)))
-     ((cong (t [_] ∘ (_, var here))
-            (trans (⋆-step Γ γ (▹-weaken Δ ⊆-∙ δ) (var here))
-                   (wk-⋆ Γ ⊆-∙ γ δ))))
+subComp : ∀ {Γ Δ Θ α} (t : Tm Γ α) (γ : Sub Δ Γ) (δ : Sub Θ Δ) →
+          t [ γ ∘ δ ] ≡ t [ γ ] [ δ ]
+subComp (var here) γ δ = refl
+subComp (var (there ∈Γ)) (γ , u) δ = subComp (var ∈Γ) γ δ            
+subComp (t · u) γ δ = cong₂ _·_ (subComp t γ δ) (subComp u γ δ)
+subComp {Γ} {Δ} (ƛ t) γ δ = sym $ cong ƛ $ trans (
+     sym (subComp t (wk-sub Γ (step ⊆-refl) γ , q)
+                    (wk-sub Δ (step ⊆-refl) δ , q)))
+     ((cong (t [_] F.∘ (_, q))
+            (trans (∘-step Γ γ (wk-sub Δ ⊆-∙ δ) q)
+                   (wk-∘ Γ ⊆-∙ γ δ))))
 
 -- associativity of composition
 
-⋆-asso : ∀ {Γ Δ Θ Λ} (γ : Δ ▹ Θ) (δ : Γ ▹ Δ) (ζ : Λ ▹ Γ) →
-         (γ ⋆ δ) ⋆ ζ ≡ γ ⋆ (δ ⋆ ζ)
-⋆-asso {Θ = ε}     tt      δ ζ = refl
-⋆-asso {Θ = Θ ∙ _} (γ , t) δ ζ =
-  trans (cong ((γ ⋆ δ) ⋆ ζ ,_) (sym ([]-asso t δ ζ)))
-        (cong (_, t [ δ ⋆ ζ ]) (⋆-asso γ δ ζ))
+assoc : ∀ {Γ Δ Θ Λ} (γ : Sub Δ Θ) (δ : Sub Γ Δ) (ζ : Sub Λ Γ) →
+         (γ ∘ δ) ∘ ζ ≡ γ ∘ (δ ∘ ζ)
+assoc {Θ = ε}     tt      δ ζ = refl
+assoc {Θ = Θ ∙ _} (γ , t) δ ζ =
+  trans (cong ((γ ∘ δ) ∘ ζ ,_) (sym (subComp t δ ζ)))
+        (cong (_, t [ δ ∘ ζ ]) (assoc γ δ ζ))
 
 -- composition on the right maps to cons
 
-maps : ∀ {Γ Δ} {α : Ty} (t : Term Δ α) (γ : Δ ▹ Γ) (δ : Γ ▹ Δ) →
-        (γ , t) ⋆ δ ≡ (γ ⋆ δ , (t [ δ ]))
-maps = λ _ _ _ → refl       
+compExt : ∀ {Γ Δ} {α : Ty} (t : Tm Δ α) (γ : Sub Δ Γ) (δ : Sub Γ Δ) →
+        (γ , t) ∘ δ ≡ (γ ∘ δ , (t [ δ ]))
+compExt = λ _ _ _ → refl       
 
 -- scwf record instantiation
 
-TermScwf : Scwf
-TermScwf = record
-             { Ty       = Ty
-             ; Ctx      = Ctx
-             ; _,_      = _∙_
-             ; ε        = ε
-             ; Tm       = Term
-             ; Hom      = _▹_
-             ; _~_      = _≡_
-             ; _~~_     = _≡_
-             ; <>       = tt
-             ; id       = id
-             ; p        = p
-             ; q        = q 
-             ; _∘_      = _⋆_
-             ; _[_]     = _[_]
-             ; <_,_>    = _,_
-             ; id₀      = idε<>
-             ; ∘<>      = ⋆-<>
-             ; varp     = id=<pq>
-             ; idL      = idL
-             ; idR      = idR
-             ; assoc    = ⋆-asso
-             ; tmId     = t[id]
-             ; pCons    = p⋆,
-             ; q[]      = q[]
-             ; clos     = []-asso
-             ; maps     = maps
-             ; cong-[]  = cong-[]
-             ; cong-<,> = cong-,
-             ; cong-∘   = cong-⋆
-             }
+TmScwf : Scwf
+TmScwf = record
+           { Ty = Ty
+           ; Ctx = Ctx
+           ; Tm = Tm
+           ; Sub = Sub
+           ; ⋄ = ε
+           ; _∙_ = _∙_
+           ; _≈_ = _≡_
+           ; _≋_ = _≡_
+           ; IsEquivT = P.isEquivalence
+           ; IsEquivS = P.isEquivalence
+           ; id = id
+           ; _∘_ = _∘_
+           ; _[_] = _[_]
+           ; <> = tt
+           ; <_,_> = _,_
+           ; p = p
+           ; q = q
+           ; id₀ = id₀
+           ; <>Lzero = ttLzero
+           ; idExt = idExt
+           ; idL = idL
+           ; idR = idR
+           ; assoc = assoc
+           ; subId = subId
+           ; pCons = pCons
+           ; qCons = qCons
+           ; subComp = subComp
+           ; compExt = compExt
+           ; cong-sub = cong-sub
+           ; cong-<,> = cong-,
+           ; cong-∘ = cong-∘
+           }
 
--- here we use the fact that γ ⋆ p is the same as weakening γ
+-- here we use the fact that γ ∘ p is the same as weakening γ
 
-lamCm : ∀ {Γ Δ} {α β} (t : Term (Γ ∙ α) β) (γ : Δ ▹ Γ) →
-         ƛ (t [ ▹-weaken Γ (step ⊆-refl) γ , var here ]) ≡ ƛ (t [ γ ⋆ p , var here ])
-lamCm {α = α} t γ rewrite sym (▹-weaken-⋆-p {α = α} γ)= refl        
+subLam : ∀ {Γ Δ} {α β} (t : Tm (Γ ∙ α) β) (γ : Sub Δ Γ) →
+         ƛ (t [ wk-sub Γ (step ⊆-refl) γ , var here ]) ≡ ƛ (t [ γ ∘ p , var here ])
+subLam {α = α} t γ rewrite sym (wk-sub-∘-p {α = α} γ)= refl        
 
-TermLamScwf : Lambda-scwf
-TermLamScwf = record
-                { scwf   = TermScwf
-                ; _`→_   = _⇒_
-                ; ƛ      = ƛ
-                ; _·_    = _·_
-                ; appCm  = λ _ _ _ → refl
-                ; lamCm  = lamCm
-                ; cong-ƛ = ƛ-eq
-                ; cong-· = app-eq
-                }
+TmLamScwf : Lambda-scwf
+TmLamScwf = record
+              { scwf = TmScwf
+              ; _`→_ = _⇒_
+              ; lam = ƛ
+              ; app = _·_
+              ; subApp = λ _ _ _ → refl
+              ; subLam = subLam
+              ; cong-lam = ƛ-eq
+              ; cong-app = app-eq
+              }

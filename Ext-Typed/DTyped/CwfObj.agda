@@ -12,21 +12,21 @@ data Sub : Nat → Nat → Set
 
 data Ctx where
   ⋄   : Ctx 0
-  _·_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
+  _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
 
 -- Raw terms and type formers
 
 data Tm where
   q    : ∀ {n} → Tm (1 + n)
   _[_] : ∀ {m n} → Tm n → Sub m n → Tm m
-  lam  : ∀ {n} → Tm (suc n) → Tm n
+  lam  : ∀ {n} → Tm (1 + n) → Tm n
   app  : ∀ {n} → Tm n → Tm n → Tm n
-  Π    : ∀ {n} → Tm n → Tm (suc n) → Tm n
+  Π    : ∀ {n} → Tm n → Tm (1 + n) → Tm n
   U    : ∀ {n} → Tm n
 
 infix 8 _∘_
 
--- Morphisms
+-- Raw morphisms
 
 data Sub where
   id    : ∀ {n} → Sub n n
@@ -60,6 +60,7 @@ data _≈_ where
              lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
   subΠ     : ∀ {n m} (γ : Sub m n) A B →
              (Π A B) [ γ ] ≈ Π (A [ γ ]) (B [ < γ ∘ p , q > ])
+  subU     : ∀ {n m} {γ : Sub m n} → U [ γ ] ≈ U             
   beta     : ∀ {n} (t : Tm (suc n)) (u : Tm n) →
              app (lam t) u ≈ t [ < id , u > ]     
   sym≈     : ∀ {n} {u u′ : Tm n} → u ≈ u′ → u′ ≈ u
@@ -142,8 +143,8 @@ surj-<,> {n = n} γ = begin
 
 -- lifting a substitution distributes over composition
 
-lift-dist : ∀ {m n k} (γ : Sub m n) (γ' : Sub k m) → ⇑ γ ∘ ⇑ γ' ≋ ⇑ (γ ∘ γ')
-lift-dist γ γ' = begin
+⇑-dist : ∀ {m n k} (γ : Sub m n) (γ' : Sub k m) → ⇑ γ ∘ ⇑ γ' ≋ ⇑ (γ ∘ γ')
+⇑-dist γ γ' = begin
   ⇑ γ ∘ ⇑ γ'                                           ≈⟨ refl≋ ⟩
   < γ ∘ p , q > ∘ < γ' ∘ p , q >                       ≈⟨ maps q (γ ∘ p) < γ' ∘ p , q > ⟩
   < (γ ∘ p) ∘ < γ' ∘ p , q > , q [ < γ' ∘ p , q > ] >  ≈⟨ cong-<,> (qExt q (γ' ∘ p)) refl≋ ⟩
@@ -172,7 +173,7 @@ data _⊢ where
  c-ext : ∀ {n} {Γ : Ctx n} {A}
          → Γ ⊢
          → Γ ⊢ A
-         → (Γ · A) ⊢
+         → (Γ ∙ A) ⊢
 
 data _⊢_ where
 
@@ -192,42 +193,42 @@ data _⊢_ where
            → Γ ⊢ A [ γ ]
 
   ty-Π-F : ∀ {n} {Γ : Ctx n} {A B}
-           → Γ ⊢
            → Γ ⊢ A
-           → Γ · A ⊢ B
+           → Γ ∙ A ⊢ B
            → Γ ⊢ Π A B
 
 data _⊢_∈_ where
 
   tm-q : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢
          → Γ ⊢ A
-         → Γ · A ⊢ q ∈ A [ p ]
+         → Γ ∙ A ⊢ q ∈ A [ p ]
 
   tm-sub : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
              {A t γ}
-           → Γ ⊢
-           → Δ ⊢
-           → Δ ⊢ A
            → Δ ⊢ t ∈ A
            → Γ ▹ Δ ⊢ γ
            → Γ ⊢ t [ γ ] ∈ A [ γ ]
 
   tm-app : ∀ {n} {Γ : Ctx n} {f t A B}
-           → Γ ⊢
+
            → Γ ⊢ A
-           → Γ · A ⊢ B
+           → Γ ∙ A ⊢ B
            → Γ ⊢ f ∈ Π A B
            → Γ ⊢ t ∈ A
            → Γ ⊢ app f t ∈ B [ < id , t > ]
            
   tm-Π-I : ∀ {n} {Γ : Ctx n}
              {A B t}
-           → Γ ⊢
            → Γ ⊢ A
-           → Γ · A ⊢ B
-           → Γ · A ⊢ t ∈ B
+           → Γ ∙ A ⊢ B
+           → Γ ∙ A ⊢ t ∈ B
            → Γ ⊢ lam t ∈ Π A B
+
+
+  tm-conv : ∀ {n} {Γ : Ctx n} {t A A'}
+            → Γ ⊢ t ∈ A
+            → A ≈ A'
+            → Γ ⊢ t ∈ A'
 
 data _▹_⊢_ where
 
@@ -242,9 +243,8 @@ data _▹_⊢_ where
        → Δ ▹ Θ ⊢ γ₁ ∘ γ₂
        
   ⊢p : ∀ {n} {Γ : Ctx n} {A}
-       → Γ ⊢
        → Γ ⊢ A
-       → Γ · A ▹ Γ ⊢ p
+       → Γ ∙ A ▹ Γ ⊢ p
 
   ⊢<> : ∀ {n} {Γ : Ctx n}
         → Γ ⊢
@@ -252,12 +252,10 @@ data _▹_⊢_ where
 
   ⊢<,> : ∀ {m n} {Γ : Ctx n}
            {Δ : Ctx m} {A t γ}
-         → Γ ⊢
-         → Δ ⊢
          → Γ ▹ Δ ⊢ γ
          → Δ ⊢ A
          → Γ ⊢ t ∈ A [ γ ]
-         → Γ ▹ Δ · A ⊢ < γ , t >
+         → Γ ▹ Δ ∙ A ⊢ < γ , t >
 
 lemma-1 : ∀ {n} {Γ : Ctx n} {A}
           → Γ ⊢ A
@@ -272,20 +270,21 @@ lemma-3 : ∀ {m n} {Γ : Ctx n}
           → Δ ▹ Γ ⊢ γ
           → Γ ⊢ × Δ ⊢
 
-lemma-3 (⊢id Γ⊢)             = Γ⊢ , Γ⊢
-lemma-3 (⊢∘ ⊢γ₁ ⊢γ₂)         = π₁ (lemma-3 ⊢γ₁) , π₂ (lemma-3 ⊢γ₂) 
-lemma-3 (⊢p Γ⊢ ⊢A)           = Γ⊢ , (c-ext Γ⊢ ⊢A) 
-lemma-3 (⊢<> Δ⊢)             = c-emp , Δ⊢ 
-lemma-3 (⊢<,> Δ⊢ Δ'⊢ _ ⊢A _) = c-ext Δ'⊢ ⊢A , Δ⊢
+lemma-3 (⊢id Γ⊢)       = Γ⊢ , Γ⊢
+lemma-3 (⊢∘ ⊢γ₁ ⊢γ₂)   = π₁ (lemma-3 ⊢γ₁) , π₂ (lemma-3 ⊢γ₂) 
+lemma-3 (⊢p ⊢A)        = lemma-1 ⊢A , c-ext (lemma-1 ⊢A) ⊢A
+lemma-3 (⊢<> Δ⊢)       = c-emp , Δ⊢ 
+lemma-3 (⊢<,> ⊢γ ⊢A _) = c-ext (lemma-1 ⊢A) ⊢A , π₂ (lemma-3 ⊢γ)
 
-lemma-1 (ty-U Γ⊢)       = Γ⊢
-lemma-1 (ty-w Γ⊢ _)     = Γ⊢
-lemma-1 (ty-Π-F Γ⊢ _ _) = Γ⊢
-lemma-1 (ty-sub ⊢A ⊢γ)  =
-  let (_ , Γ⊢) = lemma-3 ⊢γ
-  in Γ⊢              
+lemma-1 (ty-U Γ⊢)     = Γ⊢
+lemma-1 (ty-w Γ⊢ A∈U) = Γ⊢   -- lemma-1 (lemma-2 A∈U)
+lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
+lemma-1 (ty-sub _ ⊢γ) = π₂ (lemma-3 ⊢γ)
 
-lemma-2 (tm-q Γ⊢ ⊢A)              = ty-sub ⊢A (⊢p Γ⊢ ⊢A)
-lemma-2 (tm-sub _ _ ⊢A _ ⊢γ)      = ty-sub ⊢A ⊢γ
-lemma-2 (tm-Π-I Γ⊢ ⊢A ⊢B _)       = ty-Π-F Γ⊢ ⊢A ⊢B
-lemma-2 (tm-app ⊢Γ ⊢A ⊢B f∈Π t∈A) = {!!} -- goal : Γ ⊢ (.B [ < id , .t > ])
+lemma-2 (tm-q ⊢A)            = ty-sub ⊢A (⊢p ⊢A)
+lemma-2 (tm-sub t∈A ⊢γ)      = ty-sub (lemma-2 t∈A) ⊢γ
+lemma-2 (tm-Π-I ⊢A ⊢B _)     = ty-Π-F ⊢A ⊢B
+lemma-2 (tm-app ⊢A ⊢B _ t∈A) =
+  let ⊢Γ = lemma-1 ⊢A
+  in ty-sub ⊢B (⊢<,> (⊢id ⊢Γ) ⊢A (tm-conv t∈A (sym≈ (subId _))))
+lemma-2 (tm-conv t∈A' A'≈A) = {!!}                                              

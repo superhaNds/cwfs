@@ -1,126 +1,148 @@
 -----------------------------------------------------------------------------
--- The notion of a ucwf and its extensions with lambdas and others
+-- The notion of a ucwf object and its extensions with lambdas and others
 -----------------------------------------------------------------------------
 module Unityped.Ucwf where
 
 open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
-open import Data.Vec using (Vec)
-open import Data.Fin using (Fin)
 open import Relation.Binary using (Rel ; IsEquivalence ; Setoid)
-import Relation.Binary.EqReasoning as EqR
 
 -----------------------------------------------------------------------------
--- The sorts, operator symbols, and axioms of a ucwf gathered as a record
+-- The sorts, operator symbols, and axioms of a ucwf
 
 record Ucwf : Set₁ where
-  infix 4 _~_
-  infix 4 _~~_
-  infix 9 _∘_
+  infix 4 _≈_
+  infix 4 _≋_
+  infix 8 _∘_
   
   field
-    -- the types for terms and substitutions 
-    Term   : Nat → Set
-    Hom    : Nat → Nat → Set
+
+    -- Objects of the base category are natural numbers
+   
+    -- Terms and substitutions (sorts)
+    Tm   : Nat → Set
+    Sub  : Nat → Nat → Set
 
     -- two relations regarding equality of terms and substitutions
-    _~_   : ∀ {n} → Rel (Term n) lzero
-    _~~_   : ∀ {m n} → Rel (Hom m n) lzero
+    _≈_   : ∀ {n} → Rel (Tm n) lzero
+    _≋_   : ∀ {m n} → Rel (Sub m n) lzero
 
-    IsEquivT : ∀ {n} → IsEquivalence (_~_ {n})
-    IsEquivH : ∀ {m n} → IsEquivalence (_~~_ {m} {n})
+    IsEquivT : ∀ {n} → IsEquivalence (_≈_ {n})
+    IsEquivS : ∀ {m n} → IsEquivalence (_≋_ {m} {n})
 
-    -- operator symbols
-    id     : {n : Nat} → Hom n n
-    <>     : {m : Nat} → Hom m 0
-    p      : {n : Nat} → Hom (suc n) n
-    q      : {n : Nat} → Term (suc n)
-    _∘_    : {m n k : Nat} → Hom n k → Hom m n → Hom m k
-    _[_]   : {m n : Nat} → Term n → Hom m n → Term m
-    <_,_>  : {m n : Nat} → Hom m n → Term m → Hom m (suc n)
-
-    -- axioms
-    id₀   : id {0} ~~ <>
+    -- operators
     
-    ∘<>   : ∀ {m n} (ts : Hom m n) →
-             <> ∘ ts ~~ <>
+    id     : ∀ {n} → Sub n n
+    _∘_    : ∀ {m n k} → Sub n k → Sub m n → Sub m k
+    _[_]   : ∀ {m n} → Tm n → Sub m n → Tm m
+    <>     : ∀ {m} → Sub m zero
+    <_,_>  : ∀ {m n} → Sub m n → Tm m → Sub m (suc n)
+    p      : ∀ {n} → Sub (suc n) n
+    q      : ∀ {n} → Tm (suc n)
+    
+    -- cwf axioms
+
+    -- zero length id is the empty substitution
+    
+    id₀ : id {0} ≋ <>
+
+    -- <> is a a left zero for composition
+  
+    <>Lzero : ∀ {m n} (ts : Sub m n) → <> ∘ ts ≋ <>
+
+    -- extended identity is the projection morphism with the last variable
+
+    idExt : ∀ {n} → id {suc n} ≋ < p , q >
+
+    -- category of substitutions
              
-    varp  : ∀ {n} →
-             id {suc n} ~~ < p , q >
+    idL : ∀ {m n} (ts : Sub m n) → id ∘ ts ≋ ts
              
-    idL   : ∀ {m n} (ts : Hom m n) →
-             id ∘ ts ~~ ts
+    idR : ∀ {m n} (ts : Sub m n) → ts ∘ id ≋ ts
              
-    idR   : ∀ {m n} (ts : Hom m n) →
-             ts ∘ id ~~ ts
-             
-    assoc : ∀ {m n κ ι} (ts : Hom n κ) (us : Hom m n) (vs : Hom ι m) →
-             (ts ∘ us) ∘ vs ~~ ts ∘ (us ∘ vs)
-             
-    terId : ∀ {n} (t : Term n) →
-             t [ id ] ~ t
-             
-    pCons : ∀ {n κ} (t : Term n) (ts : Hom n κ) →
-             p ∘ < ts , t > ~~ ts
-             
-    qCons : ∀ {m n} (t : Term n) (ts : Hom n m) →
-             q [ < ts , t > ] ~ t
-             
-    clos  : ∀ {m n κ} (t : Term n) (ts : Hom m n) (us : Hom κ m) →
-             t [ ts ∘  us ] ~ t [ ts ] [ us ]
-             
-    maps  : ∀ {m n} (t : Term n) (ts : Hom n m) (us : Hom m n) →
-             < ts , t > ∘ us ~~ < ts ∘ us , t [ us ] >
+    assoc : ∀ {m n κ ι} (ts : Sub n κ) (us : Sub m n) (vs : Sub ι m) →
+             (ts ∘ us) ∘ vs ≋ ts ∘ (us ∘ vs)
+
+    -- Substituting in id doesn't affect terms
+ 
+    subId : ∀ {n} (t : Tm n) → t [ id ] ≈ t
+
+    -- p is the first projection
+
+    pCons : ∀ {n κ} (ts : Sub n κ) t → p ∘ < ts , t > ≋ ts
+
+    -- q is the second projection
+
+    qCons : ∀ {m n} (ts : Sub n m) t → q [ < ts , t > ] ≈ t
+
+    -- Substituting under a composition
+
+    subComp : ∀ {m n κ} (ts : Sub m n) (us : Sub κ m) t →
+               t [ ts ∘ us ] ≈ t [ ts ] [ us ]
+
+    -- Composing with an extended substitution
+
+    compExt : ∀ {m n} (ts : Sub n m) (us : Sub m n) t →
+               < ts , t > ∘ us ≋ < ts ∘ us , t [ us ] >
              
     -- congruence rules for operators
-    cong-<,> : ∀ {m n} {t u : Term m} {ts us : Hom m n} →
-                t ~ u →
-                ts ~~ us →
-                < ts , t > ~~ < us , u >
+    
+    cong-<,> : ∀ {m n} {ts us : Sub m n} {t u} →
+                t ≈ u →
+                ts ≋ us →
+                < ts , t > ≋ < us , u >
                 
-    cong-[_] : ∀ {m n} {t u : Term n} {ts us : Hom m n} →
-                t ~ u →
-                ts ~~ us →
-                t [ ts ] ~ u [ us ]
+    cong-sub : ∀ {m n} {ts us : Sub m n} {t u} →
+                t ≈ u →
+                ts ≋ us →
+                t [ ts ] ≈ u [ us ]
                 
-    cong-∘   : ∀ {m n k} {ts vs : Hom n k} {us zs : Hom m n} →
-                ts ~~ vs →
-                us ~~ zs →
-                ts ∘ us ~~ vs ∘ zs
+    cong-∘   : ∀ {m n k} {ts vs : Sub n k} {us zs : Sub m n} →
+                ts ≋ vs →
+                us ≋ zs →
+                ts ∘ us ≋ vs ∘ zs
 
   setoidT : ∀ {n} → Setoid _ _
   setoidT {n} = record { isEquivalence = IsEquivT {n} }
 
-  setoidH : ∀ {m n} → Setoid _ _
-  setoidH {m} {n} = record { isEquivalence = IsEquivH {m} {n} }
+  setoidS : ∀ {m n} → Setoid _ _
+  setoidS {m} {n} = record { isEquivalence = IsEquivS {m} {n} }
 
-  ⇑ : ∀ {m n} (ts : Hom m n) → Hom (suc m) (suc n)
+  ⇑ : ∀ {m n} (ts : Sub m n) → Sub (suc m) (suc n)
   ⇑ ts = < ts ∘ p , q >
 
-  weaken : ∀ {m} → Term m → Term (suc m)
-  weaken {m} = _[ p ]
+  weaken : ∀ {m} → Tm m → Tm (suc m)
+  weaken = _[ p ]
 
 -- Extending the pure ucwf with lambdas and applications
 
 record Lambda-ucwf : Set₁ where
-  infix 10 _·_ 
   field
-    ucwf : Ucwf   
-  open Ucwf ucwf public  
+    ucwf : Ucwf
+    
+  open Ucwf ucwf public
+  
   field
-    ƛ   : ∀ {n} → Term (suc n) → Term n
-    _·_ : ∀ {n} → Term n → Term n → Term n
+
+    -- λ abstraction and application
+
+    lam : ∀ {n} → Tm (suc n) → Tm n
+    app : ∀ {n} → Tm n → Tm n → Tm n
+
+    -- substituting under app and lam
     
-    app : ∀ {n m} (t u : Term n) (ts : Hom m n) → (t [ ts ]) · (u [ ts ]) ~ (t · u) [ ts ]
-    abs : ∀ {n m} (t : Term (suc n)) (ts : Hom m n) → ƛ t [ ts ] ~ ƛ (t [ ⇑ ts ])
+    subApp : ∀ {n m} (ts : Sub m n) t u → app (t [ ts ]) (u [ ts ]) ≈ (app t u) [ ts ]
     
-    cong-ƛ : ∀ {n} {t u : Term (suc n)} →
-              t ~ u →
-              ƛ t ~ ƛ u
-    cong-· : ∀ {n} {t u t′ u′ : Term n} →
-              t ~ t′ →
-              u ~ u′ →
-              t · u ~ t′ · u′
+    subLam : ∀ {n m} (ts : Sub m n) t → lam t [ ts ] ≈ lam (t [ ⇑ ts ])
+    
+    cong-lam : ∀ {n} {t u : Tm (suc n)} →
+                t ≈ u →
+                lam t ≈ lam u
+              
+    cong-app : ∀ {n} {t u t′ u′ : Tm n} →
+                t ≈ t′ →
+                u ≈ u′ →
+                app t u ≈ app t′ u′
 
 -- Extending the ucwf with lambdas up to β and η
 
@@ -131,9 +153,10 @@ record Lambda-βη-ucwf : Set₁ where
   open Lambda-ucwf lambda-ucwf public
 
   field
-    β   : ∀ {n} (t : Term (suc n)) (u : Term n) →
-           ƛ t · u ~ t [ < id , u > ]
-           
-    η   : ∀ {n} (t : Term n) →
-           ƛ (weaken t · q) ~ t
+
+   -- beta and eta equalities
+
+    β : ∀ {n} {t : Tm (suc n)} {u} → app (lam t) u ≈ t [ < id , u > ]
+         
+    η : ∀ {n} {t : Tm n} → lam (app (weaken t) q) ≈ t
     

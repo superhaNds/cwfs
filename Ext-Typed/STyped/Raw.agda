@@ -18,12 +18,12 @@ open ≡-Reasoning
 -------------------------------------------------------------------------
 -- Using the standard library of Substitution: operations and lemmas
 
-module TermApp {T} (l : Lift T Term) where
+module TmApp {T} (l : Lift T Tm) where
   open Lift l hiding (var)
 
   infix 8 _[_]
 
-  _[_] : ∀ {m n} → Term m → Sub T m n → Term n
+  _[_] : ∀ {m n} → Tm m → Sub T m n → Tm n
   var i  [ ρ ] = lift (lookup i ρ)
   ƛ t    [ ρ ] = ƛ (t [ ρ ↑ ])
   t · u  [ ρ ] = (t [ ρ ]) · (u [ ρ ])
@@ -40,19 +40,19 @@ module TermApp {T} (l : Lift T Term) where
   ·-/✶-↑✶ k ε        = refl
   ·-/✶-↑✶ k (ρ ◅ ρs) = cong₂ _[_] (·-/✶-↑✶ k ρs) refl
 
-tmSubst : TermSubst Term
-tmSubst = record { var = var; app = TermApp._[_] }
+tmSubst : TermSubst Tm
+tmSubst = record { var = var; app = TmApp._[_] }
 
 open TermSubst tmSubst hiding (var)
 
-tmLemmas : TermLemmas Term
+tmLemmas : TermLemmas Tm
 tmLemmas = record
   { termSubst = tmSubst
   ; app-var   = refl
   ; /✶-↑✶     = Lemma./✶-↑✶
   }
   where
-  module Lemma {T₁ T₂} {lift₁ : Lift T₁ Term} {lift₂ : Lift T₂ Term} where
+  module Lemma {T₁ T₂} {lift₁ : Lift T₁ Tm} {lift₂ : Lift T₂ Tm} where
 
     open Lifted lift₁ using () renaming (_↑✶_ to _↑✶₁_; _/✶_ to _/✶₁_)
     open Lifted lift₂ using () renaming (_↑✶_ to _↑✶₂_; _/✶_ to _/✶₂_)
@@ -63,19 +63,19 @@ tmLemmas = record
     /✶-↑✶ ρs₁ ρs₂ hyp k (var x) = hyp k x
     /✶-↑✶ ρs₁ ρs₂ hyp k (ƛ t)   = begin
       ƛ t /✶₁ ρs₁ ↑✶₁ k
-        ≡⟨ TermApp.ƛ-/✶-↑✶ _ k ρs₁ ⟩
+        ≡⟨ TmApp.ƛ-/✶-↑✶ _ k ρs₁ ⟩
       ƛ (t /✶₁ ρs₁ ↑✶₁ suc k)
         ≡⟨ cong ƛ (/✶-↑✶ ρs₁ ρs₂ hyp (suc k) t) ⟩
       ƛ (t /✶₂ ρs₂ ↑✶₂ suc k)
-        ≡⟨ sym (TermApp.ƛ-/✶-↑✶ _ k ρs₂) ⟩
+        ≡⟨ sym (TmApp.ƛ-/✶-↑✶ _ k ρs₂) ⟩
       ƛ t /✶₂ ρs₂ ↑✶₂ k
         ∎
     /✶-↑✶ ρs₁ ρs₂ hyp k (t₁ · t₂) = begin
       t₁ · t₂ /✶₁ ρs₁ ↑✶₁ k
-        ≡⟨ TermApp.·-/✶-↑✶ _ k ρs₁ ⟩
+        ≡⟨ TmApp.·-/✶-↑✶ _ k ρs₁ ⟩
       (t₁ /✶₁ ρs₁ ↑✶₁ k) · (t₂ /✶₁ ρs₁ ↑✶₁ k)
         ≡⟨ cong₂ _·_ (/✶-↑✶ ρs₁ ρs₂ hyp k t₁) (/✶-↑✶ ρs₁ ρs₂ hyp k t₂) ⟩
       (t₁ /✶₂ ρs₂ ↑✶₂ k) · (t₂ /✶₂ ρs₂ ↑✶₂ k)
-        ≡⟨ sym (TermApp.·-/✶-↑✶ _ k ρs₂) ⟩
+        ≡⟨ sym (TmApp.·-/✶-↑✶ _ k ρs₂) ⟩
       t₁ · t₂ /✶₂ ρs₂ ↑✶₂ k
         ∎

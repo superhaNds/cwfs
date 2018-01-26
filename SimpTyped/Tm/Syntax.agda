@@ -10,7 +10,7 @@ open import Relation.Binary.PropositionalEquality as P
   using (_≡_ ; refl ; sym ; trans ; cong ; cong₂)
 open import SimpTyped.Type
 open import SimpTyped.Context
-open import Function using (_$_ ; _∘_)
+open import Function as F using (_$_)
 open import Data.Product using (_×_ ; proj₁ ; proj₂ ; _,_)
 open import Data.Unit using (⊤ ; tt)
 open import Relation.Binary hiding (_⇒_)
@@ -24,17 +24,17 @@ infix 10 _·_
 
 -- typed terms with variables as membership proofs
 
-data Term (Γ : Ctx) : Ty → Set where
-  var : ∀ {α} (∈Γ : α ∈ Γ) → Term Γ α
-  _·_ : ∀ {α β} → Term Γ (α ⇒ β) → Term Γ α → Term Γ β
-  ƛ   : ∀ {α β} → Term (Γ ∙ α) β → Term Γ (α ⇒ β)
+data Tm (Γ : Ctx) : Ty → Set where
+  var : ∀ {α} (∈Γ : α ∈ Γ) → Tm Γ α
+  _·_ : ∀ {α β} → Tm Γ (α ⇒ β) → Tm Γ α → Tm Γ β
+  ƛ   : ∀ {α β} → Tm (Γ ∙ α) β → Tm Γ (α ⇒ β)
 
-weaken : ∀ {α} {Γ Δ : Ctx} (φ : Γ ⊆ Δ) (t : Term Γ α) → Term Δ α
+weaken : ∀ {α} {Γ Δ : Ctx} (φ : Γ ⊆ Δ) (t : Tm Γ α) → Tm Δ α
 weaken φ (var ∈Γ) = var (sub-in φ ∈Γ)
 weaken φ (t · u)  = weaken φ t · weaken φ u
 weaken φ (ƛ t)    = ƛ (weaken (pop! φ) t)
 
-q : ∀ {Γ α} → Term (Γ ∙ α) α
+q : ∀ {Γ α} → Tm (Γ ∙ α) α
 q = var here
 
 -- Substitutions of variables
@@ -90,88 +90,89 @@ pV = map-∈ there idV
 -- too much work for this triviality
 postulate tk∈-pV-th : ∀ {Γ α} (v : α ∈ Γ) → tk∈ v (pV {α = α}) ≡ there v
 
--- Term substitutions
+-- Tm substitutions
 
-_▹_ : (Δ Γ : Ctx) → Set
-Δ ▹ ε       = ⊤
-Δ ▹ (Γ ∙ t) = Δ ▹ Γ × Term Δ t
+Sub : (Δ Γ : Ctx) → Set
+Sub Δ ε       = ⊤
+Sub Δ (Γ ∙ t) = Sub Δ Γ × Tm Δ t
 
 -- variable substitution to term
 
-▸-to-▹ : ∀ {Δ Γ} (f : ∀ {α} → α ∈ Δ → Term Δ α) → Δ ▸ Γ → Δ ▹ Γ
+▸-to-▹ : ∀ {Δ Γ} (f : ∀ {α} → α ∈ Δ → Tm Δ α) → Δ ▸ Γ → Sub Δ Γ
 ▸-to-▹ {Γ = ε}     f tt      = tt
 ▸-to-▹ {Γ = Γ ∙ x} f (ρ , t) = ▸-to-▹ f ρ , f t
 
 -- one version of projection substitution
 
-p' : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
+p' : ∀ {Γ α} → Sub (Γ ∙ α) Γ
 p' = ▸-to-▹ var pV
 
 -- weakening a substitution is mapping weaken on each term
 
-▹-weaken : ({Δ} {Θ} Γ : Ctx) (φ : Δ ⊆ Θ) (ρ : Δ ▹ Γ) → Θ ▹ Γ
-▹-weaken ε       φ ρ       = tt
-▹-weaken (Γ ∙ x) φ (ρ , t) = ▹-weaken Γ φ ρ , weaken φ t
+wk-sub : ({Δ} {Θ} Γ : Ctx) (φ : Δ ⊆ Θ) (ρ : Sub Δ Γ) → Sub Θ Γ
+wk-sub ε       φ ρ       = tt
+wk-sub (Γ ∙ x) φ (ρ , t) = wk-sub Γ φ ρ , weaken φ t
 
 -- identity substitution
 
-id : ∀ {Γ} → Γ ▹ Γ
+id : ∀ {Γ} → Sub Γ Γ
 id {ε}     = tt
-id {Γ ∙ α} = ▹-weaken Γ ⊆-∙ id , var here
+id {Γ ∙ α} = wk-sub Γ ⊆-∙ id , var here
 
 -- lookup
 
-tkVar : ∀ {Γ Δ α} (∈Γ : α ∈ Γ) (ρ : Δ ▹ Γ) → Term Δ α
+tkVar : ∀ {Γ Δ α} (∈Γ : α ∈ Γ) (ρ : Sub Δ Γ) → Tm Δ α
 tkVar here       (ρ , t) = t
 tkVar (there ∈Γ) (ρ , t) = tkVar ∈Γ ρ
 
 -- meta substitution operation
 
-_[_] : ∀ {Γ Δ α} → Term Γ α → Δ ▹ Γ → Term Δ α
-var ∈Γ [ ρ ]  = tkVar ∈Γ ρ
+_[_] : ∀ {Γ Δ α} → Tm Γ α → Sub Δ Γ → Tm Δ α
+var ∈Γ  [ ρ ] = tkVar ∈Γ ρ
 (t · u) [ ρ ] = t [ ρ ] · u [ ρ ]
-ƛ t [ ρ ]     = ƛ (t [ ▹-weaken _ ⊆-∙ ρ , var here ])
+ƛ t     [ ρ ] = ƛ (t [ wk-sub _ ⊆-∙ ρ , var here ])
 
 -- traditional projection substitution
 
-p : ∀ {Γ α} → (Γ ∙ α) ▹ Γ
-p {Γ} = ▹-weaken Γ ⊆-∙ id
+p : ∀ {Γ α} → Sub (Γ ∙ α) Γ
+p {Γ} = wk-sub Γ ⊆-∙ id
 
-weaken-same : ∀ {Γ α} (t : Term Γ α) → Term (Γ ∙ α) α
+weaken-same : ∀ {Γ α} (t : Tm Γ α) → Tm (Γ ∙ α) α
 weaken-same = weaken ⊆-∙
 
-infix 10 _⋆_
+infix 10 _∘_
 
 -- composition of substitutions
 
-_⋆_ : ∀ {Γ Δ Θ} → Γ ▹ Θ → Δ ▹ Γ → Δ ▹ Θ
-_⋆_ {Θ = ε}     ρ       σ = tt
-_⋆_ {Θ = Θ ∙ α} (ρ , t) σ = ρ ⋆ σ , t [ σ ]
+_∘_ : ∀ {Γ Δ Θ} → Sub Γ Θ → Sub Δ Γ → Sub Δ Θ
+_∘_ {Θ = ε}     ρ       σ = tt
+_∘_ {Θ = Θ ∙ α} (ρ , t) σ = ρ ∘ σ , t [ σ ]
 
 -- weakens a substitution and adds the last variable
--- ρ ⋆ p is the same as mapping weaken on ρ; this is a proven property is Properties
+-- ρ ∘ p is the same as mapping weaken on ρ;
+-- this is directly a cwf combinator expression
 
-↑_ : ∀ {Γ Δ α} → Δ ▹ Γ → (Δ ∙ α) ▹ (Γ ∙ α)
-↑ ρ = ρ ⋆ p , var here 
+↑_ : ∀ {Γ Δ α} → Sub Δ Γ → Sub (Δ ∙ α) (Γ ∙ α)
+↑ ρ = ρ ∘ p , q 
 
-simp : ∀ {Γ Δ Θ} (φ : Γ ⊆ Δ) (ρ : Θ ▹ Δ) → Θ ▹ Γ
+simp : ∀ {Γ Δ Θ} (φ : Γ ⊆ Δ) (ρ : Sub Θ Δ) → Sub Θ Γ
 simp base     ρ       = tt
 simp (step φ) (ρ , t) = simp φ ρ
 simp (pop! φ) (ρ , t) = simp φ ρ , t
 
 -- congruences and inversion lemmas
 
-cong-[] : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Δ ▹ Γ} →
+cong-sub : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Δ Γ} →
           t ≡ t' → γ ≡ γ' → t [ γ ] ≡ t' [ γ' ]
-cong-[] refl refl = refl
+cong-sub refl refl = refl
 
-cong-, : ∀ {Γ Δ α} {t t' : Term Γ α} {γ γ' : Γ ▹ Δ} →
+cong-, : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Γ Δ} →
          t ≡ t' → γ ≡ γ' → (γ , t) ≡ (γ' , t')
 cong-, refl refl = refl
 
-cong-⋆ : ∀ {Γ Δ Θ} {γ δ : Δ ▹ Θ} {γ' δ' : Γ ▹ Δ} →
-         γ ≡ δ → γ' ≡ δ' → γ ⋆ γ' ≡ δ ⋆ δ'
-cong-⋆ refl refl = refl             
+cong-∘ : ∀ {Γ Δ Θ} {γ δ : Sub Δ Θ} {γ' δ' : Sub Γ Δ} →
+         γ ≡ δ → γ' ≡ δ' → γ ∘ γ' ≡ δ ∘ δ'
+cong-∘ refl refl = refl             
 
 var-eq : ∀ {Γ α} {φ₁ φ₂ : α ∈ Γ} → φ₁ ≡ φ₂ → var φ₁ ≡ var φ₂
 var-eq refl = refl
@@ -179,20 +180,20 @@ var-eq refl = refl
 var-eq-inv : ∀ {Γ α} {φ₁ φ₂ : α ∈ Γ} → var φ₁ ≡ var φ₂ → φ₁ ≡ φ₂
 var-eq-inv refl = refl
 
-ƛ-eq : ∀ {Γ α β} {t t' : Term (Γ ∙ α) β} → t ≡ t' → ƛ t ≡ ƛ t'
+ƛ-eq : ∀ {Γ α β} {t t' : Tm (Γ ∙ α) β} → t ≡ t' → ƛ t ≡ ƛ t'
 ƛ-eq refl = refl
 
-ƛ-eq-inv : ∀ {Γ α β} {t t' : Term (Γ ∙ α) β} → ƛ t ≡ ƛ t' → t ≡ t'
+ƛ-eq-inv : ∀ {Γ α β} {t t' : Tm (Γ ∙ α) β} → ƛ t ≡ ƛ t' → t ≡ t'
 ƛ-eq-inv refl = refl
 
-app-eq : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
+app-eq : ∀ {Γ α β} {t t' : Tm Γ (α ⇒ β)} {u u' : Tm Γ α} →
           t ≡ t' → u ≡ u' → t · u ≡ t' · u'
 app-eq refl refl = refl
 
-app-eq-invl : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
-              t · u ≡ t' · u' → t ≡ t'
+app-eq-invl : ∀ {Γ α β} {t t' : Tm Γ (α ⇒ β)} {u u' : Tm Γ α} →
+               t · u ≡ t' · u' → t ≡ t'
 app-eq-invl refl = refl
 
-app-eq-invr : ∀ {Γ α β} {t t' : Term Γ (α ⇒ β)} {u u' : Term Γ α} →
-              t · u ≡ t' · u' → u ≡ u'
+app-eq-invr : ∀ {Γ α β} {t t' : Tm Γ (α ⇒ β)} {u u' : Tm Γ α} →
+               t · u ≡ t' · u' → u ≡ u'
 app-eq-invr refl = refl              
