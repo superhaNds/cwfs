@@ -180,6 +180,7 @@ abstract
   r∘-asso : ∀ {m n k} (is : Ren m n) (ts : Subst k m) (t : Tm n) →
             t [ is r∘ ts ] ≡ (ren t is) [ ts ]
   r∘-asso is ts (var i) = sym $ lookup-map (flip lookup ts) i is
+
   r∘-asso is ts (t · u) = cong₂ _·_ (r∘-asso is ts t) (r∘-asso is ts u)
   r∘-asso is ts (ƛ t) = trans (cong (ƛ F.∘ t [_]) (↑-r∘-dist is ts))
                               (cong ƛ (r∘-asso (lift-ren is) (↑ ts) t))
@@ -209,12 +210,12 @@ abstract
 
   -- this lemma lives in the lemmas record for substitution
   postulate 
-    renλ : ∀ {n} (t : Tm (1 + n)) → ren t (lift-ren pR) ≡ t [ ↑ p ]
+    ren-in-lift : ∀ {n} (t : Tm (1 + n)) → ren t (lift-ren pR) ≡ t [ ↑ p ]
 
   wk-[p] : ∀ {n} (t : Tm n) → weaken t ≡ t [ p {n} ]
   wk-[p] (var ι) = trans (wkVar ι) (sym $ var[p] ι)
   wk-[p] (t · u) = cong₂ _·_ (wk-[p] t) (wk-[p] u)
-  wk-[p] (ƛ t)   = cong ƛ (renλ t)
+  wk-[p] (ƛ t)   = cong ƛ (ren-in-lift t)
 
   mapWk-∘p : ∀ {m n} (σ : Subst m n) → σ ∘ p ≡ weaken-subst σ
   mapWk-∘p [] = refl

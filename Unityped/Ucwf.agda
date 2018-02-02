@@ -3,6 +3,7 @@
 -----------------------------------------------------------------------------
 module Unityped.Ucwf where
 
+open import Level renaming (zero to lzero ; suc to  lsuc)
 open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Relation.Binary using (Rel ; IsEquivalence ; Setoid)
@@ -10,7 +11,7 @@ open import Relation.Binary using (Rel ; IsEquivalence ; Setoid)
 -----------------------------------------------------------------------------
 -- The sorts, operator symbols, and axioms of a ucwf
 
-record Ucwf : Set₁ where
+record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
   infix 4 _≈_
   infix 4 _≋_
   infix 8 _∘_
@@ -20,12 +21,12 @@ record Ucwf : Set₁ where
     -- Objects of the base category are natural numbers
    
     -- Terms and substitutions (sorts)
-    Tm   : Nat → Set
-    Sub  : Nat → Nat → Set
+    Tm   : Nat → Set ℓ
+    Sub  : Nat → Nat → Set ℓ'
 
     -- two relations regarding equality of terms and substitutions
-    _≈_   : ∀ {n} → Rel (Tm n) lzero
-    _≋_   : ∀ {m n} → Rel (Sub m n) lzero
+    _≈_   : ∀ {n} → Rel (Tm n) ℓ
+    _≋_   : ∀ {m n} → Rel (Sub m n) ℓ'
 
     IsEquivT : ∀ {n} → IsEquivalence (_≈_ {n})
     IsEquivS : ∀ {m n} → IsEquivalence (_≋_ {m} {n})
@@ -116,9 +117,9 @@ record Ucwf : Set₁ where
 
 -- Extending the pure ucwf with lambdas and applications
 
-record Lambda-ucwf : Set₁ where
+record Lambda-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
   field
-    ucwf : Ucwf
+    ucwf : Ucwf {ℓ} {ℓ'}
     
   open Ucwf ucwf public
   
@@ -146,9 +147,9 @@ record Lambda-ucwf : Set₁ where
 
 -- Extending the ucwf with lambdas up to β and η
 
-record Lambda-βη-ucwf : Set₁ where
+record Lambda-βη-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
   field
-    lambda-ucwf : Lambda-ucwf
+    lambda-ucwf : Lambda-ucwf {ℓ} {ℓ'}
 
   open Lambda-ucwf lambda-ucwf public
 

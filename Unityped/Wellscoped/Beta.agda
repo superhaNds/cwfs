@@ -13,8 +13,10 @@ open import Function as F using (_$_ ; flip)
 open import Relation.Binary using (IsEquivalence ; Setoid)
 open import Unityped.Wellscoped.Syntax
 open import Unityped.Wellscoped.Substitution
+open import Unityped.Wellscoped.Properties
+open import Unityped.Wellscoped.WsUcwf
 import Relation.Binary.EqReasoning as EqR
-open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Relation.Binary.PropositionalEquality as P hiding ([_])
 
 ---------------------------------------------------------------------
 -- β convertability as an inductive relation over terms
@@ -33,9 +35,9 @@ data _~βη_  {n} : (_ _ : Tm n) → Set where
                
   ξ : {t u : Tm (1 + n)} → t ~βη u → ƛ t ~βη ƛ u
                
-  β : ∀ {t : Tm (1 + n)} {u} → ƛ t · u ~βη t [ id , u ]
+  β : ∀ (t : Tm (1 + n)) u → ƛ t · u ~βη t [ id , u ]
                
-  η : {t : Tm n} → ƛ (weaken t · q) ~βη t
+  η : (t : Tm n) → ƛ (weaken t · q) ~βη t
   
   sym~βη : {t₁ t₂ : Tm n} →
             t₁ ~βη t₂ →
@@ -50,7 +52,7 @@ data _≈βη_ {m} : ∀ {n} (_ _ : Subst m n) → Set where
 
   ⋄   : ∀ {ρ ρ' : Subst m 0} → ρ ≈βη ρ'
 
-  ext : ∀ {n} {t u : Tm m} {ρ ρ' : Subst m n} →
+  ext : ∀ {n} {t u} {ρ ρ' : Subst m n} →
          t ~βη u →
          ρ ≈βη ρ' →
          (ρ , t) ≈βη (ρ' , u)
@@ -58,7 +60,7 @@ data _≈βη_ {m} : ∀ {n} (_ _ : Subst m n) → Set where
 -- Reflexivity and setoid instances for above relations
 
 refl~βη : ∀ {n} {t : Tm n} → t ~βη t
-refl~βη = trans~βη (sym~βη η) η
+refl~βη = trans~βη (sym~βη (η _)) (η _)
 
 refl≈βη : ∀ {m n} {ρ : Subst m n} → ρ ≈βη ρ
 refl≈βη {ρ = []}    = ⋄
@@ -99,35 +101,74 @@ TmSetoid {n} = record { Carrier = Tm n
 -----------------------------------------------------------------------------------------
 -- Congruence rule proofs
 
-cong-, : ∀ {m n} {t t' : Tm n} {ρ ρ' : Subst n m} →
-          t ~βη t' →
-          ρ ≈βη ρ' →
+cong-ext : ∀ {m n} {t t' : Tm n} {ρ ρ' : Subst n m} →
+          t ~βη t' → ρ ≈βη ρ' →
           (ρ , t) ≈βη (ρ' , t')
-cong-, t~t' ⋄            = ext t~t' ⋄
-cong-, t~t' (ext x ρ≈ρ') = ext t~t' (cong-, x ρ≈ρ')         
+cong-ext t~t' ⋄            = ext t~t' ⋄
+cong-ext t~t' (ext x ρ≈ρ') = ext t~t' (cong-ext x ρ≈ρ')         
 
 lookup-sub : ∀ {m n} {ρ ρ' : Subst m n} (i : Fin n) →
               ρ ≈βη ρ' → lookup i ρ ~βη lookup i ρ'
 lookup-sub ()      ⋄
-lookup-sub zero    (ext t~u ρ≈ρ') = t~u
+lookup-sub zero    (ext t~u _)    = t~u
 lookup-sub (suc i) (ext _   ρ≈ρ') = lookup-sub i ρ≈ρ'
 
-cong-[] : ∀ {m n} {t t' : Tm n} {ρ ρ' : Subst m n} →
-           t ~βη t' →
-           ρ ≈βη ρ' →
-           t [ ρ ] ~βη t' [ ρ' ]
-cong-[] (varcong i)           ρ≈ρ' = lookup-sub i ρ≈ρ'
-cong-[] (apcong t~t' t~t'')   ρ≈ρ' = apcong (cong-[] t~t' ρ≈ρ') (cong-[] t~t'' ρ≈ρ')
-cong-[] (ξ t~t')              ρ≈ρ' = ξ (cong-[] t~t' {!!})
-cong-[] (sym~βη t~t')         ρ≈ρ' = sym~βη (cong-[] t~t' (sym≈βη ρ≈ρ'))
-cong-[] (trans~βη t~t' t~t'') ρ≈ρ' = trans~βη (cong-[] t~t' ρ≈ρ') (cong-[] t~t'' refl≈βη)
-cong-[] β                     ρ≈ρ' = {!!}
-cong-[] η                     ρ≈ρ' = {!!}
+-- ↑ ρ = < ρ ∘ p , q >
+↑ρ-pr : ∀ {m n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → ↑ ρ ≈βη ↑ ρ'
+↑ρ-pr ⋄           = refl≈βη
+↑ρ-pr (ext x ρ=ρ) = {!!}
 
-cong-∘ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →
-          ρ  ≈βη σ →
-          ρ' ≈βη σ' →
-          ρ ∘ ρ' ≈βη σ ∘ σ'
-cong-∘ ⋄           ρ'~σ'         = ⋄
-cong-∘ (ext t ρ≈σ) ⋄             = ext (cong-[] t ⋄) (cong-∘ ρ≈σ ⋄)
-cong-∘ (ext t ρ≈σ) (ext u ρ'≈σ') = ext (cong-[] t (ext u ρ'≈σ')) (cong-∘ ρ≈σ (ext u ρ'≈σ'))
+η-help : ∀ {n m} (t : Tm n) (ρ : Subst m n) → weaken (t [ ρ ]) ≡ (weaken t) [ ↑ ρ ]
+η-help t ρ = sym $ begin
+  weaken t [ ↑ ρ ]                ≡⟨⟩
+  weaken t [ weaken-subst ρ , q ] ≡⟨ cong (λ x → weaken t [ x , q ]) (sym (mapWk-∘p ρ)) ⟩
+  weaken t [ ρ ∘ p , q ]          ≡⟨ cong (_[ ρ ∘ p , q ]) (wk-[p] t) ⟩
+  t [ p ] [ ρ ∘ p , q ]           ≡⟨ sym (subComp t p (ρ ∘ p , q)) ⟩
+  t [ p ∘ (ρ ∘ p , q) ]           ≡⟨ cong (t [_]) (pCons (ρ ∘ p) q) ⟩
+  t [ ρ ∘ p ]                     ≡⟨ subComp t ρ p ⟩
+  (t [ ρ ]) [ p ]                 ≡⟨ sym (wk-[p] (t [ ρ ])) ⟩
+  weaken (t [ ρ ])                ∎ where open P.≡-Reasoning
+
+β-help : ∀ {m n} (t : Tm (suc n)) u (ρ : Subst m n) → t [ ↑ ρ ] [ id , u [ ρ ] ] ≡ t [ id , u ] [ ρ ]
+β-help t u ρ = begin
+  t [ ↑ ρ ] [ id , u [ ρ ] ]                          ≡⟨ sym (subComp t (↑ ρ) (id , u [ ρ ])) ⟩
+  t [ ↑ ρ ∘ (id , u [ ρ ]) ]                          ≡⟨⟩
+  t [ (weaken-subst ρ , q) ∘ (id , u [ ρ ]) ]         ≡⟨ cong (λ x → t [ (x , q) ∘ (id , u [ ρ ]) ]) (sym (mapWk-∘p _)) ⟩
+  t [ (ρ ∘ p , q) ∘ (id , u [ ρ ]) ]                  ≡⟨⟩
+  t [ (ρ ∘ p) ∘ (id , u [ ρ ]) , u [ ρ ] ]            ≡⟨ cong (λ x → t [ x , u [ ρ ] ]) (assoc ρ p _) ⟩
+  t [ ρ ∘ (p ∘ (id , u [ ρ ])) , u [ ρ ] ]            ≡⟨ cong (λ x → t [ ρ ∘ x , u [ ρ ] ]) (pCons _ _) ⟩
+  t [ ρ ∘ id , u [ ρ ] ]                              ≡⟨ cong (λ x → t [ x , u [ ρ ] ]) (idR ρ) ⟩
+  t [ ρ , u [ ρ ] ]                                   ≡⟨ cong (λ x → t [ x , u [ ρ ] ]) (sym (idL ρ)) ⟩
+  t [ id ∘ ρ , u [ ρ ] ]                              ≡⟨⟩
+  t [ (id , u) ∘ ρ ]                                  ≡⟨ subComp t (id , u) ρ ⟩
+  t [ id , u ] [ ρ ]                                  ∎ where open P.≡-Reasoning
+
+congSub-t : ∀ {m n} {t t' : Tm n} {ρ : Subst m n} → t ~βη t' → t [ ρ ] ~βη t' [ ρ ]
+congSub-t (varcong i)         = refl~βη
+congSub-t (apcong t~t' t~t'') = apcong (congSub-t t~t') (congSub-t t~t'')
+congSub-t (ξ t~t')            = ξ (congSub-t t~t')
+congSub-t {ρ = ρ} (β t u)
+  rewrite sym $ β-help t u ρ = β (t [ ↑ ρ ]) (u [ ρ ])
+congSub-t {ρ = ρ} (η a)
+  rewrite cong (ƛ F.∘ (_· q)) (sym (η-help a ρ)) = η (a [ ρ ])
+congSub-t (sym~βη t~t')         = sym~βη (congSub-t t~t')
+congSub-t (trans~βη t~t' t~t'') = trans~βη (congSub-t t~t') (congSub-t t~t'')
+
+congSub-s : ∀ {m n} {t : Tm n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → t [ ρ ] ~βη t [ ρ' ]
+congSub-s {ρ = []} {[]}     ⋄            = refl~βη
+congSub-s {t = var zero}    (ext x ρ≈ρ') = x
+congSub-s {t = var (suc i)} (ext x ρ≈ρ') = congSub-s {t = var i} ρ≈ρ'
+congSub-s {t = a · b}       (ext x ρ≈ρ') = apcong (congSub-s {t = a} (ext x ρ≈ρ')) (congSub-s {t = b} (ext x ρ≈ρ'))
+congSub-s {t = ƛ b}         (ext x ρ≈ρ') = ξ (congSub-s {t = b} (↑ρ-pr (ext x ρ≈ρ')))
+
+cong-[] : ∀ {m n} {t t' : Tm n} {ρ ρ' : Subst m n} →
+           t ~βη t' → ρ ≈βη ρ' →
+           t [ ρ ] ~βη t' [ ρ' ]
+cong-[] {t' = t'} t~t' ρ≈ρ' = trans~βη (congSub-t t~t') (congSub-s {t = t'} ρ≈ρ')
+
+cong-∘≈ : ∀ {m n k} {ρ σ : Subst m n} {ρ' σ' : Subst k m} →
+           ρ ≈βη σ → ρ' ≈βη σ' →
+           ρ ∘ ρ' ≈βη σ ∘ σ'
+cong-∘≈ ⋄           ρ'~σ'         = ⋄
+cong-∘≈ (ext t ρ≈σ) ⋄             = ext (cong-[] t ⋄) (cong-∘≈ ρ≈σ ⋄)
+cong-∘≈ (ext t ρ≈σ) (ext u ρ'≈σ') = ext (cong-[] t (ext u ρ'≈σ')) (cong-∘≈ ρ≈σ (ext u ρ'≈σ'))
