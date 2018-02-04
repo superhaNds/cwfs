@@ -11,11 +11,9 @@ import Relation.Binary.EqReasoning as EqR
 
 ⟦_⟧  : ∀ {n} → Tm-λ n → Tm-cwf n
 ⟦_⟧' : ∀ {m n} → Sub-λ m n → Sub-cwf m n
-⟦_⟧C : ∀ {n} → Ctx-λ n → Ctx-cwf n
 
 ⟪_⟫ : ∀ {n} → Tm-cwf n → Tm-λ n
 ⟪_⟫' : ∀ {m n} → Sub-cwf m n → Sub-λ m n
-⟪_⟫C : ∀ {n} → Ctx-cwf n → Ctx-λ n
 
 varCwf : ∀ {n} (i : Fin n) → Tm-cwf n 
 varCwf zero    = q
@@ -54,17 +52,6 @@ postulate
   ⟦⟧-∘-dist : ∀ {m n k} (σ : Sub-λ n k) (γ : Sub-λ m n) → ⟦ σ ∘λ γ ⟧' ≋ ⟦ σ ⟧' ∘ ⟦ γ ⟧'
 
   p-inverse : ∀ {n} → p {n} ≋ ⟦ p-λ ⟧'
-
-{-
-ct-λ⇒cwf : ∀ {n} (Γ : Ctx-λ n)   → ⟪ ⟦ Γ ⟧C ⟫C ≡ Γ
-ct-cwf⇒λ : ∀ {n} (Γ : Ctx-cwf n) → ⟦ ⟪ Γ ⟫C ⟧C ≡ Γ
-
-ct-λ⇒cwf ⋄       = refl
-ct-λ⇒cwf (Γ ∙ A) = {!!}
-
-ct-cwf⇒λ ⋄       = refl
-ct-cwf⇒λ (Γ ∙ A) = {!!} 
--}
 
 sub-comm : ∀ {m n} (t : Tm-λ n) (σ : Sub-λ m n) → ⟦ t [ σ ]λ ⟧ ≈ ⟦ t ⟧ [ ⟦ σ ⟧' ]
 sub-comm (var zero)    (t ∷ σ) = sym≈ (qCons ⟦ t ⟧ ⟦ σ ⟧')

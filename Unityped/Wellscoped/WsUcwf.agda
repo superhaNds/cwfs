@@ -196,34 +196,28 @@ Tm-ucwf = record
             ; cong-sub = congSub
             ; cong-∘ = cong-∘
             }
-{- 
+ 
 ------------------------------------------------------------------------------------
 -- Tm is also a Ucwf with lambda - application
 
-abs : ∀ {n m} (t : Tm (1 + n)) (σ : Subst m n) → ƛ t [ σ ] ≡ ƛ (t [ (σ ∘ p) , q ])
-abs t σ = sym (cong (λ x → ƛ (t [ x , q ])) (mapWk-∘p σ))
+abs : ∀ {n m} (σ : Subst m n) t → ƛ t [ σ ] ≡ ƛ (t [ (σ ∘ p) , q ])
+abs σ t = sym (cong (λ x → ƛ (t [ x , q ])) (mapWk-∘p σ))
 
-appSub : ∀ {n m} (t u : Tm n) (ρ : Subst m n) → t [ ρ ] · u [ ρ ] ≡ (t · u) [ ρ ]
-appSub t u ρ = refl 
+appSub : ∀ {n m} (ρ : Subst m n) t u → t [ ρ ] · u [ ρ ] ≡ (t · u) [ ρ ]
+appSub _ _ _ = refl 
 
 Tm-λ-ucwf : Lambda-ucwf
-Tm-λ-ucwf = record { ucwf   = Tm-ucwf
-                   ; ƛ      = ƛ
-                   ; _·_    = _·_
-                   ; cong-ƛ = cong-ƛ
-                   ; cong-· = cong-ap
-                   ; app    = appSub
-                   ; abs    = abs
-                   }
+Tm-λ-ucwf = record
+              { ucwf = Tm-ucwf
+              ; lam = ƛ
+              ; app = _·_
+              ; subApp = appSub
+              ; subLam = abs
+              ; cong-lam = cong-ƛ
+              ; cong-app = cong₂ _·_
+              }
+                   
 {-
 η′ : ∀ {n} (t : Tm n) → ƛ (t [ p ] · q) ~ t
 η′ t = trans~ (cong≡~ (λ x → ƛ (x · q)) (sym $ wk-[p] t)) (η t) 
-
-
-Tm-λβη-ucwf : Lambda-βη-ucwf
-Tm-λβη-ucwf = record { lambda-ucwf = Tm-λ-ucwf
-                     ; β   = β
-                     ; η   = η′
-                     }
--}
 -}

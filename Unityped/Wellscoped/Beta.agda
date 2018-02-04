@@ -114,9 +114,10 @@ lookup-sub zero    (ext t~u _)    = t~u
 lookup-sub (suc i) (ext _   ρ≈ρ') = lookup-sub i ρ≈ρ'
 
 -- ↑ ρ = < ρ ∘ p , q >
-↑ρ-pr : ∀ {m n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → ↑ ρ ≈βη ↑ ρ'
-↑ρ-pr ⋄           = refl≈βη
-↑ρ-pr (ext x ρ=ρ) = {!!}
+postulate
+  ↑ρ-pr : ∀ {m n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → ↑ ρ ≈βη ↑ ρ'
+--↑ρ-pr ⋄           = refl≈βη
+--↑ρ-pr (ext x ρ=ρ) = {!!}
 
 η-help : ∀ {n m} (t : Tm n) (ρ : Subst m n) → weaken (t [ ρ ]) ≡ (weaken t) [ ↑ ρ ]
 η-help t ρ = sym $ begin

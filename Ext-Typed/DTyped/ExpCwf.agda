@@ -262,10 +262,10 @@ data _⊢_∈_ where
             → A' ≈ A
             → Γ ⊢ t ∈ A'
 
-  {-tm-tcon : ∀ {n} {Γ : Ctx n} {A t t'}
+ {- tm-tcon : ∀ {n} {Γ : Ctx n} {A t t'}
             → Γ ⊢ t ∈ A
             → t ≈ t'
-            → Γ ⊢ t' ∈ A-}
+            → Γ ⊢ t' ∈ A -}
 
 data _▹_⊢_ where
 
@@ -326,3 +326,4 @@ lemma-2 (tm-app ⊢A ⊢B _ t∈A) =
   let Γ⊢ = lemma-1 ⊢A
   in ty-sub ⊢B (⊢<,> (⊢id Γ⊢) ⊢A (tm-conv (ty-conv ⊢A (sym≈ (subId _))) t∈A (subId _)))
 lemma-2 (tm-conv ⊢A' _ _) = ⊢A'
+
