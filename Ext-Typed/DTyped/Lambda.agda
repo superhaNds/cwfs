@@ -130,8 +130,8 @@ subComp (Π A B) ρ σ = begin
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ∘ ↑ σ ])   ≡⟨ cong-Π₂ (subComp B (↑ ρ) (↑ σ)) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ] [ ↑ σ ]) ∎
 
-
---
+-------------------------------------------------------------------------------------------
+-- Type system
 
 Ctx : Nat → Set
 Ctx n = Vec (Tm n) n
@@ -139,6 +139,7 @@ Ctx n = Vec (Tm n) n
 _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (suc n)
 Γ ∙ A = {!!}
 
+infix 5 _⊢
 infix 5 _⊢_
 infix 5 _⊢_∈_
 infix 5 _▹_⊢_
@@ -158,7 +159,7 @@ data _⊢ where
   c-ext : ∀ {n} {Γ : Ctx n} {A}
           → Γ ⊢
           → Γ ⊢ A
-          → (Γ ∙ A) ⊢
+          → Γ ∙ A ⊢
 
 data _⊢_ where
 
