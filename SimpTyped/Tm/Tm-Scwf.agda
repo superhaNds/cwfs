@@ -23,7 +23,7 @@ open P.≡-Reasoning
 idExt : ∀ {Γ α} → id {Γ ∙ α} ≡ (p , q)
 idExt = refl
 
--- terminal object is a left zero
+-- empty morphism is a left zero
 
 ttLzero : ∀ {Γ Δ} (ρ : Sub Γ Δ) → tt ∘ ρ ≡ tt
 ttLzero _ = refl

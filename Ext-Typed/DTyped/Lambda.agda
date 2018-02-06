@@ -1,5 +1,10 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-module Lambda where
+-----------------------------------------------------------------------------------------------
+-- An implementation of dependently typed lambda calculus with Π and universe ala Russel
+-- Substitution is formalized in the meta language, we have variables using de Bruijn indices
+-- and substitutions are vectors. Starting from raw syntax, we provide external typing
+-- relations.
+-----------------------------------------------------------------------------------------------
+module Ext-Typed.DTyped.Lambda where
 
 open import Function as F using (_$_)
 open import Data.Nat renaming (ℕ to Nat)
@@ -8,6 +13,9 @@ open import Data.Vec hiding ([_] ; _∈_)
 open import Data.Vec.Properties
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
+
+-----------------------------------------------------------------------------------------------
+-- Terms and types under one data type
 
 infix 10 _·_
 
@@ -21,11 +29,17 @@ data Tm (n : Nat) : Set where
 q : ∀ {n} → Tm (suc n)
 q = var zero
 
+-- Renamings (substitutions for variables)
+
 Ren : Nat → Nat → Set
 Ren m n = Vec (Fin m) n
 
+-- Substitutions
+
 Sub : Nat → Nat → Set
 Sub m n = Vec (Tm m) n
+
+-- identity substitution
 
 id : ∀ {n} → Sub n n
 id = tabulate var
@@ -38,8 +52,12 @@ _,_ : ∀ {m n} → Sub m n → Tm m → Sub m (suc n)
 p : ∀ {n} → Sub (suc n) n
 p = tabulate (var F.∘ suc)
 
+-- lifting and extending a renaming
+
 ↑-ren : ∀ {m n} → Ren m n → Ren (suc m) (suc n)
 ↑-ren ρ = zero ∷ map suc ρ
+
+-- renaming operation
 
 ren : ∀ {m n} → Tm n → Ren m n → Tm m
 ren (var i) ρ = var (lookup i ρ)
@@ -48,14 +66,22 @@ ren (t · u) ρ = (ren t ρ) · (ren u ρ)
 ren (Π A B) ρ = Π (ren A ρ) (ren B (↑-ren ρ))
 ren U       _ = U
 
+-- weakening a term
+
 wk : ∀ {n} → Tm n → Tm (suc n)
 wk t = ren t (tabulate suc)
+
+-- weakening a substitution
 
 wk-sub : ∀ {m n} → Sub m n → Sub (suc m) n
 wk-sub = map wk
 
+-- Lifting and extending a substitution
+
 ↑_ : ∀ {m n} (ρ : Sub m n) → Sub (suc m) (suc n)
 ↑ ρ = wk-sub ρ , q
+
+-- Substitution as a meta operation
 
 _[_] : ∀ {m n} (t : Tm n) (ρ : Sub m n) → Tm m
 var i   [ ρ ] = lookup i ρ
@@ -65,6 +91,8 @@ var i   [ ρ ] = lookup i ρ
 U       [ _ ] = U
 
 infix 8 _∘_
+
+-- Compositions of substitutions
 
 _∘_ : ∀ {m n k} → Sub n k → Sub m n → Sub m k
 ρ ∘ σ = map (_[ σ ]) ρ
@@ -125,7 +153,7 @@ subComp (var (suc i)) (x ∷ ρ) σ = subComp (var i) ρ σ
 subComp (ƛ t)   ρ σ = cong-ƛ (trans (cong (t [_]) (↑-dist ρ σ)) (subComp t (↑ ρ) (↑ σ)))
 subComp (t · u) ρ σ = cong₂ _·_ (subComp t ρ σ) (subComp u ρ σ)
 subComp (Π A B) ρ σ = begin
-  Π (A [ ρ ∘ σ ]) (B [ ↑ (ρ ∘ σ) ])     ≡⟨ cong-Π₁ (subComp A ρ σ) ⟩
+  Π (A [ ρ ∘ σ ])   (B [ ↑ (ρ ∘ σ) ])   ≡⟨ cong-Π₁ (subComp A ρ σ) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ (ρ ∘ σ) ])   ≡⟨ cong-Π₂ (cong (B [_]) (↑-dist ρ σ)) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ∘ ↑ σ ])   ≡⟨ cong-Π₂ (subComp B (↑ ρ) (↑ σ)) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ] [ ↑ σ ]) ∎
@@ -133,11 +161,16 @@ subComp (Π A B) ρ σ = begin
 -------------------------------------------------------------------------------------------
 -- Type system
 
-Ctx : Nat → Set
-Ctx n = Vec (Tm n) n
+-- same definitions as the explicit
 
-_∙_ : ∀ {n} → Ctx n → Tm n → Ctx (suc n)
-Γ ∙ A = {!!}
+data Ctx : Nat → Set where
+  ⋄   : Ctx 0
+  _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
+
+postulate 
+  lookup-ct : ∀ {n} (i : Fin n) (Γ : Ctx n) → Tm n
+--lookup-ct zero (Γ ∙ x) = {!x!}
+--lookup-ct (suc i) Γ = {!lookup-ct i ?!}
 
 infix 5 _⊢
 infix 5 _⊢_
@@ -154,7 +187,7 @@ data _▹_⊢_ : ∀ {m n} (Δ : Ctx m) (Γ : Ctx n) (γ : Sub m n) → Set
 
 data _⊢ where
 
-  c-emp : [] ⊢
+  c-emp : ⋄ ⊢
 
   c-ext : ∀ {n} {Γ : Ctx n} {A}
           → Γ ⊢
@@ -180,7 +213,7 @@ data _⊢_ where
 data _⊢_∈_ where
 
   tm-var : ∀ {n} {i : Fin n} {Γ : Ctx n}
-           → Γ ⊢ var i ∈ lookup i Γ
+           → Γ ⊢ var i ∈ lookup-ct i Γ
 
   tm-app : ∀ {n} {Γ : Ctx n} {f t A B}
            → Γ ⊢ A
@@ -200,7 +233,7 @@ data _▹_⊢_ where
 
   ⊢<> : ∀ {n} {Γ : Ctx n}
         → Γ ⊢
-        → Γ ▹ [] ⊢ []
+        → Γ ▹ ⋄ ⊢ []
 
   ⊢<,> : ∀ {m n} {Γ : Ctx n}
            {Δ : Ctx m} {A t γ}

@@ -1,29 +1,33 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-module RawIso where
+-----------------------------------------------------------------------------------------------
+-- The isomorphism at the raw level between two ΠU-cwfs objects (defined in ExpCwf and Lambda)
+-- We show there is an isomorphism of base categories and a natural isomorphism between
+-- the functors
+-----------------------------------------------------------------------------------------------
+module Ext-Typed.DTyped.RawIso where
 
 open import Data.Fin
 open import Function as F using (_$_)
-open import Lambda renaming (Ctx to Ctx-λ ; Tm to Tm-λ ; Sub to Sub-λ ; q to q-λ ; id to id-λ ; p to p-λ ; _∘_ to _∘λ_ ; _[_] to _[_]λ) hiding (subComp ; cong-sub)
-open import ExpCwf renaming (Ctx to Ctx-cwf ; Tm to Tm-cwf ; Sub to Sub-cwf)
+open import Ext-Typed.DTyped.Lambda renaming (Ctx to Ctx-λ ; Tm to Tm-λ ; Sub to Sub-λ ; q to q-λ ; id to id-λ ; p to p-λ ; _∘_ to _∘λ_ ; _[_] to _[_]λ) hiding (subComp ; cong-sub)
+open import Ext-Typed.DTyped.ExpCwf renaming (Ctx to Ctx-cwf ; Tm to Tm-cwf ; Sub to Sub-cwf)
 open import Data.Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_] ; cong-app)
 import Relation.Binary.EqReasoning as EqR
 
-⟦_⟧  : ∀ {n} → Tm-λ n → Tm-cwf n
-⟦_⟧' : ∀ {m n} → Sub-λ m n → Sub-cwf m n
+-----------------------------------------------------------------------------------------------
+-- Proofs
 
+-- Natural transformations between the functors of the cwfs
+⟦_⟧  : ∀ {n} → Tm-λ n → Tm-cwf n
 ⟪_⟫ : ∀ {n} → Tm-cwf n → Tm-λ n
+
+-- Functors between the base categories of the cwfs
+⟦_⟧' : ∀ {m n} → Sub-λ m n → Sub-cwf m n
 ⟪_⟫' : ∀ {m n} → Sub-cwf m n → Sub-λ m n
 
+-- Variable representation in the variable free calculus
 varCwf : ∀ {n} (i : Fin n) → Tm-cwf n 
 varCwf zero    = q
 varCwf (suc i) = varCwf i [ p ]
-
-⟦ []     ⟧C = ⋄
-⟦ A ∷ Γ ⟧C = {!!}
-
-⟪ ⋄     ⟫C = []
-⟪ Γ ∙ A ⟫C = {!!}
 
 ⟦ var i ⟧ = varCwf i
 ⟦ ƛ t   ⟧ = lam ⟦ t ⟧

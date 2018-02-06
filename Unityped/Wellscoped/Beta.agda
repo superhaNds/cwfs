@@ -113,12 +113,6 @@ lookup-sub ()      ⋄
 lookup-sub zero    (ext t~u _)    = t~u
 lookup-sub (suc i) (ext _   ρ≈ρ') = lookup-sub i ρ≈ρ'
 
--- ↑ ρ = < ρ ∘ p , q >
-postulate
-  ↑ρ-pr : ∀ {m n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → ↑ ρ ≈βη ↑ ρ'
---↑ρ-pr ⋄           = refl≈βη
---↑ρ-pr (ext x ρ=ρ) = {!!}
-
 η-help : ∀ {n m} (t : Tm n) (ρ : Subst m n) → weaken (t [ ρ ]) ≡ (weaken t) [ ↑ ρ ]
 η-help t ρ = sym $ begin
   weaken t [ ↑ ρ ]                ≡⟨⟩
@@ -150,10 +144,18 @@ congSub-t (apcong t~t' t~t'') = apcong (congSub-t t~t') (congSub-t t~t'')
 congSub-t (ξ t~t')            = ξ (congSub-t t~t')
 congSub-t {ρ = ρ} (β t u)
   rewrite sym $ β-help t u ρ = β (t [ ↑ ρ ]) (u [ ρ ])
-congSub-t {ρ = ρ} (η a)
-  rewrite cong (ƛ F.∘ (_· q)) (sym (η-help a ρ)) = η (a [ ρ ])
+congSub-t {ρ = ρ} (η a) rewrite cong (ƛ F.∘ (_· q)) (sym (η-help a ρ)) = η (a [ ρ ])
 congSub-t (sym~βη t~t')         = sym~βη (congSub-t t~t')
 congSub-t (trans~βη t~t' t~t'') = trans~βη (congSub-t t~t') (congSub-t t~t'')
+
+cong-∘≈₁ : ∀ {m n k} {σ σ' : Subst m n} {γ : Subst k m} → σ ≈βη σ' → σ ∘ γ ≈βη σ' ∘ γ
+cong-∘≈₁ {σ = []} {[]} ⋄ = refl≈βη
+cong-∘≈₁ {γ = γ} (ext t~u σ≈σ') = cong-ext (congSub-t {ρ = γ} t~u) (cong-∘≈₁ σ≈σ')
+
+↑ρ-pr : ∀ {m n} {γ δ : Subst m n} → γ ≈βη δ → ↑ γ ≈βη ↑ δ
+↑ρ-pr {γ = γ} {δ} γ≈δ
+  rewrite  sym (mapWk-∘p γ)
+         | sym (mapWk-∘p δ) = cong-ext refl~βη (cong-∘≈₁ γ≈δ)
 
 congSub-s : ∀ {m n} {t : Tm n} {ρ ρ' : Subst m n} → ρ ≈βη ρ' → t [ ρ ] ~βη t [ ρ' ]
 congSub-s {ρ = []} {[]}     ⋄            = refl~βη

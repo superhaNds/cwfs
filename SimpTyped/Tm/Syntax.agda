@@ -61,8 +61,7 @@ idV : ∀ {Γ} → Γ ▸ Γ
 idV {ε}     = tt
 idV {Γ ∙ α} = ▸-weaken Γ ⊆-∙ idV , here
 
-map-∈ : ∀ {Δ Γ α} (f : ∀ {α α'} → α ∈ Δ → α ∈ Δ ∙ α') →
-        Δ ▸ Γ → (Δ ∙ α) ▸ Γ
+map-∈ : ∀ {Δ Γ α} (f : ∀ {α α'} → α ∈ Δ → α ∈ Δ ∙ α') → Δ ▸ Γ → (Δ ∙ α) ▸ Γ
 map-∈ {Γ = ε}     f tt      = tt
 map-∈ {Γ = Γ ∙ x} f (ρ , t) = map-∈ f ρ , f t
 
@@ -98,14 +97,14 @@ Sub Δ (Γ ∙ t) = Sub Δ Γ × Tm Δ t
 
 -- variable substitution to term
 
-▸-to-▹ : ∀ {Δ Γ} (f : ∀ {α} → α ∈ Δ → Tm Δ α) → Δ ▸ Γ → Sub Δ Γ
-▸-to-▹ {Γ = ε}     f tt      = tt
-▸-to-▹ {Γ = Γ ∙ x} f (ρ , t) = ▸-to-▹ f ρ , f t
+▸-to-sub : ∀ {Δ Γ} (f : ∀ {α} → α ∈ Δ → Tm Δ α) → Δ ▸ Γ → Sub Δ Γ
+▸-to-sub {Γ = ε}     f tt      = tt
+▸-to-sub {Γ = Γ ∙ x} f (ρ , t) = ▸-to-sub f ρ , f t
 
 -- one version of projection substitution
 
 p' : ∀ {Γ α} → Sub (Γ ∙ α) Γ
-p' = ▸-to-▹ var pV
+p' = ▸-to-sub var pV
 
 -- weakening a substitution is mapping weaken on each term
 

@@ -279,4 +279,8 @@ Tm-λ-scwf = record
               }
 
 Tm-λ-βη-scwf : Lambda-βη-scwf
-Tm-λ-βη-scwf = record { lambda-scwf = Tm-λ-scwf ; β = β ; η = η }
+Tm-λ-βη-scwf = record
+                 { lambda-scwf = Tm-λ-scwf
+                 ; β = β
+                 ; η = η
+                 }

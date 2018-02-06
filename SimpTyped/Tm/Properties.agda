@@ -129,7 +129,7 @@ abstract
     trans (tkVar-wk-id v ⊆-∙)
           (cong (var F.∘ there) (sub-in-refl v))
 
-  lim : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) (v : α ∈ Γ) → var (tk∈ v ρ) ≡ tkVar v (▸-to-▹ var ρ)
+  lim : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) (v : α ∈ Γ) → var (tk∈ v ρ) ≡ tkVar v (▸-to-sub var ρ)
   lim {Γ ∙ x} (ρ , t) here      = refl
   lim {Γ ∙ x} (ρ , t) (there v) = lim ρ v
 
@@ -165,20 +165,20 @@ abstract
       (cong (there F.∘ there F.∘ flip sub-in v) ⊆-trans-refl))) 
       (cong (there F.∘ there) (sub-in-refl v))
 
-  tkVar-pV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (pVar {Γ} {α})) ≡ var (there v)
+  tkVar-pV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-sub var (pVar {Γ} {α})) ≡ var (there v)
   tkVar-pV here = refl
   tkVar-pV {Γ ∙ x} (there v) =
     trans (sym (lim pVar (there v)))
           (cong var (trans (tk∈-wk-there (there v)) refl))
 
-  tkVar-idV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (idV {Γ})) ≡ var v
+  tkVar-idV : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-sub var (idV {Γ})) ≡ var v
   tkVar-idV here = refl
   tkVar-idV {Γ ∙ x} (there v) =
     trans (sym (lim idV (there v)))
           (cong var (trans (tk∈-wk-id v (step ⊆-refl))
                            (cong there (sub-in-refl v))))
 
-  tkV-p-map : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-▹ var (pV {α = α})) ≡ var (there v)
+  tkV-p-map : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-sub var (pV {α = α})) ≡ var (there v)
   tkV-p-map here = refl
   tkV-p-map {Γ ∙ x} (there v) = trans (sym (lim pV (there v))) (cong var (tk∈-pV-th (there v)))
 
@@ -189,11 +189,11 @@ abstract
     cong₂ _,_ (for-all-tk γ γ' (hyp F.∘ there)) (hyp here)
  
   p-tk-same : ∀ {Γ α} (v : α ∈ Γ) →
-               tkVar v (▸-to-▹ (λ {τ} → var) (pV {α = α})) ≡ tkVar v p
+               tkVar v (▸-to-sub (λ {τ} → var) (pV {α = α})) ≡ tkVar v p
   p-tk-same {Γ} {α} v = sym (trans (tkVar-p v) (sym (tkV-p-map v)))
   
-  postulate pIsVarP : ∀ {Γ α} → ▸-to-▹ var (pV {Γ} {α}) ≡ p
-  --pIsVarP {Γ} {α} = for-all-tk (▸-to-▹ var (pV {Γ} {α})) p (λ v → {!p-tk-same v!})
+  postulate pIsVarP : ∀ {Γ α} → ▸-to-sub var (pV {Γ} {α}) ≡ p
+  --pIsVarP {Γ} {α} = for-all-tk (▸-to-sub var (pV {Γ} {α})) p (λ v → {!p-tk-same v!})
   
   subId : ∀ {Γ α} (t : Tm Γ α) → t [ id ] ≡ t
   subId (var ∈Γ) = tkVar-id ∈Γ

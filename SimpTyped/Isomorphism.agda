@@ -222,7 +222,7 @@ vars {Γ ∙ x} (ρ , t) = < vars ρ , varCwf t >
 ▸-to-hom {Γ = Γ ∙ x} f (ρ , t) = < ▸-to-hom f ρ , f t >
 
 map≈mapcwf : ∀ {Γ Δ} (ρ : Δ ▸ Γ) →
-              ⟦ ▸-to-▹ var ρ ⟧ˢ ≋ ▸-to-hom varCwf ρ
+              ⟦ ▸-to-sub var ρ ⟧ˢ ≋ ▸-to-hom varCwf ρ
 map≈mapcwf {ε}     tt      = refl≋
 map≈mapcwf {Γ ∙ x} (ρ , _) = cong-<,> refl≈ (map≈mapcwf ρ)
 
@@ -269,5 +269,5 @@ p≈vars {Γ ∙ x} {α} = let (ρ , t) = (pV {Γ ∙ x})
 p~⟦p⟧ {Γ} {α} =
   trans≋ p≈vars (trans≋ (vars≈hom _)
     (trans≋ (sym≋ (map≈mapcwf _)) g))
-  where g : ⟦ ▸-to-▹ var (pV {Γ} {α}) ⟧ˢ ≋ ⟦ p-λ ⟧ˢ
+  where g : ⟦ ▸-to-sub var (pV {Γ} {α}) ⟧ˢ ≋ ⟦ p-λ ⟧ˢ
         g rewrite pIsVarP {Γ} {α} = refl≋
