@@ -42,22 +42,16 @@ infix 4 _⊢_∈_
 
 data _⊢_∈_ {n} (Γ : Ctx n) : Tm n → Ty → Set where
 
-  var : ∀ {i} →
-
-          ------------------------
-           Γ ⊢ var i ∈ lookup i Γ
+  var : ∀ {i} →  Γ ⊢ var i ∈ lookup i Γ
   
-  ƛ   : ∀ {t α β} →
-  
-             Γ ∙ α ⊢ t ∈ β →
-           -------------------
-             Γ ⊢ ƛ t ∈ α ⇒ β
+  ƛ : ∀ {t α β}
+      → Γ ∙ α ⊢ t ∈ β
+      → Γ ⊢ ƛ t ∈ α ⇒ β
               
-  _·_ : ∀ {t u σ τ} →
-  
-           Γ ⊢ t ∈ σ ⇒ τ → Γ ⊢ u ∈ σ →
-          -----------------------------
-                Γ ⊢ t · u ∈ τ
+  _·_ : ∀ {t u σ τ}
+        → Γ ⊢ t ∈ σ ⇒ τ
+        → Γ ⊢ u ∈ σ
+        → Γ ⊢ t · u ∈ τ
 
 ⊢vr0 : ∀ {n α} {Γ : Ctx n} → Γ ∙ α ⊢ q ∈ α
 ⊢vr0 = var
@@ -107,13 +101,12 @@ infix  4 _▹_⊢_
 
 data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → SubT n m → Set where
 
-  []  : ∀ {Δ} → [] ▹ Δ ⊢ []
+  [] : ∀ {Δ} → [] ▹ Δ ⊢ []
   
-  ext : ∀ {m} {Γ : Ctx m} {Δ σ t ρ} →
-  
-          Δ ⊢ t ∈ σ → Γ ▹ Δ ⊢ ρ →
-          -----------------------
-             Γ ∙ σ ▹ Δ ⊢ ρ , t
+  ext : ∀ {m} {Γ : Ctx m} {Δ σ t ρ}
+        → Δ ⊢ t ∈ σ
+        → Γ ▹ Δ ⊢ ρ
+        → Γ ∙ σ ▹ Δ ⊢ ρ , t
 
 --------------------------------------------------------------------------------
 -- Typing rules for scwf, i.e., types are preserved for each operator 
@@ -126,47 +119,48 @@ module Var where
   map-suc-preserv []      []           = []
   map-suc-preserv (x ∷ ρ) (ext var ⊢ρ) = ext var (map-suc-preserv ρ ⊢ρ)
 
-  ↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Fin m n} →
-               Γ ▹ Δ ⊢ Vec.map var ρ →
-               Γ ∙ α ▹ Δ ∙ α ⊢ Vec.map var (VarSubst._↑ ρ)
+  ↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Fin m n}
+              → Γ ▹ Δ ⊢ Vec.map var ρ
+              → Γ ∙ α ▹ Δ ∙ α ⊢ Vec.map var (VarSubst._↑ ρ)
   ↑-preserv ⊢ρ = ext var (map-suc-preserv _ ⊢ρ)
 
   id-preserv : ∀ {n} {Γ : Ctx n} → Γ ▹ Γ ⊢ Vec.map var VarSubst.id
   id-preserv {Γ = []}    = []
   id-preserv {Γ = _ ∷ _} = ↑-preserv id-preserv
 
-  wk-preserv : ∀ {n} {Γ : Ctx n} {α} →
-                Γ ▹ Γ ∙ α ⊢ Vec.map var VarSubst.wk
+  wk-preserv : ∀ {n} {Γ : Ctx n} {α}
+               → Γ ▹ Γ ∙ α ⊢ Vec.map var VarSubst.wk
   wk-preserv = map-suc-preserv VarSubst.id id-preserv
 
-  lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x ρ →
-                   Γ ▹ Δ ⊢ Vec.map var ρ → Δ ⊢ var (lookup x ρ) ∈ lookup x Γ
+  lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} x ρ
+                   → Γ ▹ Δ ⊢ Vec.map var ρ
+                   → Δ ⊢ var (lookup x ρ) ∈ lookup x Γ
   lookup-preserv zero    (_ ∷ _) (ext var _) = var
   lookup-preserv (suc x) (_ ∷ ρ) (ext var ⊢ρ) = lookup-preserv x ρ ⊢ρ
 
-  []-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ} →
-                Γ ⊢ t ∈ α →
-                Γ ▹ Δ ⊢ Vec.map var ρ →
-                Δ ⊢ t /Var ρ ∈ α
+  []-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ}
+               → Γ ⊢ t ∈ α
+               → Γ ▹ Δ ⊢ Vec.map var ρ
+               → Δ ⊢ t /Var ρ ∈ α
   []-preserv (var {i}) ⊢ρ = lookup-preserv i _ ⊢ρ
   []-preserv (ƛ t)     ⊢ρ = ƛ ([]-preserv t (↑-preserv ⊢ρ))
   []-preserv (t · u)   ⊢ρ = []-preserv t ⊢ρ · []-preserv u ⊢ρ
 
-weaken-preserv : ∀ {n Γ α β} {t : Tm n} →
-                  Γ ⊢ t ∈ β →
-                  Γ ∙ α ⊢ weaken t ∈ β
+weaken-preserv : ∀ {n Γ α β} {t : Tm n}
+                 → Γ ⊢ t ∈ β
+                 → Γ ∙ α ⊢ weaken t ∈ β
 weaken-preserv t = Var.[]-preserv t Var.wk-preserv
 
-map-weaken-preserv : ∀ {m n Γ Δ α} {ρ : Sub Tm m n} →
-                      Γ ▹ Δ ⊢ ρ →
-                      Γ ▹ Δ ∙ α ⊢ Vec.map weaken ρ
-map-weaken-preserv []         = []
+map-weaken-preserv : ∀ {m n Γ Δ α} {ρ : Sub Tm m n}
+                     → Γ ▹ Δ ⊢ ρ
+                     → Γ ▹ Δ ∙ α ⊢ Vec.map weaken ρ
+map-weaken-preserv [] = []
 map-weaken-preserv (ext t ⊢ρ) =
   ext (weaken-preserv t) (map-weaken-preserv ⊢ρ)
 
-↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Tm m n} →
-             Γ ▹ Δ ⊢ ρ →
-             Γ ∙ α ▹ Δ ∙ α ⊢ ρ ↑
+↑-preserv : ∀ {m n Γ Δ α} {ρ : Sub Tm m n}
+            → Γ ▹ Δ ⊢ ρ
+            → Γ ∙ α ▹ Δ ∙ α ⊢ ρ ↑
 ↑-preserv ⊢ρ = ext var (map-weaken-preserv ⊢ρ)
 
 -- identity preserves
@@ -184,19 +178,18 @@ p-preserv {Γ = _ ∷ Γ} = map-weaken-preserv $ ↑-preserv id-preserv
 -- lookup preserves
 
 lookup-preserv : ∀ {m n} {Γ : Ctx m}
-                   {Δ : Ctx n} i {ρ} →
-                  Γ ▹ Δ ⊢ ρ →
-                  Δ ⊢ lookup i ρ ∈ lookup i Γ
+                   {Δ : Ctx n} i {ρ}
+                 → Γ ▹ Δ ⊢ ρ
+                 → Δ ⊢ lookup i ρ ∈ lookup i Γ
 lookup-preserv zero    (ext t ⊢ρ) = t
 lookup-preserv (suc x) (ext t ⊢ρ) = lookup-preserv x ⊢ρ
 
 -- substitution preserves
 
-subst-lemma : ∀ {m n} {Γ : Ctx m}
-                {Δ : Ctx n} {α t ρ} →
-               Γ ⊢ t ∈ α →
-               Γ ▹ Δ ⊢ ρ →
-               Δ ⊢ t [ ρ ] ∈ α                 
+subst-lemma : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} {α t ρ}
+              → Γ ⊢ t ∈ α
+              → Γ ▹ Δ ⊢ ρ
+              → Δ ⊢ t [ ρ ] ∈ α                 
 subst-lemma (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
 subst-lemma (ƛ t)     ⊢ρ = ƛ (subst-lemma t (↑-preserv ⊢ρ))
 subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
@@ -217,10 +210,10 @@ subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
              Θ ▹ Γ ⊢ ρ →
              Γ ▹ Δ ⊢ σ →
              Θ ▹ Δ ⊢ ρ ∘ σ
-∘-preserv []         _   = []
+∘-preserv [] _  = []
 ∘-preserv (ext x ⊢ρ) ⊢ρ' =
-  ∙-preserv (subst-lemma x ⊢ρ')
-            (∘-preserv ⊢ρ ⊢ρ')
+  ext (subst-lemma x ⊢ρ')
+      (∘-preserv ⊢ρ ⊢ρ')
 
 open TermLemmas tmLemmas public hiding (var)
 

@@ -81,6 +81,17 @@ wk-sub = map wk
 ↑_ : ∀ {m n} (ρ : Sub m n) → Sub (suc m) (suc n)
 ↑ ρ = wk-sub ρ , q
 
+id' : ∀ {n} → Sub n n
+id' {zero} = []
+id' {suc n} = ↑ id'
+
+wk⋆ : ∀ k {n} → Sub (k + n) n
+wk⋆ zero    = id'
+wk⋆ (suc k) = map wk (wk⋆ k)
+
+p' : ∀ {n} → Sub (suc n) n
+p' = wk⋆ 1
+
 -- Substitution as a meta operation
 
 _[_] : ∀ {m n} (t : Tm n) (ρ : Sub m n) → Tm m
@@ -127,7 +138,7 @@ postulate
   ↑-dist : ∀ {m n k} (ρ : Sub m n) (σ : Sub k m) → ↑ (ρ ∘ σ) ≡ ↑ ρ ∘ ↑ σ
 
   wk-sub-p : ∀ {n} {t : Tm n} → wk t ≡ t [ p ]
-
+  
 wkSub-∘-p : ∀ {m n} (ρ : Sub m n) → wk-sub ρ ≡ ρ ∘ p
 wkSub-∘-p [] = refl
 wkSub-∘-p (t ∷ ρ) = begin
@@ -157,87 +168,4 @@ subComp (Π A B) ρ σ = begin
   Π (A [ ρ ] [ σ ]) (B [ ↑ (ρ ∘ σ) ])   ≡⟨ cong-Π₂ (cong (B [_]) (↑-dist ρ σ)) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ∘ ↑ σ ])   ≡⟨ cong-Π₂ (subComp B (↑ ρ) (↑ σ)) ⟩
   Π (A [ ρ ] [ σ ]) (B [ ↑ ρ ] [ ↑ σ ]) ∎
-
--------------------------------------------------------------------------------------------
--- Type system
-
--- same definitions as the explicit
-
-data Ctx : Nat → Set where
-  ⋄   : Ctx 0
-  _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
-
-postulate 
-  lookup-ct : ∀ {n} (i : Fin n) (Γ : Ctx n) → Tm n
---lookup-ct zero (Γ ∙ x) = {!x!}
---lookup-ct (suc i) Γ = {!lookup-ct i ?!}
-
-infix 5 _⊢
-infix 5 _⊢_
-infix 5 _⊢_∈_
-infix 5 _▹_⊢_
-
-data _⊢    : ∀ {n} (Γ : Ctx n) → Set
-
-data _⊢_   : ∀ {n} (Γ : Ctx n) (A : Tm n) → Set
-
-data _⊢_∈_ : ∀ {n} (Γ : Ctx n) (t : Tm n) (A : Tm n) → Set
-
-data _▹_⊢_ : ∀ {m n} (Δ : Ctx m) (Γ : Ctx n) (γ : Sub m n) → Set
-
-data _⊢ where
-
-  c-emp : ⋄ ⊢
-
-  c-ext : ∀ {n} {Γ : Ctx n} {A}
-          → Γ ⊢
-          → Γ ⊢ A
-          → Γ ∙ A ⊢
-
-data _⊢_ where
-
-  ty-U : ∀ {n} {Γ : Ctx n}
-         → Γ ⊢
-         → Γ ⊢ U         
-
-  ty-w : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢
-         → Γ ⊢ A ∈ U
-         → Γ ⊢ A
-
-  ty-Π-F : ∀ {n} {Γ : Ctx n} {A B}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ⊢ Π A B
-
-data _⊢_∈_ where
-
-  tm-var : ∀ {n} {i : Fin n} {Γ : Ctx n}
-           → Γ ⊢ var i ∈ lookup-ct i Γ
-
-  tm-app : ∀ {n} {Γ : Ctx n} {f t A B}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ⊢ f ∈ Π A B
-           → Γ ⊢ t ∈ A
-           → Γ ⊢ f · t ∈ B [ id , t ]
-           
-  tm-Π-I : ∀ {n} {Γ : Ctx n}
-             {A B t}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ∙ A ⊢ t ∈ B
-           → Γ ⊢ ƛ t ∈ Π A B
-
-data _▹_⊢_ where
-
-  ⊢<> : ∀ {n} {Γ : Ctx n}
-        → Γ ⊢
-        → Γ ▹ ⋄ ⊢ []
-
-  ⊢<,> : ∀ {m n} {Γ : Ctx n}
-           {Δ : Ctx m} {A t γ}
-         → Γ ▹ Δ ⊢ γ
-         → Δ ⊢ A
-         → Γ ⊢ t ∈ A [ γ ]
-         → Γ ▹ Δ ∙ A ⊢ (γ , t)
+        
