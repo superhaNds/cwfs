@@ -283,7 +283,6 @@ data _⊢_ where
          → Γ ⊢ U         
 
   ty-w : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢
          → Γ ⊢ A ∈ U
          → Γ ⊢ A
 
@@ -372,6 +371,12 @@ lemma-2 : ∀ {n} {Γ : Ctx n} {A t}
           → Γ ⊢ t ∈ A
           → Γ ⊢ A
 
+-- And the context
+
+lemma-2B : ∀ {n} {Γ : Ctx n} {A t}
+           → Γ ⊢ t ∈ A
+           → Γ ⊢
+           
 -- Given a well-formed substitution between two contexts, the contexts must be well-formed
 
 lemma-3 : ∀ {m n} {Γ : Ctx n}
@@ -386,9 +391,16 @@ lemma-3 (⊢<> Δ⊢)       = c-emp , Δ⊢
 lemma-3 (⊢<,> ⊢γ ⊢A _) = c-ext (lemma-1 ⊢A) ⊢A , π₂ (lemma-3 ⊢γ)
 
 lemma-1 (ty-U Γ⊢)     = Γ⊢
-lemma-1 (ty-w Γ⊢ A∈U) = Γ⊢
+lemma-1 (ty-w A∈U)    = lemma-2B A∈U
 lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
 lemma-1 (ty-sub _ ⊢γ) = π₂ (lemma-3 ⊢γ)
+
+lemma-2B (tm-q ⊢A)          = c-ext (lemma-1 ⊢A) ⊢A
+lemma-2B (tm-sub t∈A ⊢γ)    = π₂ (lemma-3 ⊢γ)
+lemma-2B (tm-app _ _ _ t∈A) = lemma-2B t∈A
+lemma-2B (tm-conv x t∈A x₁) = lemma-2B t∈A
+lemma-2B (tm-Π-I _ _ t∈A) with lemma-2B t∈A
+... | c-ext Γ⊢ _ = Γ⊢
 
 lemma-2 (tm-q ⊢A)            = ty-sub ⊢A (⊢p ⊢A)
 lemma-2 (tm-sub t∈A ⊢γ)      = ty-sub (lemma-2 t∈A) ⊢γ

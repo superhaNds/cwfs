@@ -138,7 +138,9 @@ postulate
   ↑-dist : ∀ {m n k} (ρ : Sub m n) (σ : Sub k m) → ↑ (ρ ∘ σ) ≡ ↑ ρ ∘ ↑ σ
 
   wk-sub-p : ∀ {n} {t : Tm n} → wk t ≡ t [ p ]
-  
+
+  pCons : ∀ {m n} {t : Tm m} (ρ : Sub m n) → p ∘ (ρ , t) ≡ ρ
+
 wkSub-∘-p : ∀ {m n} (ρ : Sub m n) → wk-sub ρ ≡ ρ ∘ p
 wkSub-∘-p [] = refl
 wkSub-∘-p (t ∷ ρ) = begin
