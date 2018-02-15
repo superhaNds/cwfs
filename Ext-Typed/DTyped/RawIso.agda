@@ -71,12 +71,18 @@ sub-comm (t · u) σ =
 sub-comm U       _ = sym≈ subU
 sub-comm (ƛ t)   σ = {!!}
 sub-comm (Π A B) σ = begin
-  Π ⟦ A [ σ ]λ ⟧ ⟦ B [ ↑ σ ]λ ⟧                              ≈⟨ cong-Π (sub-comm A σ) (sub-comm B (↑ σ)) ⟩
-  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ wk-sub σ ⟧' , q > ])     ≈⟨ {!!} ⟩
-  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ∘λ p-λ ⟧' , q > ])     ≈⟨ cong-Π refl≈ (cong-sub refl≈ (cong-<, (⟦⟧-∘-dist σ p-λ))) ⟩
-  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ⟧' ∘ ⟦ p-λ ⟧' , q > ]) ≈⟨ cong-Π refl≈ (cong-sub refl≈ (cong-<, (cong-∘₂ (sym≋ p-inverse)))) ⟩
-  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ⟧' ∘ p , q > ])        ≈⟨ sym≈ (subΠ ⟦ σ ⟧' ⟦ A ⟧ ⟦ B ⟧) ⟩
-  Π ⟦ A ⟧ ⟦ B ⟧ [ ⟦ σ ⟧' ]                                   ∎
+  Π ⟦ A [ σ ]λ ⟧ ⟦ B [ ↑ σ ]λ ⟧
+    ≈⟨ cong-Π (sub-comm A σ) (sub-comm B (↑ σ)) ⟩
+  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ wk-sub σ ⟧' , q > ])
+    ≈⟨ {!!} ⟩
+  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ∘λ p-λ ⟧' , q > ])
+    ≈⟨ cong-Π refl≈ (cong-sub refl≈ (cong-<, (⟦⟧-∘-dist σ p-λ))) ⟩
+  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ⟧' ∘ ⟦ p-λ ⟧' , q > ])
+    ≈⟨ cong-Π refl≈ (cong-sub refl≈ (cong-<, (cong-∘₂ (sym≋ p-inverse)))) ⟩
+  Π (⟦ A ⟧ [ ⟦ σ ⟧' ]) (⟦ B ⟧ [ < ⟦ σ ⟧' ∘ p , q > ])
+    ≈⟨ sym≈ (subΠ ⟦ σ ⟧' ⟦ A ⟧ ⟦ B ⟧) ⟩
+  Π ⟦ A ⟧ ⟦ B ⟧ [ ⟦ σ ⟧' ]
+    ∎
   where open EqR (TmSetoid {_})
 
 t-λ⇒cwf : ∀ {n} (t : Tm-λ n) → ⟪ ⟦ t ⟧ ⟫ ≡ t

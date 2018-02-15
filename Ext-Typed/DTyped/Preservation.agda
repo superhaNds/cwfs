@@ -57,10 +57,10 @@ data _⊢_ where
          → Γ ⊢
          → Γ ⊢ U         
 
-  ty-w : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢
-         → Γ ⊢ A ∈ U
-         → Γ ⊢ A
+  ty-∈U : ∀ {n} {Γ : Ctx n} {A}
+          → Γ ⊢
+          → Γ ⊢ A ∈ U
+          → Γ ⊢ A
 
   ty-Π-F : ∀ {n} {Γ : Ctx n} {A B}
            → Γ ⊢ A
@@ -71,9 +71,8 @@ getTy : ∀ {n} {Γ : Ctx n} {A} → Γ ⊢ A → Tm n
 getTy {A = A} Γ⊢A = A
 
 data _⊢_∈_ where
-
   tm-var : ∀ {n} {i : Fin n} {Γ : Ctx n}
-           → Γ ⊢ lookup-ct i Γ
+           --→ Γ ⊢
            → Γ ⊢ var i ∈ lookup-ct i Γ
 
   tm-app : ∀ {n} {Γ : Ctx n} {f t A B}
@@ -83,8 +82,7 @@ data _⊢_∈_ where
            → Γ ⊢ t ∈ A
            → Γ ⊢ f · t ∈ B [ id , t ]
            
-  tm-Π-I : ∀ {n} {Γ : Ctx n}
-             {A B t}
+  tm-Π-I : ∀ {n} {Γ : Ctx n} {A B t}
            → Γ ⊢ A
            → Γ ∙ A ⊢ B
            → Γ ∙ A ⊢ t ∈ B
@@ -96,8 +94,7 @@ data _▹_⊢_ where
         → Γ ⊢
         → Γ ▹ ⋄ ⊢ []
 
-  ⊢<,> : ∀ {m n} {Γ : Ctx n}
-           {Δ : Ctx m} {A t γ}
+  ⊢<,> : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {A t γ}
          → Γ ▹ Δ ⊢ γ
          → Δ ⊢ A
          → Γ ⊢ t ∈ A [ γ ]
@@ -165,7 +162,7 @@ lemma-3-2 (⊢<,> ⊢ρ _ _) = lemma-3-2 ⊢ρ
 
 lemma-1 : ∀ {n} {Γ : Ctx n} {A} → Γ ⊢ A → Γ ⊢
 lemma-1 (ty-U Γ⊢)     = Γ⊢
-lemma-1 (ty-w Γ⊢ _)   = Γ⊢
+lemma-1 (ty-∈U Γ⊢ _)   = Γ⊢
 lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
 
 p-preserv : ∀ {n} {Γ : Ctx n} {A} → Γ ⊢ A → Γ ∙ A ▹ Γ ⊢ p'
@@ -212,7 +209,7 @@ ty-sub : ∀ {m n} {Δ : Ctx m}
           → Γ ▹ Δ ⊢ γ
           → Γ ⊢ A [ γ ]
 ty-sub (ty-U x) ⊢γ = ty-U (lemma-3-2 ⊢γ)
-ty-sub (ty-w Δ⊢ A∈U) ⊢γ = {!!}
+ty-sub (ty-∈U Δ⊢ A∈U) ⊢γ = {!!}
 ty-sub (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (ty-sub ⊢A ⊢γ) {!!}          
 
 {-
@@ -250,4 +247,3 @@ comp-pres {Γ = Γ} {Δ = Δ} {Θ = Θ ∙ A} {γ = t ∷ γ} {δ}
             = ⊢<,> (comp-pres ⊢γ ⊢δ) ⊢A (h (subst-lemma t∈A[γ] ⊢δ))
         where h : Δ ⊢ t [ δ ] ∈ (A [ γ ] [ δ ]) → Δ ⊢ t [ δ ] ∈ (A [ γ ∘ δ ])
               h hyp rewrite subComp A γ δ = hyp
-  
