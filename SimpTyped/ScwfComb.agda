@@ -176,8 +176,8 @@ refl≈ {t = t} = trans≈ (sym≈ (subId t)) (subId t)
   ; trans = trans≈
   }
 
-TmCwf : ∀ {Γ α} → Setoid _ _
-TmCwf {Γ} {α} = record
+TmSetoid : ∀ {Γ α} → Setoid _ _
+TmSetoid {Γ} {α} = record
   { Carrier = Tm Γ α
   ; _≈_ = _≈_
   ; isEquivalence = ≈equivr
@@ -193,8 +193,8 @@ refl≋ {γ = γ} = trans≋ (sym≋ (idL γ)) (idL γ)
   ; trans = trans≋
   }
 
-HmSetoid : ∀ {Γ Δ} → Setoid _ _
-HmSetoid {Γ} {Δ} = record
+SubSetoid : ∀ {Γ Δ} → Setoid _ _
+SubSetoid {Γ} {Δ} = record
   { Carrier = Sub Γ Δ
   ; _≈_ = _≋_
   ; isEquivalence = ≋equivr
@@ -215,7 +215,7 @@ ter-arrow γ = begin
     ≈⟨ <>Lzero γ ⟩
   <>
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 -- Surjective pairing
 
@@ -229,7 +229,7 @@ surj-<,> γ = begin
     ≈⟨ compExt q p γ ⟩
   < p ∘ γ , q [ γ ] >
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 Tm-Scwf : Scwf
 Tm-Scwf = record

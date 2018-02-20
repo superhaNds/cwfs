@@ -31,108 +31,105 @@ varCwf (there φ) = varCwf φ [ p ]
 
 ⟦_⟧  : ∀ {Γ α} → Tm-λ Γ α → Tm-cwf Γ α
 ⟪_⟫  : ∀ {Γ α} → Tm-cwf Γ α → Tm-λ Γ α
-⟪_⟫ʰ : ∀ {Γ Δ} → Sub-cwf Δ Γ → Sub-λ Δ Γ
-⟦_⟧ˢ : ∀ {Γ Δ} → Sub-λ Δ Γ → Sub-cwf Δ Γ
+⟪_⟫' : ∀ {Γ Δ} → Sub-cwf Δ Γ → Sub-λ Δ Γ
+⟦_⟧' : ∀ {Γ Δ} → Sub-λ Δ Γ → Sub-cwf Δ Γ
 
 ⟦ var ∈Γ ⟧  = varCwf ∈Γ
 ⟦ t · u ⟧   = app ⟦ t ⟧ ⟦ u ⟧
 ⟦ ƛ t ⟧     = lam ⟦ t ⟧
 
 ⟪ q ⟫       = q-λ
-⟪ t [ ρ ] ⟫ = ⟪ t ⟫ [ ⟪ ρ ⟫ʰ ]λ
+⟪ t [ ρ ] ⟫ = ⟪ t ⟫ [ ⟪ ρ ⟫' ]λ
 ⟪ lam t ⟫   = ƛ ⟪ t ⟫
 ⟪ app t u ⟫ = ⟪ t ⟫ · ⟪ u ⟫
 
-⟦_⟧ˢ {ε}     _       = <>
-⟦_⟧ˢ {Γ ∙ α} (ρ , t) = < ⟦ ρ ⟧ˢ , ⟦ t ⟧ >
+⟦_⟧' {ε}     _       = <>
+⟦_⟧' {Γ ∙ α} (ρ , t) = < ⟦ ρ ⟧' , ⟦ t ⟧ >
 
-⟪ <> ⟫ʰ        = tt
-⟪ id ⟫ʰ        = id-λ
-⟪ p  ⟫ʰ        = p-λ
-⟪ γ ∘ γ' ⟫ʰ    = ⟪ γ ⟫ʰ ∘λ ⟪ γ' ⟫ʰ
-⟪ < γ , t > ⟫ʰ = ⟪ γ ⟫ʰ , ⟪ t ⟫
+⟪ <> ⟫'        = tt
+⟪ id ⟫'        = id-λ
+⟪ p  ⟫'        = p-λ
+⟪ γ ∘ γ' ⟫'    = ⟪ γ ⟫' ∘λ ⟪ γ' ⟫'
+⟪ < γ , t > ⟫' = ⟪ γ ⟫' , ⟪ t ⟫
 
 -------------------------------------------------------------------------------
 -- Inverse proofs
 
-sub-cwf⇒λ : ∀ {Γ Δ} (γ : Sub-cwf Γ Δ) → ⟦ ⟪ γ ⟫ʰ ⟧ˢ ≋ γ
+sub-cwf⇒λ : ∀ {Γ Δ} (γ : Sub-cwf Γ Δ) → ⟦ ⟪ γ ⟫' ⟧' ≋ γ
 
 tm-λ⇒cwf : ∀ {Γ α} (t : Tm-λ Γ α) → ⟪ ⟦ t ⟧ ⟫ ≡ t
 
 tm-cwf⇒λ : ∀ {Γ α} (t : Tm-cwf Γ α) → ⟦ ⟪ t ⟫ ⟧ ≈ t
 
-sub-λ⇒cwf : ∀ {Γ Δ} (γ : Sub-λ Γ Δ) → ⟪ ⟦ γ ⟧ˢ ⟫ʰ ≡ γ
+sub-λ⇒cwf : ∀ {Γ Δ} (γ : Sub-λ Γ Δ) → ⟪ ⟦ γ ⟧' ⟫' ≡ γ
 
 -------------------------------------------------------------------------------
 -- supporting properties
 
-p~⟦p⟧ : ∀ {Γ α} → p {Γ} {α} ≋ ⟦ p-λ {Γ} ⟧ˢ
+p-inverse : ∀ {Γ α} → p {Γ} {α} ≋ ⟦ p-λ {Γ} ⟧'
 
 []-comm : ∀ {Γ Δ α} (t : Tm-λ Γ α) (ρ : Sub-λ Δ Γ) →
-           ⟦ t [ ρ ]λ ⟧ ≈ ⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]
+           ⟦ t [ ρ ]λ ⟧ ≈ ⟦ t ⟧ [ ⟦ ρ ⟧' ]
           
 ⟦⟧-∘-dist : ∀ {Γ Δ Θ} (ρ : Sub-λ Δ Θ) (σ : Sub-λ Γ Δ) →
-            ⟦ ρ ∘λ σ ⟧ˢ ≋ ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ
-
-postulate ⟦⟧-∘-distₚ : ∀ {Γ Δ Θ} (ρ : Sub-λ Δ Θ) (σ : Sub-λ Γ Δ) → ⟦ ρ ∘λ σ ⟧ˢ ≋ ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ
+            ⟦ ρ ∘λ σ ⟧' ≋ ⟦ ρ ⟧' ∘ ⟦ σ ⟧'
 
 -- substitution commutes to the other object
 
 []-comm {ε} (var ()) tt
-
-[]-comm (var here) (ρ , t) = sym≈ (qCons ⟦ t ⟧ ⟦ ρ ⟧ˢ)
+[]-comm (var here) (ρ , t) = sym≈ (qCons ⟦ t ⟧ ⟦ ρ ⟧')
 []-comm (var (there ∈Γ)) (ρ , t) = begin
   ⟦ tkVar ∈Γ ρ ⟧
     ≈⟨ []-comm (var ∈Γ) ρ ⟩
-  ⟦ var ∈Γ ⟧ [ ⟦ ρ ⟧ˢ ]
-    ≈⟨ cong-sub refl≈ (sym≋ (pCons ⟦ t ⟧ ⟦ ρ ⟧ˢ)) ⟩
-  ⟦ var ∈Γ ⟧ [ p ∘ < ⟦ ρ ⟧ˢ , ⟦ t ⟧ > ]
-    ≈⟨ subComp ⟦ var ∈Γ ⟧ p < ⟦ ρ ⟧ˢ , ⟦ t ⟧ > ⟩
-  ⟦ var ∈Γ ⟧ [ p ] [ < ⟦ ρ ⟧ˢ , ⟦ t ⟧ > ]
+  ⟦ var ∈Γ ⟧ [ ⟦ ρ ⟧' ]
+    ≈⟨ cong-sub refl≈ (sym≋ (pCons ⟦ t ⟧ ⟦ ρ ⟧')) ⟩
+  ⟦ var ∈Γ ⟧ [ p ∘ < ⟦ ρ ⟧' , ⟦ t ⟧ > ]
+    ≈⟨ subComp ⟦ var ∈Γ ⟧ p < ⟦ ρ ⟧' , ⟦ t ⟧ > ⟩
+  ⟦ var ∈Γ ⟧ [ p ] [ < ⟦ ρ ⟧' , ⟦ t ⟧ > ]
     ∎
-  where open EqR (TmCwf {_})
+  where open EqR (TmSetoid {_})
   
 []-comm (t · u) ρ = begin
   app ⟦ t [ ρ ]λ ⟧ ⟦ u [ ρ ]λ ⟧
     ≈⟨ cong-app ([]-comm t ρ) refl≈ ⟩
-  app (⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]) ⟦ u [ ρ ]λ ⟧
+  app (⟦ t ⟧ [ ⟦ ρ ⟧' ]) ⟦ u [ ρ ]λ ⟧
     ≈⟨ cong-app refl≈ ([]-comm u ρ) ⟩
-  app (⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]) (⟦ u ⟧ [ ⟦ ρ ⟧ˢ ])
-    ≈⟨ subApp ⟦ t ⟧ ⟦ u ⟧ ⟦ ρ ⟧ˢ ⟩
-  app ⟦ t ⟧ ⟦ u ⟧ [ ⟦ ρ ⟧ˢ ]
+  app (⟦ t ⟧ [ ⟦ ρ ⟧' ]) (⟦ u ⟧ [ ⟦ ρ ⟧' ])
+    ≈⟨ subApp ⟦ t ⟧ ⟦ u ⟧ ⟦ ρ ⟧' ⟩
+  app ⟦ t ⟧ ⟦ u ⟧ [ ⟦ ρ ⟧' ]
     ∎
-  where open EqR (TmCwf {_})
+  where open EqR (TmSetoid {_})
   
 []-comm {Γ} (ƛ {α = α} t) ρ = begin
   lam ⟦ t [ wk-sub Γ ⊆-∙ ρ , var here ]λ ⟧
     ≈⟨ cong-lam ([]-comm t (wk-sub Γ ⊆-∙ ρ , var here)) ⟩
-  lam (⟦ t ⟧ [ < ⟦ wk-sub Γ ⊆-∙ ρ ⟧ˢ , q > ])
+  lam (⟦ t ⟧ [ < ⟦ wk-sub Γ ⊆-∙ ρ ⟧' , q > ])
     ≈⟨ cong-lam (cong-sub refl≈ (help)) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ∘λ p-λ ⟧ˢ , q > ])
-    ≈⟨ cong-lam (cong-sub refl≈ (cong-<,> refl≈ (⟦⟧-∘-distₚ ρ p-λ))) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ ⟦ p-λ ⟧ˢ , q > ])
-    ≈⟨ cong-lam (cong-sub refl≈ (cong-<,> refl≈ (cong-∘ refl≋ (sym≋ p~⟦p⟧)))) ⟩
-  lam (⟦ t ⟧ [ < ⟦ ρ ⟧ˢ ∘ p , q > ])
-    ≈⟨ sym≈ (subLam ⟦ t ⟧ ⟦ ρ ⟧ˢ) ⟩
-  lam ⟦ t ⟧ [ ⟦ ρ ⟧ˢ ]
+  lam (⟦ t ⟧ [ < ⟦ ρ ∘λ p-λ ⟧' , q > ])
+    ≈⟨ cong-lam (cong-sub refl≈ (cong-<,> refl≈ ({!!}))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧' ∘ ⟦ p-λ ⟧' , q > ])
+    ≈⟨ cong-lam (cong-sub refl≈ (cong-<,> refl≈ (cong-∘ refl≋ (sym≋ p-inverse)))) ⟩
+  lam (⟦ t ⟧ [ < ⟦ ρ ⟧' ∘ p , q > ])
+    ≈⟨ sym≈ (subLam ⟦ t ⟧ ⟦ ρ ⟧') ⟩
+  lam ⟦ t ⟧ [ ⟦ ρ ⟧' ]
     ∎
-  where open EqR (TmCwf {_})
-        help : < ⟦ wk-sub Γ (⊆-∙ {a = α}) ρ ⟧ˢ , q > ≋ < ⟦ ρ ∘λ p-λ ⟧ˢ , q >
+  where open EqR (TmSetoid {_})
+        help : < ⟦ wk-sub Γ (⊆-∙ {a = α}) ρ ⟧' , q > ≋ < ⟦ ρ ∘λ p-λ ⟧' , q >
         help rewrite wk-sub-∘-p {Γ} {α = α} ρ = refl≋
 
 -- composition distributes
 
-⟦⟧-∘-dist {Θ = ε} tt σ = sym≋ (<>Lzero ⟦ σ ⟧ˢ)
+⟦⟧-∘-dist {Θ = ε} tt σ = sym≋ (<>Lzero ⟦ σ ⟧')
 ⟦⟧-∘-dist {Θ = Θ ∙ x} (ρ , t) σ = begin
-  < ⟦ ρ ∘λ σ ⟧ˢ , ⟦ t [ σ ]λ ⟧ >
+  < ⟦ ρ ∘λ σ ⟧' , ⟦ t [ σ ]λ ⟧ >
     ≈⟨ cong-<,> refl≈ (⟦⟧-∘-dist ρ σ) ⟩
-  < ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ , ⟦ t [ σ ]λ ⟧ >
+  < ⟦ ρ ⟧' ∘ ⟦ σ ⟧' , ⟦ t [ σ ]λ ⟧ >
     ≈⟨ cong-<,> ([]-comm t σ) refl≋ ⟩
-  < ⟦ ρ ⟧ˢ ∘ ⟦ σ ⟧ˢ , ⟦ t ⟧ [ ⟦ σ ⟧ˢ ] >
-    ≈⟨ sym≋ (compExt ⟦ t ⟧ ⟦ ρ ⟧ˢ ⟦ σ ⟧ˢ) ⟩
-  < ⟦ ρ ⟧ˢ , ⟦ t ⟧ > ∘ ⟦ σ ⟧ˢ
+  < ⟦ ρ ⟧' ∘ ⟦ σ ⟧' , ⟦ t ⟧ [ ⟦ σ ⟧' ] >
+    ≈⟨ sym≋ (compExt ⟦ t ⟧ ⟦ ρ ⟧' ⟦ σ ⟧') ⟩
+  < ⟦ ρ ⟧' , ⟦ t ⟧ > ∘ ⟦ σ ⟧'
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 -- inverse lambda term
 
@@ -158,15 +155,15 @@ tm-cwf⇒λ q = refl≈
 tm-cwf⇒λ (lam t) = cong-lam (tm-cwf⇒λ t)
 tm-cwf⇒λ (app t u) = cong-app (tm-cwf⇒λ t) (tm-cwf⇒λ u)
 tm-cwf⇒λ (t [ γ ]) = begin
-  ⟦ ⟪ t ⟫ [ ⟪ γ ⟫ʰ ]λ ⟧
-    ≈⟨ []-comm ⟪ t ⟫ ⟪ γ ⟫ʰ ⟩
-  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ]
+  ⟦ ⟪ t ⟫ [ ⟪ γ ⟫' ]λ ⟧
+    ≈⟨ []-comm ⟪ t ⟫ ⟪ γ ⟫' ⟩
+  ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ γ ⟫' ⟧' ]
     ≈⟨ cong-sub (tm-cwf⇒λ t) refl≋ ⟩
-  t [ ⟦ ⟪ γ ⟫ʰ ⟧ˢ ]
+  t [ ⟦ ⟪ γ ⟫' ⟧' ]
     ≈⟨ cong-sub refl≈ (sub-cwf⇒λ γ) ⟩
   t [ γ ]
     ∎
-  where open EqR (TmCwf {_})
+  where open EqR (TmSetoid {_})
 
 -- empty sub case
 
@@ -180,26 +177,26 @@ sub-cwf⇒λ (id {Γ ∙ α}) = sym≋ $ begin
     ≈⟨ idExt ⟩
   < p , q >
     ≈⟨ cong-<,> refl≈ (sym≋ (sub-cwf⇒λ p)) ⟩
-  < ⟦ p-λ ⟧ˢ , q >
+  < ⟦ p-λ ⟧' , q >
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 -- projection case
 
-sub-cwf⇒λ p = sym≋ p~⟦p⟧
+sub-cwf⇒λ p = sym≋ p-inverse
 
 -- composition case
 
 sub-cwf⇒λ (γ ∘ γ') = begin
-  ⟦ ⟪ γ ⟫ʰ ∘λ ⟪ γ' ⟫ʰ ⟧ˢ
-    ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫ʰ ⟪ γ' ⟫ʰ ⟩
-  ⟦ ⟪ γ ⟫ʰ ⟧ˢ ∘ ⟦ ⟪ γ' ⟫ʰ ⟧ˢ
+  ⟦ ⟪ γ ⟫' ∘λ ⟪ γ' ⟫' ⟧'
+    ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫' ⟪ γ' ⟫' ⟩
+  ⟦ ⟪ γ ⟫' ⟧' ∘ ⟦ ⟪ γ' ⟫' ⟧'
     ≈⟨ cong-∘ (sub-cwf⇒λ γ) refl≋ ⟩
-  γ ∘ ⟦ ⟪ γ' ⟫ʰ ⟧ˢ
+  γ ∘ ⟦ ⟪ γ' ⟫' ⟧'
     ≈⟨ cong-∘ refl≋ (sub-cwf⇒λ γ') ⟩
   γ ∘ γ'
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 -- cons case
 
@@ -222,7 +219,7 @@ vars {Γ ∙ x} (ρ , t) = < vars ρ , varCwf t >
 ▸-to-hom {Γ = Γ ∙ x} f (ρ , t) = < ▸-to-hom f ρ , f t >
 
 map≈mapcwf : ∀ {Γ Δ} (ρ : Δ ▸ Γ) →
-              ⟦ ▸-to-sub var ρ ⟧ˢ ≋ ▸-to-hom varCwf ρ
+              ⟦ ▸-to-sub var ρ ⟧' ≋ ▸-to-hom varCwf ρ
 map≈mapcwf {ε}     tt      = refl≋
 map≈mapcwf {Γ ∙ x} (ρ , _) = cong-<,> refl≈ (map≈mapcwf ρ)
 
@@ -243,7 +240,7 @@ var-lemma {Γ ∙ x} (ρ , t) = begin
     ≈⟨ cong-<,> refl≈ (var-lemma ρ) ⟩
   <  vars (map-∈ there ρ) , varCwf t [ p ] >
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
 help : ∀ {Γ x α} →
         vars (map-∈ {α = x} (there) (map-∈ {α = α} (there) idV)) ≋
@@ -264,10 +261,10 @@ p≈vars {Γ ∙ x} {α} = let (ρ , t) = (pV {Γ ∙ x})
     ≈⟨ cong-<,> refl≈ help ⟩
   < vars ρ , q [ p ] >
     ∎
-  where open EqR (HmSetoid {_} {_})
+  where open EqR (SubSetoid {_} {_})
 
-p~⟦p⟧ {Γ} {α} =
+p-inverse {Γ} {α} =
   trans≋ p≈vars (trans≋ (vars≈hom _)
     (trans≋ (sym≋ (map≈mapcwf _)) g))
-  where g : ⟦ ▸-to-sub var (pV {Γ} {α}) ⟧ˢ ≋ ⟦ p-λ ⟧ˢ
+  where g : ⟦ ▸-to-sub var (pV {Γ} {α}) ⟧' ≋ ⟦ p-λ ⟧'
         g rewrite pIsVarP {Γ} {α} = refl≋

@@ -185,14 +185,34 @@ lookup-pres  {Γ = Γ} {Δ} (suc i) {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]
                          | pCons {t = t} γ = hyp
                     
 
+postulate
+  prop : ∀ {m n} {γ : Sub m n} {t B}
+         → B [ id , t ] [ γ ]
+         ≡ B [ ↑ γ ] [ id , (t [ γ ]) ]
+
+getTm : ∀ {n} {Γ : Ctx n} {t A} → Γ ⊢ t ∈ A → Tm n
+getTm {t = t} _ = t
+
+ty-sub : ∀ {m n} {Δ : Ctx m}
+             {Γ : Ctx n} {A γ}
+          → Δ ⊢ A
+          → Γ ▹ Δ ⊢ γ
+          → Γ ⊢ A [ γ ]
+
 subst-lemma : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {A t γ}
              → Δ ⊢ t ∈ A
              → Γ ▹ Δ ⊢ γ
              → Γ ⊢ t [ γ ] ∈ A [ γ ]
-subst-lemma (tm-var {i = i} _)     ⊢γ = lookup-pres i ⊢γ
-subst-lemma (tm-app ⊢A ⊢B f∈Π t∈A) ⊢γ = {!subst-lemma t∈A ⊢γ!}
-subst-lemma (tm-Π-I ⊢A ⊢B t∈B)     ⊢γ = {!subst-lemma t∈B ?!}
+subst-lemma tm-var ⊢γ = {!!}
+subst-lemma {t = f·t} {γ = γ} (tm-app ⊢A ⊢B f∈Π t∈A) ⊢γ
+  rewrite (prop {γ = γ} {t = getTm t∈A} {B = getTy ⊢B}) = tm-app (ty-sub ⊢A ⊢γ) {!!} ((subst-lemma f∈Π ⊢γ)) (subst-lemma t∈A ⊢γ)
+--tm-app _ _ (subst-lemma f∈Π ⊢γ) (subst-lemma t∈A ⊢γ)
+subst-lemma (tm-Π-I x x₁ t₁) ⊢γ = {!subst-lemma t₁!}
 
+-- tm-app _ _ (lemma-tm f∈Π ⊢γ) (lemma-tm t∈A ⊢γ)
+
+{-
+-}
 -- B [ id , t ] [ γ ] ~ ƛ B · t
 -- beta conversion?
 
@@ -203,11 +223,7 @@ Have: .Γ ⊢ .f [ .γ ] ∈ Π (.A [ .γ ]) (.B [ ↑ .γ ])
 Have: .Γ ⊢ .t [ .γ ] ∈ (.A [ .γ ])
 -}
 
-ty-sub : ∀ {m n} {Δ : Ctx m}
-             {Γ : Ctx n} {A γ}
-          → Δ ⊢ A
-          → Γ ▹ Δ ⊢ γ
-          → Γ ⊢ A [ γ ]
+
 ty-sub (ty-U x) ⊢γ = ty-U (lemma-3-2 ⊢γ)
 ty-sub (ty-∈U Δ⊢ A∈U) ⊢γ = {!!}
 ty-sub (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (ty-sub ⊢A ⊢γ) {!!}          
@@ -222,7 +238,7 @@ q-pres : ∀ {n} {Γ : Ctx n} {A}
          → Γ ⊢ A
          → Γ ∙ A ⊢ q ∈ wk A
 q-pres ⊢A = tm-var {!!}        
--}
+
 tm-conv : ∀ {n} {Γ : Ctx n} {t A A'}
           → Γ ⊢ A'
           → Γ ⊢ t ∈ A
@@ -247,3 +263,4 @@ comp-pres {Γ = Γ} {Δ = Δ} {Θ = Θ ∙ A} {γ = t ∷ γ} {δ}
             = ⊢<,> (comp-pres ⊢γ ⊢δ) ⊢A (h (subst-lemma t∈A[γ] ⊢δ))
         where h : Δ ⊢ t [ δ ] ∈ (A [ γ ] [ δ ]) → Δ ⊢ t [ δ ] ∈ (A [ γ ∘ δ ])
               h hyp rewrite subComp A γ δ = hyp
+-}

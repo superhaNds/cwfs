@@ -60,7 +60,7 @@ open Fins
 
 module PProof where
 
-  open import Unityped.UcwfModel renaming (Tm to Tm-cwf)
+  open import Unityped.UcwfComb renaming (Tm to Tm-cwf)
 
   varCwf : ∀ {n} (i : Fin n) → Tm-cwf n
   varCwf zero    = q

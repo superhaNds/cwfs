@@ -17,6 +17,7 @@ open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Ext-Typed.STyped.Syntax
 open import Ext-Typed.STyped.Raw
+open import Ext-Typed.STyped.ScwfObj
 open ≡-Reasoning
 
 -------------------------------------------------------------------------
@@ -69,7 +70,7 @@ Ren m n = Sub Fin n m
 wk-ren : ∀ {m n} → Ren m n → Ren (suc m) n
 wk-ren ρ = Vec.map suc ρ
 
-ren-to-sub : ∀ {m n} → Ren m n → SubT m n
+ren-to-sub : ∀ {m n} → Ren m n → Sub Tm n m
 ren-to-sub ρ = Vec.map var ρ
 
 wk-vars : ∀ {m n} → Ren m n → SubT (suc m) n
@@ -80,10 +81,10 @@ open TermSubst tmSubst hiding (var)
 _[_] : {m n : Nat} → Tm m → SubT n m → Tm n
 _[_] = _/_
 
-_,_ : ∀ {m n} (ρ : SubT m n) (t : Tm m) → SubT m (suc n)
+_,_ : ∀ {m n} (ρ : Sub Tm n m) (t : Tm m) → SubT m (suc n)
 ρ , t = t ∷ ρ
 
-_∘_ : ∀ {m n k} → SubT n k → SubT m n → SubT m k
+_∘_ : ∀ {m n k} → SubT n k → Sub Tm n m → SubT m k
 ρ₁ ∘ ρ₂ = ρ₁ ⊙ ρ₂
 
 p : ∀ {n} → SubT (suc n) n
@@ -99,7 +100,7 @@ id' = id
 
 infix  4 _▹_⊢_
 
-data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → SubT n m → Set where
+data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Tm m n → Set where
 
   [] : ∀ {Δ} → [] ▹ Δ ⊢ []
   
@@ -194,7 +195,7 @@ subst-lemma (var {i}) ⊢ρ = lookup-preserv i ⊢ρ
 subst-lemma (ƛ t)     ⊢ρ = ƛ (subst-lemma t (↑-preserv ⊢ρ))
 subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 
--- cons preserves
+-- cons preserves (by definition)
 
 ∙-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
               {t : Tm n} {ρ : Sub Tm m n} {α} →
@@ -206,7 +207,7 @@ subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 -- composition preserves
 
 ∘-preserv : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
-              {ρ : SubT n k} {σ : SubT m n} →
+              {ρ : SubT n k} {σ : Sub Tm n m} →
              Θ ▹ Γ ⊢ ρ →
              Γ ▹ Δ ⊢ σ →
              Θ ▹ Δ ⊢ ρ ∘ σ
@@ -225,35 +226,39 @@ wk-[p] t = /-wk {t = t}
 
 -- empty substitution
 
-<>-ty : ∀ {m} {Δ : Ctx m} → Σ (SubT m 0) ([] ▹ Δ ⊢_)
+<>-ty : ∀ {m} {Δ : Ctx m} → Σ (Sub Tm 0 m) ([] ▹ Δ ⊢_)
 <>-ty = [] Σ., []
 
 -- extending a substitution
 
-<,>-ty : ∀ {m n α} {Γ : Ctx m} {Δ : Ctx n} → Σ (SubT m n) (Δ ▹ Γ ⊢_) → Σ (Tm m) (Γ ⊢_∈ α) →
-         Σ (SubT m (suc n)) (Δ ∙ α ▹ Γ ⊢_)
+<,>-ty : ∀ {m n α} {Γ : Ctx m} {Δ : Ctx n}
+         → Σ (Sub Tm n m) (Δ ▹ Γ ⊢_)
+         → Σ (Tm m) (Γ ⊢_∈ α)
+         → Σ (Sub Tm (suc n) m) (Δ ∙ α ▹ Γ ⊢_)
 <,>-ty (ρ Σ., ⊢ρ) (t Σ., t∈) = ρ , t Σ., ext t∈ ⊢ρ
 
 -- composition
 
-∘-ty : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k} →
-       Σ (SubT n k) (Θ ▹ Γ ⊢_) → Σ (SubT m n) (Γ ▹ Δ ⊢_) → Σ (SubT m k) (Θ ▹ Δ ⊢_)
+∘-ty : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
+       → Σ (Sub Tm k n) (Θ ▹ Γ ⊢_)
+       → Σ (Sub Tm n m) (Γ ▹ Δ ⊢_)
+       → Σ (Sub Tm k m) (Θ ▹ Δ ⊢_)
 ∘-ty (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) = ρ ∘ σ Σ., ∘-preserv ⊢ρ ⊢σ             
 
 -- substitution operation
 
 sub-ty : ∀ {m n α} {Δ : Ctx m} {Γ : Ctx n} → Σ (Tm n) (Γ ⊢_∈ α) →
-         Σ (SubT m n) (Γ ▹ Δ ⊢_) → Σ (Tm m) (Δ ⊢_∈ α)             
+         Σ (Sub Tm n m) (Γ ▹ Δ ⊢_) → Σ (Tm m) (Δ ⊢_∈ α)             
 sub-ty (t Σ., t∈) (ρ Σ., ⊢ρ) = t [ ρ ] Σ., subst-lemma t∈ ⊢ρ
 
 -- identity
 
-id-ty : ∀ {n} {Γ : Ctx n} → Σ (SubT n n) (Γ ▹ Γ ⊢_)
+id-ty : ∀ {n} {Γ : Ctx n} → Σ (Sub Tm n n) (Γ ▹ Γ ⊢_)
 id-ty = id' Σ., id-preserv
 
 -- lifting/projection
 
-p-ty : ∀ {n α} {Γ : Ctx n} → Σ (SubT (suc n) n) (Γ ▹ Γ ∙ α ⊢_)
+p-ty : ∀ {n α} {Γ : Ctx n} → Σ (Sub Tm n (suc n)) (Γ ▹ Γ ∙ α ⊢_)
 p-ty = p Σ., p-preserv
 
 -- zeroth variable
@@ -263,12 +268,38 @@ q-ty = q Σ., ⊢vr0
 
 -- lambda abstraction
 
-ƛ-ty : ∀ {n} {Γ : Ctx n} {α β} → Σ (Tm (suc n)) (Γ ∙ α ⊢_∈ β) →
-       Σ (Tm n) (Γ ⊢_∈ (α ⇒ β))
+ƛ-ty : ∀ {n} {Γ : Ctx n} {α β}
+       → Σ (Tm (suc n)) (Γ ∙ α ⊢_∈ β)
+       → Σ (Tm n) (Γ ⊢_∈ (α ⇒ β))
 ƛ-ty (t Σ., t∈) = ƛ t Σ., ƛ t∈       
 
 -- apply
 
-app-ty : ∀ {n} {Γ : Ctx n} {α β} → Σ (Tm n) (Γ ⊢_∈ (α ⇒ β)) →
-         Σ (Tm n) (Γ ⊢_∈ α) → Σ (Tm n) (Γ ⊢_∈ β)
+app-ty : ∀ {n} {Γ : Ctx n} {α β}
+         → Σ (Tm n) (Γ ⊢_∈ (α ⇒ β))
+         → Σ (Tm n) (Γ ⊢_∈ α)
+         → Σ (Tm n) (Γ ⊢_∈ β)
 app-ty (t Σ., t∈) (u Σ., u∈) = t · u Σ., t∈ · u∈
+
+private
+
+  ScwfInst : Scwf
+  ScwfInst = record
+               { RTm = Tm
+               ; RSub = Sub Tm
+               ; _≈_ = _≡_
+               ; _≋_ = _≡_
+               ; Ty = Ty
+               ; Ctx = Ctx
+               ; ε = []
+               ; _∙_ = _∙_
+               ; _⊢_∈_ = _⊢_∈_
+               ; _▹_⊢_ = _▹_⊢_
+               ; id-ty = id-ty
+               ; _∘_ = {!∘-ty!}  -- indices are inversed because the length is in the second position there but here in the first ..
+               ; q-ty = q-ty
+               ; p-ty = {!p-ty!}
+               ; <>-ty = {!<>-ty!}
+               ; <,>-ty = {!!}
+               ; sub-ty = {!sub-ty!}
+               }

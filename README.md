@@ -5,14 +5,10 @@ families described as a generalized algebraic theory described in [Internal Type
 and the traditional notions of lambda calculus it models.
 
 We consider the category of CwFs starting with the unityped version where types are removed 
-and we define what it means to be a CwF object in this category. After, we build an explicit 
-calculus and the corresponding traditional lambda calculus with substitution and operations
-formalized in the meta-language. We implement formal proofs that lambda calculus is a Unityped 
-CwF object and then we show that it is isomorphic to the explicit CwF object. The motivation 
-behind the idea is to construct initial objects in the CwF category.
-
-We build the model theory of the lambda calculus for the untyped, simply typed, and some parts 
-of a depedently typed formulation with Pi and a universe.
+and we define what it means to be an object in the category. After, we build two term models
+one with explicit substitutions and one with implicit with ordinary lambda terms and construct
+CwF morphisms between them and an isomorphism. This work is performed for untyped, simply
+typed (two parts), and some formulation of a full CwF.
 
 # Content
 

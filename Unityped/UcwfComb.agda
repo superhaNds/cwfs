@@ -5,7 +5,7 @@
 -- of explicit substitutions
 ------------------------------------------------------------------------------------
 
-module Unityped.UcwfModel where
+module Unityped.UcwfComb where
 
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc ; _+_)
 import Data.Nat.Properties.Simple as NatP

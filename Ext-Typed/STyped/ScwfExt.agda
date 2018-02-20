@@ -9,7 +9,7 @@ open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product using (Σ)
 open import Data.Vec hiding ([_])
 open import Ext-Typed.STyped.CtxType
-
+open import Ext-Typed.STyped.ScwfObj
 -------------------------------------------------------------------------
 -- Raw terms substitutions
 
@@ -198,3 +198,31 @@ refl≈ {t = t} = trans≈ (sym≈ (terId t)) (terId t)
 
 refl≋ : ∀ {m n} {ρ : RSub m n} → ρ ≋ ρ
 refl≋ {ρ = ρ} = trans≋ (sym≋ (idL ρ)) (idL ρ)
+
+ScwfInst : Scwf
+ScwfInst = record
+             { RTm    = RTm
+             ; RSub   = RSub
+             ; _≈_    = _≈_
+             ; _≋_    = _≋_
+             ; Ty     = Ty
+             ; Ctx    = Ctx
+             ; ε      = ε
+             ; _∙_    = _∙_
+             ; _⊢_∈_  = _⊢_∈_
+             ; _▹_⊢_  = λ Γ Δ ρ → Δ ▹ Γ ⊢ ρ
+             ; id-ty  = id Σ., ⊢id
+             ; _∘_    = λ { (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) → (ρ ∘ σ) Σ., (⊢∘ ⊢ρ ⊢σ) }
+             ; q-ty   = q Σ., q∈
+             ; p-ty   = p Σ., ⊢p
+             ; <>-ty  = <> Σ., ⊢<>
+             ; <,>-ty = λ { (ρ Σ., ⊢ρ) (t Σ., t∈) → < ρ , t > Σ., ⊢<,> t∈ ⊢ρ }
+             ; sub-ty = λ { (t Σ., t∈) (ρ Σ., ⊢ρ) → (t [ ρ ]) Σ., sub∈ t∈ ⊢ρ }
+             }
+
+LamScwfInst : Lambda-Scwf
+LamScwfInst = record
+                { scwf   = ScwfInst
+                ; _`→_   = _⇒_
+                ; lam-ty = λ { (t Σ., t∈) → lam t Σ., lam∈ t∈ }
+                ; app-ty = λ { (t Σ., t∈) (u Σ., u∈) → app t u Σ., app∈ t∈ u∈ } }
