@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------------
--- ΠU-Cwf object constructed with raw terms and external typing relations. A raw calculus
--- of explicit substitutions and untyped conversion, with explicit typing rules for each
+-- ΠU-Cwf with explicit substitutions constructed with raw terms and external typing relations.
+-- Untyped conversion with explicit typing rules for each
 -- construct. We a universe of small types ala russel and Π types.
 -----------------------------------------------------------------------------------------------
 module Ext-Typed.DTyped.ExpCwf where
@@ -81,44 +81,52 @@ data _≈_ where
   
   qCons    : ∀ {n m} t (γ : Sub n m) → q [ < γ , t > ] ≈ t
   
-  subComp  : ∀ {m n k} t (γ : Sub k n) (σ : Sub m k) →
-              t [ γ ∘ σ ] ≈ (t [ γ ])[ σ ]
+  subComp  : ∀ {m n k} t (γ : Sub k n) (σ : Sub m k)
+             → t [ γ ∘ σ ] ≈ (t [ γ ])[ σ ]
              
-  subApp   : ∀ {n m} (γ : Sub m n) t u →
-              app (t [ γ ]) (u [ γ ]) ≈ app t u [ γ ]
+  subApp   : ∀ {n m} (γ : Sub m n) t u
+             → app (t [ γ ]) (u [ γ ]) ≈ app t u [ γ ]
              
-  subLam   : ∀ {n m} (t : Tm (1 + n)) (γ : Sub m n) →
-              lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
+  subLam   : ∀ {n m} (t : Tm (1 + n)) (γ : Sub m n)
+             → lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
              
-  subΠ     : ∀ {n m} (γ : Sub m n) A B →
-              (Π A B) [ γ ] ≈ Π (A [ γ ]) (B [ < γ ∘ p , q > ])
+  subΠ     : ∀ {n m} (γ : Sub m n) A B
+             → (Π A B) [ γ ] ≈ Π (A [ γ ]) (B [ < γ ∘ p , q > ])
               
   subU     : ∀ {n m} {γ : Sub m n} → U [ γ ] ≈ U
   
-  beta     : ∀ {n} (t : Tm (1 + n)) (u : Tm n) → app (lam t) u ≈ t [ < id , u > ]
+  beta     : ∀ {n} (t : Tm (1 + n)) (u : Tm n)
+             → app (lam t) u ≈ t [ < id , u > ]
 
   eta      : ∀ {n} (t : Tm (1 + n)) → lam (app (t [ p ]) q) ≈ t
               
-  cong-Π   : ∀ {n} {A A' : Tm n} {B B'} →
-              A ≈ A' →
-              B ≈ B' →
-              Π A B ≈ Π A' B'
+  cong-Π   : ∀ {n} {A A' : Tm n} {B B'}
+             → A ≈ A'
+             → B ≈ B'
+             → Π A B ≈ Π A' B'
               
-  cong-app : ∀ {n} {t u t′ u′ : Tm n} →
-              t ≈ t′ → u ≈ u′ → app t u ≈ app t′ u′
+  cong-app : ∀ {n} {t u t′ u′ : Tm n}
+             → t ≈ t′
+             → u ≈ u′
+             → app t u ≈ app t′ u′
               
-  cong-sub : ∀ {m n} {γ σ : Sub m n} {t u} →
-              t ≈ u →
-              γ ≋ σ →
-              t [ γ ] ≈ u [ σ ]
+  cong-sub : ∀ {m n} {γ σ : Sub m n} {t u}
+             → t ≈ u
+             → γ ≋ σ
+             → t [ γ ] ≈ u [ σ ]
              
-  cong-lam : ∀ {n} {t u : Tm (1 + n)} →
-              t ≈ u → lam t ≈ lam u
+  cong-lam : ∀ {n} {t u : Tm (1 + n)}
+             → t ≈ u
+             → lam t ≈ lam u
               
-  sym≈     : ∀ {n} {u u′ : Tm n} → u ≈ u′ → u′ ≈ u
+  sym≈     : ∀ {n} {u u′ : Tm n}
+             → u ≈ u′
+             → u′ ≈ u
   
-  trans≈   : ∀ {m} {t u v : Tm m} →
-             t ≈ u → u ≈ v → t ≈ v
+  trans≈   : ∀ {m} {t u v : Tm m}
+             → t ≈ u
+             → u ≈ v
+             → t ≈ v
 
 refl≈ : ∀ {n} {t : Tm n} → t ≈ t
 refl≈ {t = t} = trans≈ (sym≈ (subId t)) (subId t)
@@ -137,28 +145,32 @@ data _≋_ where
   
   idR      : ∀ {m n} (γ : Sub m n) → γ ∘ id ≋ γ
   
-  assoc    : ∀ {m n k p} (γ : Sub n k) (σ : Sub m n) (τ : Sub p m) →
-              (γ ∘ σ) ∘ τ  ≋ γ ∘ (σ ∘ τ)
+  assoc    : ∀ {m n k p} (γ : Sub n k) (σ : Sub m n) (τ : Sub p m)
+             → (γ ∘ σ) ∘ τ  ≋ γ ∘ (σ ∘ τ)
               
   pCons    : ∀ {m n} u (σ : Sub m n) → σ ≋ p ∘ < σ , u >
   
-  compExt  : ∀ {m n k} t (γ : Sub n k) (σ : Sub m n) →
-             < γ , t > ∘ σ  ≋ < γ ∘ σ , t [ σ ] >
+  compExt  : ∀ {m n k} t (γ : Sub n k) (σ : Sub m n)
+             → < γ , t > ∘ σ  ≋ < γ ∘ σ , t [ σ ] >
 
-  cong-<,> : ∀ {m n} {γ σ : Sub m n} {t u} →
-             t ≈ u →
-             γ ≋ σ →
-             < γ , t > ≋ < σ , u >
+  cong-<,> : ∀ {m n} {γ σ : Sub m n} {t u}
+             → t ≈ u
+             → γ ≋ σ
+             → < γ , t > ≋ < σ , u >
 
-  cong-∘   : ∀ {m n k} {γ τ : Sub n k} {σ ξ : Sub m n} →
-             γ ≋ τ →
-             σ ≋ ξ →
-             γ ∘ σ ≋ τ ∘ ξ
+  cong-∘   : ∀ {m n k} {γ τ : Sub n k} {σ ξ : Sub m n}
+             → γ ≋ τ
+             → σ ≋ ξ
+             → γ ∘ σ ≋ τ ∘ ξ
              
-  sym≋     : ∀ {m n} {γ σ : Sub m n} → γ ≋ σ → σ ≋ γ
+  sym≋     : ∀ {m n} {γ σ : Sub m n}
+             → γ ≋ σ
+             → σ ≋ γ
   
-  trans≋   : ∀ {m n} {γ σ τ : Sub m n} →
-             γ ≋ σ → σ ≋ τ → γ ≋ τ
+  trans≋   : ∀ {m n} {γ σ τ : Sub m n}
+             → γ ≋ σ
+             → σ ≋ τ
+             → γ ≋ τ
 
 refl≋ : ∀ {m n} {γ : Sub m n} → γ ≋ γ
 refl≋ {γ = γ} = trans≋ (sym≋ (idL γ)) (idL γ)
@@ -242,7 +254,7 @@ surj-<,> {n = n} γ = begin
                                                        where open EqR (SubSetoid {_} {_})
 
 -----------------------------------------------------------------------------------------------
--- External type system for dependent types with Π and universe ala Russel
+-- External type system for dependent types with Π and universe ala Russell
 
 -- There are four basic judgements we make in this theory
 
@@ -282,7 +294,7 @@ data _⊢_ where
          → Γ ⊢
          → Γ ⊢ U         
 
-  ty-w : ∀ {n} {Γ : Ctx n} {A}
+  ty-∈U : ∀ {n} {Γ : Ctx n} {A}
          → Γ ⊢ A ∈ U
          → Γ ⊢ A
 
@@ -391,7 +403,7 @@ lemma-3 (⊢<> Δ⊢)       = c-emp , Δ⊢
 lemma-3 (⊢<,> ⊢γ ⊢A _) = c-ext (lemma-1 ⊢A) ⊢A , π₂ (lemma-3 ⊢γ)
 
 lemma-1 (ty-U Γ⊢)     = Γ⊢
-lemma-1 (ty-w A∈U)    = lemma-2B A∈U
+lemma-1 (ty-∈U A∈U)   = lemma-2B A∈U
 lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
 lemma-1 (ty-sub _ ⊢γ) = π₂ (lemma-3 ⊢γ)
 

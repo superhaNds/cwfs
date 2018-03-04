@@ -1,5 +1,8 @@
 -----------------------------------------------------------------------------
--- The notion of a ucwf object and its extensions with lambdas and others
+-- The notion of a ucwf and its extensions with extra structure
+-- Ucwf morphisms between ucwfs after
+-- They represent objects and morphisms in the respective category
+-- of ucwfs with the appropriate structure
 -----------------------------------------------------------------------------
 module Unityped.Ucwf where
 
@@ -11,22 +14,23 @@ open import Relation.Binary using (Rel ; IsEquivalence ; Setoid)
 -----------------------------------------------------------------------------
 -- The sorts, operator symbols, and axioms of a ucwf
 
-record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
+record Ucwf : Set₁ where
   infix 4 _≈_
   infix 4 _≋_
   infix 8 _∘_
   
   field
-
-    -- Objects of the base category are natural numbers
+    -- Contexts are natural numbers
    
     -- Terms and substitutions (sorts)
-    Tm   : Nat → Set ℓ
-    Sub  : Nat → Nat → Set ℓ'
+    
+    Tm   : Nat → Set
+    Sub  : Nat → Nat → Set 
 
-    -- two relations regarding equality of terms and substitutions
-    _≈_   : ∀ {n} → Rel (Tm n) ℓ
-    _≋_   : ∀ {m n} → Rel (Sub m n) ℓ'
+    -- Relations for equality of terms and substitutions
+    
+    _≈_   : ∀ {n} → Rel (Tm n) lzero
+    _≋_   : ∀ {m n} → Rel (Sub m n) lzero
 
     IsEquivT : ∀ {n} → IsEquivalence (_≈_ {n})
     IsEquivS : ∀ {m n} → IsEquivalence (_≋_ {m} {n})
@@ -49,7 +53,7 @@ record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
 
     -- <> is a a left zero for composition
   
-    <>Lzero : ∀ {m n} (ts : Sub m n) → <> ∘ ts ≋ <>
+    left-zero : ∀ {m n} (ts : Sub m n) → <> ∘ ts ≋ <>
 
     -- extended identity is the projection morphism with the last variable
 
@@ -61,8 +65,8 @@ record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
              
     idR : ∀ {m n} (ts : Sub m n) → ts ∘ id ≋ ts
              
-    assoc : ∀ {m n κ ι} (ts : Sub n κ) (us : Sub m n) (vs : Sub ι m) →
-             (ts ∘ us) ∘ vs ≋ ts ∘ (us ∘ vs)
+    assoc : ∀ {m n κ ι} (ts : Sub n κ) (us : Sub m n) (vs : Sub ι m)
+            → (ts ∘ us) ∘ vs ≋ ts ∘ (us ∘ vs)
 
     -- Substituting in id doesn't affect terms
  
@@ -78,30 +82,30 @@ record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
 
     -- Substituting under a composition
 
-    subComp : ∀ {m n κ} (ts : Sub m n) (us : Sub κ m) t →
-               t [ ts ∘ us ] ≈ t [ ts ] [ us ]
+    subComp : ∀ {m n κ} (ts : Sub m n) (us : Sub κ m) t
+              → t [ ts ∘ us ] ≈ t [ ts ] [ us ]
 
     -- Composing with an extended substitution
 
-    compExt : ∀ {m n} (ts : Sub n m) (us : Sub m n) t →
-               < ts , t > ∘ us ≋ < ts ∘ us , t [ us ] >
+    compExt : ∀ {m n} (ts : Sub n m) (us : Sub m n) t
+              → < ts , t > ∘ us ≋ < ts ∘ us , t [ us ] >
              
     -- congruence rules for operators
     
-    cong-<,> : ∀ {m n} {ts us : Sub m n} {t u} →
-                t ≈ u →
-                ts ≋ us →
-                < ts , t > ≋ < us , u >
+    cong-<,> : ∀ {m n} {ts us : Sub m n} {t u}
+               → t ≈ u
+               → ts ≋ us
+               → < ts , t > ≋ < us , u >
                 
-    cong-sub : ∀ {m n} {ts us : Sub m n} {t u} →
-                t ≈ u →
-                ts ≋ us →
-                t [ ts ] ≈ u [ us ]
+    cong-sub : ∀ {m n} {ts us : Sub m n} {t u}
+               → t ≈ u
+               → ts ≋ us
+               → t [ ts ] ≈ u [ us ]
                 
-    cong-∘   : ∀ {m n k} {ts vs : Sub n k} {us zs : Sub m n} →
-                ts ≋ vs →
-                us ≋ zs →
-                ts ∘ us ≋ vs ∘ zs
+    cong-∘ : ∀ {m n k} {ts vs : Sub n k} {us zs : Sub m n}
+             → ts ≋ vs
+             → us ≋ zs
+             → ts ∘ us ≋ vs ∘ zs
 
   setoidT : ∀ {n} → Setoid _ _
   setoidT {n} = record { isEquivalence = IsEquivT {n} }
@@ -117,9 +121,9 @@ record Ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
 
 -- Extending the pure ucwf with lambdas and applications
 
-record Lambda-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
+record Lambda-ucwf : Set₁ where
   field
-    ucwf : Ucwf {ℓ} {ℓ'}
+    ucwf : Ucwf
     
   open Ucwf ucwf public
   
@@ -132,24 +136,26 @@ record Lambda-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
 
     -- substituting under app and lam
     
-    subApp : ∀ {n m} (ts : Sub m n) t u → app (t [ ts ]) (u [ ts ]) ≈ (app t u) [ ts ]
+    subApp : ∀ {n m} (ts : Sub m n) t u
+             → app (t [ ts ]) (u [ ts ]) ≈ (app t u) [ ts ]
     
-    subLam : ∀ {n m} (ts : Sub m n) t → lam t [ ts ] ≈ lam (t [ ⇑ ts ])
+    subLam : ∀ {n m} (ts : Sub m n) t
+             → lam t [ ts ] ≈ lam (t [ ⇑ ts ])
     
-    cong-lam : ∀ {n} {t u : Tm (suc n)} →
-                t ≈ u →
-                lam t ≈ lam u
+    cong-lam : ∀ {n} {t u : Tm (suc n)}
+               → t ≈ u
+               → lam t ≈ lam u
               
-    cong-app : ∀ {n} {t u t′ u′ : Tm n} →
-                t ≈ t′ →
-                u ≈ u′ →
-                app t u ≈ app t′ u′
+    cong-app : ∀ {n} {t u t′ u′ : Tm n}
+               → t ≈ t′
+               → u ≈ u′
+               → app t u ≈ app t′ u′
 
--- Extending the ucwf with lambdas up to β and η
+-- Extending a ucwf with lambdas up to β and η
 
-record Lambda-βη-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
+record Lambda-βη-ucwf : Set₁ where
   field
-    lambda-ucwf : Lambda-ucwf {ℓ} {ℓ'}
+    lambda-ucwf : Lambda-ucwf 
 
   open Lambda-ucwf lambda-ucwf public
 
@@ -160,4 +166,51 @@ record Lambda-βη-ucwf {ℓ ℓ'} : Set (lsuc (ℓ ⊔ ℓ')) where
     β : ∀ {n} {t : Tm (suc n)} {u} → app (lam t) u ≈ t [ < id , u > ]
          
     η : ∀ {n} {t : Tm n} → lam (app (weaken t) q) ≈ t
+
+----------------------------------------------------------------------------------------------------
+-- Ucwf morphisms
+
+record Ucwf-Morphism  (src trg : Ucwf) : Set₁ where
+  open Ucwf src
+    renaming (Tm to Tm₁ ; Sub to Sub₁ ; <> to <>₁ ; <_,_> to <_,_>₁ ; _∘_ to _∘₁_
+             ; _[_] to _[_]₁ ; q to q₁ ; p to p₁ ; id to id₁ ; _≈_ to _≈₁_ ; _≋_ to _≋₁_)
+  open Ucwf trg
+    renaming (Tm to Tm₂ ; Sub to Sub₂ ; <> to <>₂ ; <_,_> to <_,_>₂ ;_∘_ to _∘₂_
+             ; _[_] to _[_]₂ ; q to q₂ ; p to p₂ ; id to id₂ ; _≈_ to _≈₂_ ; _≋_ to _≋₂_) 
+  field
+  
+    -- maps from terms and substitutions
     
+    ⟦_⟧   : ∀ {n} → Tm₁ n → Tm₂ n
+    ⟦_⟧'  : ∀ {m n} → Sub₁ m n → Sub₂ m n
+
+    -- Ucwf structure is preserved
+    
+    id-preserved : ∀ {n} → ⟦ id₁ {n} ⟧' ≋₂ id₂
+    
+    q-preserved : ∀ {n} → ⟦ q₁ {n}  ⟧ ≈₂ q₂
+    
+    p-preserved : ∀ {n} → ⟦ p₁ {n}  ⟧' ≋₂ p₂
+    
+    ∘-preserved : ∀ {m n k} (ts₁ : Sub₁ k n) (ts₂ : Sub₁ m k)
+                  → ⟦ ts₁ ∘₁ ts₂ ⟧' ≋₂ ⟦ ts₁ ⟧' ∘₂ ⟦ ts₂ ⟧'
+
+    <>-preserved : ∀ {m} → ⟦ <>₁ {m} ⟧' ≋₂ <>₂
+
+    <,>-preserved : ∀ {m n} (t : Tm₁ m) (ts : Sub₁ m n)
+                    → ⟦ < ts , t >₁ ⟧' ≋₂ < ⟦ ts ⟧' , ⟦ t ⟧ >₂
+
+    sub-preserved : ∀ {m n} (t : Tm₁ n) (ts : Sub₁ m n)
+                    → ⟦ t [ ts ]₁ ⟧ ≈₂ ⟦ t ⟧ [ ⟦ ts ⟧' ]₂
+
+record Lambda-Ucwf-Morphism (src trg : Lambda-ucwf) : Set₁ where
+  open Lambda-ucwf src renaming (ucwf to ucwf₁ ; Tm to Tm₁ ; lam to lam₁ ; app to app₁)
+  open Lambda-ucwf trg renaming (ucwf to ucwf₂ ; Tm to Tm₂ ; lam to lam₂ ; app to app₂ ; _≈_ to _≈₂_)
+  field
+    ucwf-arr : Ucwf-Morphism ucwf₁ ucwf₂
+  
+  field
+    ⟦_⟧ : ∀ {n} → Tm₁ n → Tm₂ n
+    lam-preserved : ∀ {n} {t : Tm₁ (suc n)} → ⟦ lam₁ t ⟧ ≈₂ lam₂ ⟦ t ⟧
+    app-preserved : ∀ {n} {f t : Tm₁ n} → ⟦ app₁ f t ⟧ ≈₂ app₂ ⟦ f ⟧ ⟦ t ⟧
+

@@ -1,10 +1,10 @@
-module SimpTyped.Tm.Beta where
+module SimpTyped.ImpSub.Beta where
 
-open import SimpTyped.Tm.Syntax
+open import SimpTyped.ImpSub.Syntax
 open import SimpTyped.Type
 open import SimpTyped.Context
-open import SimpTyped.Tm.Properties
-open import SimpTyped.Tm.Tm-Scwf
+open import SimpTyped.ImpSub.Properties
+open import SimpTyped.ImpSub.Tm-Scwf
 open import Data.Product
 open import Data.Unit
 open import Function as F using (_$_)
@@ -19,36 +19,37 @@ data _~βη_ {Γ} : ∀ {α} (_ _ : Tm Γ α) → Set where
 
   varcong : ∀ {α} (v : α ∈ Γ) → var v ~βη var v
        
-  apcong : ∀ {α β} {t t' : Tm Γ (α ⇒ β)} {u u'} →
-            t ~βη t' →
-            u ~βη u' →
-            (t · u) ~βη (t' · u')
+  apcong : ∀ {α β} {t t' : Tm Γ (α ⇒ β)} {u u'}
+           → t ~βη t'
+           → u ~βη u'
+           → (t · u) ~βη (t' · u')
            
-  ξ : ∀ {α β} {t t' : Tm (Γ ∙ α) β} →
-       t ~βη t' → ƛ t ~βη ƛ t'
+  ξ : ∀ {α β} {t t' : Tm (Γ ∙ α) β}
+      → t ~βη t'
+      → ƛ t ~βη ƛ t'
   
-  β : ∀ {α β} (t : Tm (Γ ∙ α) β) u →
-       ƛ t · u ~βη (t [ id , u ])
+  β : ∀ {α β} (t : Tm (Γ ∙ α) β) u → ƛ t · u ~βη (t [ id , u ])
 
   η : ∀ {α β} (t : Tm Γ (α ⇒ β)) → ƛ (t [ p ] · q) ~βη t
        
-  sym~βη : ∀ {α} {t₁ t₂ : Tm Γ α} →
-            t₁ ~βη t₂ →
-            t₂ ~βη t₁
+  sym~βη : ∀ {α} {t₁ t₂ : Tm Γ α}
+           → t₁ ~βη t₂
+           → t₂ ~βη t₁
               
-  trans~βη : ∀ {α} {t₁ t₂ t₃ : Tm Γ α} →
-              t₁ ~βη t₂ →
-              t₂ ~βη t₃ →
-              t₁ ~βη t₃
+  trans~βη : ∀ {α} {t₁ t₂ t₃ : Tm Γ α}
+             → t₁ ~βη t₂
+             → t₂ ~βη t₃
+             → t₁ ~βη t₃
   
 data _≈βη_ {Δ} : ∀ {Γ} (_ _ : Sub Δ Γ) → Set where
 
   ⋄ : {γ γ' : Sub Δ ε} → γ ≈βη γ'
   
-  ext : ∀ {Γ α}
-          {t u : Tm Δ α}
-          {γ γ' : Sub Δ Γ} →          
-         t ~βη u → γ ≈βη γ' → (γ , t) ≈βη (γ' , u)
+  ext : ∀ {Γ α} {t u : Tm Δ α}
+          {γ γ' : Sub Δ Γ}
+        → t ~βη u
+        → γ ≈βη γ'
+        → (γ , t) ≈βη (γ' , u)
 
 refl~βη : ∀ {Γ α} {t : Tm Γ α} → t ~βη t
 refl~βη {t = t} = trans~βη (sym~βη (β (var here) t)) (β (var here) t)
@@ -96,7 +97,8 @@ cong-ext : ∀ {Γ Δ α} {t t' : Tm Γ α} {ρ ρ' : Sub Γ Δ} →
 cong-ext t~t' ⋄            = ext t~t' ⋄
 cong-ext t~t' (ext x ρ≈ρ') = ext t~t' (cong-ext x ρ≈ρ')
 
-β-help : ∀ {Γ Δ α β} (t : Tm (Γ ∙ α) β) u (γ : Sub Δ Γ) → t [ wk-sub _ ⊆-∙ γ , q ] [ id , u [ γ ] ] ≡ t [ id , u ] [ γ ]
+β-help : ∀ {Γ Δ α β} (t : Tm (Γ ∙ α) β) u (γ : Sub Δ Γ)
+         → t [ wk-sub _ ⊆-∙ γ , q ] [ id , u [ γ ] ] ≡ t [ id , u ] [ γ ]
 β-help t u γ = begin
   t [ wk-sub _ ⊆-∙ γ , q ] [ id , u [ γ ] ] ≡⟨ cong (λ x → t [ x , q ] [ id , u [ γ ] ]) (sym (wk-sub-∘-p γ)) ⟩
   t [ γ ∘ p , q ] [ id , u [ γ ] ]          ≡⟨ sym $ subComp t (γ ∘ p , q) (id , (u [ γ ])) ⟩
@@ -109,7 +111,8 @@ cong-ext t~t' (ext x ρ≈ρ') = ext t~t' (cong-ext x ρ≈ρ')
   t [ (id , u ) ∘ γ ]                       ≡⟨ subComp t (id , u) γ ⟩
   t [ id , u ] [ γ ]                        ∎ where open P.≡-Reasoning
   
-η-help : ∀ {Γ Δ α β} (t : Tm Γ (α ⇒ β)) (γ : Sub Δ Γ) → (t [ γ ]) [ p {α = α} ] ≡ t [ p ] [ wk-sub Γ ⊆-∙ γ , q ] 
+η-help : ∀ {Γ Δ α β} (t : Tm Γ (α ⇒ β)) (γ : Sub Δ Γ)
+         → (t [ γ ]) [ p {α = α} ] ≡ t [ p ] [ wk-sub Γ ⊆-∙ γ , q ] 
 η-help t γ = sym $ begin
   t [ p ] [ wk-sub _ ⊆-∙ γ , q ]         ≡⟨ cong (λ x → t [ p ] [ x , q ]) (sym (wk-sub-∘-p γ)) ⟩
   t [ p ] [ γ ∘ p , q ]                  ≡⟨ sym (subComp t _ (γ ∘ p , q)) ⟩

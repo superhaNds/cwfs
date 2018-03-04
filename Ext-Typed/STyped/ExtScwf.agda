@@ -1,21 +1,18 @@
-module Ext-Typed.STyped.ScwfObj where
+module Ext-Typed.STyped.ExtScwf where
 
 open import Data.Product
 open import Data.Nat renaming (ℕ to Nat)
 open import Agda.Primitive
 open import Relation.Binary
+open import Unityped.Ucwf
 
 record Scwf : Set₁ where
   infix 5 _⊢_∈_
   infix 5 _▹_⊢_
   field
-    RTm  : Nat → Set
-    RSub : Nat → Nat → Set
-    _≈_  : ∀ {n} → Rel (RTm n) lzero
-    _≋_  : ∀ {m n} → Rel (RSub m n) lzero
-
-    --- ... remaining raw stuff
-    
+    ucwf : Ucwf
+  open Ucwf ucwf renaming (Tm to RTm ; Sub to RSub)
+  field
     -- Types
     Ty : Set
 
@@ -36,10 +33,10 @@ record Scwf : Set₁ where
     id-ty : ∀ {n} {Γ : Ctx n} → Σ (RSub n n) (Γ ▹ Γ ⊢_)
 
     -- composition
-    _∘_ : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
-          → Σ (RSub n k) (Γ ▹ Θ ⊢_)
-          → Σ (RSub m n) (Δ ▹ Γ ⊢_)
-          → Σ (RSub m k) (Δ ▹ Θ ⊢_)
+    ∘-ty : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
+           → Σ (RSub n k) (Γ ▹ Θ ⊢_)
+           → Σ (RSub m n) (Δ ▹ Γ ⊢_)
+           → Σ (RSub m k) (Δ ▹ Θ ⊢_)
 
     -- last variable
     q-ty  : ∀ {n} {Γ : Ctx n} {α} → Σ (RTm (suc n)) (Γ ∙ α ⊢_∈ α)
@@ -67,6 +64,7 @@ record Lambda-Scwf : Set₁ where
   field
     scwf : Scwf
   open Scwf scwf public
+  open Ucwf ucwf renaming (Tm to RTm)
   field
 
     -- function type

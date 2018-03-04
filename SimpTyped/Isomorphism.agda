@@ -5,12 +5,12 @@
 -------------------------------------------------------------------------------
 module SimpTyped.Isomorphism where
 
-open import SimpTyped.ScwfComb renaming (Tm to Tm-cwf ; Sub to Sub-cwf)
-open import SimpTyped.Tm.Syntax
+open import SimpTyped.ExpSub.ScwfExpSub renaming (Tm to Tm-cwf ; Sub to Sub-cwf)
+open import SimpTyped.ImpSub.Syntax
   renaming (Tm to Tm-λ ; Sub to Sub-λ ; _∘_ to _∘λ_ ; q to q-λ ; weaken to weaken-λ ; _[_] to _[_]λ
             ; p to p-λ ; id to id-λ ; cong-sub to cong-sub-λ) hiding (cong-∘)
 open import SimpTyped.Context
-open import SimpTyped.Tm.Properties hiding (id₀)
+open import SimpTyped.ImpSub.Properties hiding (id₀)
 open import SimpTyped.Context
 open import SimpTyped.Type
 open import Function as F using (_$_ ; flip)
@@ -30,8 +30,11 @@ varCwf here      = q
 varCwf (there φ) = varCwf φ [ p ]
 
 ⟦_⟧  : ∀ {Γ α} → Tm-λ Γ α → Tm-cwf Γ α
+
 ⟪_⟫  : ∀ {Γ α} → Tm-cwf Γ α → Tm-λ Γ α
+
 ⟪_⟫' : ∀ {Γ Δ} → Sub-cwf Δ Γ → Sub-λ Δ Γ
+
 ⟦_⟧' : ∀ {Γ Δ} → Sub-λ Δ Γ → Sub-cwf Δ Γ
 
 ⟦ var ∈Γ ⟧  = varCwf ∈Γ
@@ -68,19 +71,19 @@ sub-λ⇒cwf : ∀ {Γ Δ} (γ : Sub-λ Γ Δ) → ⟪ ⟦ γ ⟧' ⟫' ≡ γ
 
 p-inverse : ∀ {Γ α} → p {Γ} {α} ≋ ⟦ p-λ {Γ} ⟧'
 
-[]-comm : ∀ {Γ Δ α} (t : Tm-λ Γ α) (ρ : Sub-λ Δ Γ) →
-           ⟦ t [ ρ ]λ ⟧ ≈ ⟦ t ⟧ [ ⟦ ρ ⟧' ]
+sub-preserves : ∀ {Γ Δ α} (t : Tm-λ Γ α) (ρ : Sub-λ Δ Γ)
+                → ⟦ t [ ρ ]λ ⟧ ≈ ⟦ t ⟧ [ ⟦ ρ ⟧' ]
           
-⟦⟧-∘-dist : ∀ {Γ Δ Θ} (ρ : Sub-λ Δ Θ) (σ : Sub-λ Γ Δ) →
-            ⟦ ρ ∘λ σ ⟧' ≋ ⟦ ρ ⟧' ∘ ⟦ σ ⟧'
+∘-preserves : ∀ {Γ Δ Θ} (ρ : Sub-λ Δ Θ) (σ : Sub-λ Γ Δ)
+              → ⟦ ρ ∘λ σ ⟧' ≋ ⟦ ρ ⟧' ∘ ⟦ σ ⟧'
 
 -- substitution commutes to the other object
 
-[]-comm {ε} (var ()) tt
-[]-comm (var here) (ρ , t) = sym≈ (qCons ⟦ t ⟧ ⟦ ρ ⟧')
-[]-comm (var (there ∈Γ)) (ρ , t) = begin
+sub-preserves {ε} (var ()) tt
+sub-preserves (var here) (ρ , t) = sym≈ (qCons ⟦ t ⟧ ⟦ ρ ⟧')
+sub-preserves (var (there ∈Γ)) (ρ , t) = begin
   ⟦ tkVar ∈Γ ρ ⟧
-    ≈⟨ []-comm (var ∈Γ) ρ ⟩
+    ≈⟨ sub-preserves (var ∈Γ) ρ ⟩
   ⟦ var ∈Γ ⟧ [ ⟦ ρ ⟧' ]
     ≈⟨ cong-sub refl≈ (sym≋ (pCons ⟦ t ⟧ ⟦ ρ ⟧')) ⟩
   ⟦ var ∈Γ ⟧ [ p ∘ < ⟦ ρ ⟧' , ⟦ t ⟧ > ]
@@ -89,20 +92,20 @@ p-inverse : ∀ {Γ α} → p {Γ} {α} ≋ ⟦ p-λ {Γ} ⟧'
     ∎
   where open EqR (TmSetoid {_})
   
-[]-comm (t · u) ρ = begin
+sub-preserves (t · u) ρ = begin
   app ⟦ t [ ρ ]λ ⟧ ⟦ u [ ρ ]λ ⟧
-    ≈⟨ cong-app ([]-comm t ρ) refl≈ ⟩
+    ≈⟨ cong-app (sub-preserves t ρ) refl≈ ⟩
   app (⟦ t ⟧ [ ⟦ ρ ⟧' ]) ⟦ u [ ρ ]λ ⟧
-    ≈⟨ cong-app refl≈ ([]-comm u ρ) ⟩
+    ≈⟨ cong-app refl≈ (sub-preserves u ρ) ⟩
   app (⟦ t ⟧ [ ⟦ ρ ⟧' ]) (⟦ u ⟧ [ ⟦ ρ ⟧' ])
     ≈⟨ subApp ⟦ t ⟧ ⟦ u ⟧ ⟦ ρ ⟧' ⟩
   app ⟦ t ⟧ ⟦ u ⟧ [ ⟦ ρ ⟧' ]
     ∎
   where open EqR (TmSetoid {_})
   
-[]-comm {Γ} (ƛ {α = α} t) ρ = begin
+sub-preserves {Γ} (ƛ {α = α} t) ρ = begin
   lam ⟦ t [ wk-sub Γ ⊆-∙ ρ , var here ]λ ⟧
-    ≈⟨ cong-lam ([]-comm t (wk-sub Γ ⊆-∙ ρ , var here)) ⟩
+    ≈⟨ cong-lam (sub-preserves t (wk-sub Γ ⊆-∙ ρ , var here)) ⟩
   lam (⟦ t ⟧ [ < ⟦ wk-sub Γ ⊆-∙ ρ ⟧' , q > ])
     ≈⟨ cong-lam (cong-sub refl≈ (help)) ⟩
   lam (⟦ t ⟧ [ < ⟦ ρ ∘λ p-λ ⟧' , q > ])
@@ -119,12 +122,12 @@ p-inverse : ∀ {Γ α} → p {Γ} {α} ≋ ⟦ p-λ {Γ} ⟧'
 
 -- composition distributes
 
-⟦⟧-∘-dist {Θ = ε} tt σ = sym≋ (<>Lzero ⟦ σ ⟧')
-⟦⟧-∘-dist {Θ = Θ ∙ x} (ρ , t) σ = begin
+∘-preserves {Θ = ε} tt σ = sym≋ (left-zero ⟦ σ ⟧')
+∘-preserves {Θ = Θ ∙ x} (ρ , t) σ = begin
   < ⟦ ρ ∘λ σ ⟧' , ⟦ t [ σ ]λ ⟧ >
-    ≈⟨ cong-<,> refl≈ (⟦⟧-∘-dist ρ σ) ⟩
+    ≈⟨ cong-<,> refl≈ (∘-preserves ρ σ) ⟩
   < ⟦ ρ ⟧' ∘ ⟦ σ ⟧' , ⟦ t [ σ ]λ ⟧ >
-    ≈⟨ cong-<,> ([]-comm t σ) refl≋ ⟩
+    ≈⟨ cong-<,> (sub-preserves t σ) refl≋ ⟩
   < ⟦ ρ ⟧' ∘ ⟦ σ ⟧' , ⟦ t ⟧ [ ⟦ σ ⟧' ] >
     ≈⟨ sym≋ (compExt ⟦ t ⟧ ⟦ ρ ⟧' ⟦ σ ⟧') ⟩
   < ⟦ ρ ⟧' , ⟦ t ⟧ > ∘ ⟦ σ ⟧'
@@ -156,7 +159,7 @@ tm-cwf⇒λ (lam t) = cong-lam (tm-cwf⇒λ t)
 tm-cwf⇒λ (app t u) = cong-app (tm-cwf⇒λ t) (tm-cwf⇒λ u)
 tm-cwf⇒λ (t [ γ ]) = begin
   ⟦ ⟪ t ⟫ [ ⟪ γ ⟫' ]λ ⟧
-    ≈⟨ []-comm ⟪ t ⟫ ⟪ γ ⟫' ⟩
+    ≈⟨ sub-preserves ⟪ t ⟫ ⟪ γ ⟫' ⟩
   ⟦ ⟪ t ⟫ ⟧ [ ⟦ ⟪ γ ⟫' ⟧' ]
     ≈⟨ cong-sub (tm-cwf⇒λ t) refl≋ ⟩
   t [ ⟦ ⟪ γ ⟫' ⟧' ]
@@ -189,7 +192,7 @@ sub-cwf⇒λ p = sym≋ p-inverse
 
 sub-cwf⇒λ (γ ∘ γ') = begin
   ⟦ ⟪ γ ⟫' ∘λ ⟪ γ' ⟫' ⟧'
-    ≈⟨ ⟦⟧-∘-dist ⟪ γ ⟫' ⟪ γ' ⟫' ⟩
+    ≈⟨ ∘-preserves ⟪ γ ⟫' ⟪ γ' ⟫' ⟩
   ⟦ ⟪ γ ⟫' ⟧' ∘ ⟦ ⟪ γ' ⟫' ⟧'
     ≈⟨ cong-∘ (sub-cwf⇒λ γ) refl≋ ⟩
   γ ∘ ⟦ ⟪ γ' ⟫' ⟧'
@@ -232,7 +235,7 @@ vars≈hom {Γ ∙ x} (ρ , t) = cong-<,> refl≈ (vars≈hom ρ)
 
 var-lemma : ∀ {Γ Δ α} (ρ : Δ ▸ Γ) →
              vars ρ ∘ (p {α = α}) ≋ vars (map-∈ there ρ)
-var-lemma {ε} tt = <>Lzero p
+var-lemma {ε} tt = left-zero p
 var-lemma {Γ ∙ x} (ρ , t) = begin
   < vars ρ , varCwf t > ∘ p
     ≈⟨ compExt (varCwf t) (vars ρ) p ⟩

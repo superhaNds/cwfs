@@ -53,7 +53,7 @@ record Scwf : Set₁ where
     
     id₀ : id {⋄} ≋ <>
     
-    <>Lzero : ∀ {Γ Δ} (γ : Sub Γ Δ) → <> ∘ γ ≋ <>
+    left-zero : ∀ {Γ Δ} (γ : Sub Γ Δ) → <> ∘ γ ≋ <>
     
     idExt : ∀ {Γ α} → id {Γ ∙ α} ≋ < p , q >
     
@@ -61,8 +61,8 @@ record Scwf : Set₁ where
     
     idR : ∀ {Γ Δ} (γ : Sub Γ Δ) → γ ∘ id ≋ γ
     
-    assoc : ∀ {Γ Δ Θ Λ} (γ : Sub Δ Θ) (δ : Sub Γ Δ) (ζ : Sub Λ Γ) →
-             (γ ∘ δ) ∘ ζ ≋ γ ∘ (δ ∘ ζ)
+    assoc : ∀ {Γ Δ Θ Λ} (γ : Sub Δ Θ) (δ : Sub Γ Δ) (ζ : Sub Λ Γ)
+            → (γ ∘ δ) ∘ ζ ≋ γ ∘ (δ ∘ ζ)
             
     subId : ∀ {Γ α} (t : Tm Γ α) → t [ id ] ≈ t
     
@@ -70,26 +70,26 @@ record Scwf : Set₁ where
     
     qCons : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Sub Γ Δ) → q [ < γ , t > ] ≈ t
     
-    subComp : ∀ {Γ Δ Θ α} (t : Tm Δ α) (γ : Sub Γ Δ) (δ : Sub Θ Γ) →
-               t [ γ ∘ δ ] ≈ t [ γ ] [ δ ]
+    subComp : ∀ {Γ Δ Θ α} (t : Tm Δ α) (γ : Sub Γ Δ) (δ : Sub Θ Γ)
+              → t [ γ ∘ δ ] ≈ t [ γ ] [ δ ]
             
-    compExt : ∀ {Γ Δ α} (t : Tm Δ α) (γ : Sub Δ Γ) (δ : Sub Γ Δ) →
-               < γ , t > ∘ δ ≋ < γ ∘ δ , t [ δ ] >
+    compExt : ∀ {Γ Δ α} (t : Tm Δ α) (γ : Sub Δ Γ) (δ : Sub Γ Δ)
+              →  < γ , t > ∘ δ ≋ < γ ∘ δ , t [ δ ] >
             
-    cong-sub : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Δ Γ} →
-                t ≈ t' →
-                γ ≋ γ' →
-                t [ γ ] ≈ t' [ γ' ]
+    cong-sub : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Δ Γ}
+               → t ≈ t'
+               → γ ≋ γ'
+               →  t [ γ ] ≈ t' [ γ' ]
                
-    cong-<,> : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Γ Δ} →
-                t ≈ t' →
-                γ ≋ γ' →
-                < γ , t > ≋ < γ' , t' >
+    cong-<,> : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Γ Δ}
+               → t ≈ t'
+               → γ ≋ γ'
+               → < γ , t > ≋ < γ' , t' >
                
-    cong-∘ : ∀ {Γ Δ Θ} {γ δ : Sub Δ Θ} {γ' δ' : Sub Γ Δ} →
-              γ ≋ δ →
-              γ' ≋ δ' →
-              γ ∘ γ' ≋ δ ∘ δ'
+    cong-∘ : ∀ {Γ Δ Θ} {γ δ : Sub Δ Θ} {γ' δ' : Sub Γ Δ}
+             → γ ≋ δ
+             → γ' ≋ δ'
+             → γ ∘ γ' ≋ δ ∘ δ'
 
   setoidT : ∀ {Γ α} → Setoid _ _
   setoidT {Γ} {α} = record { isEquivalence = IsEquivT {Γ} {α} }
@@ -151,3 +151,43 @@ record Lambda-βη-scwf : Set₁ where
     β : ∀ {Γ α β} {t : Tm (Γ ∙ α) β} {u} → app (lam t) u ≈ t [ < id , u > ]
 
     η : ∀ {Γ α β} {t : Tm Γ (α `→ β)} → lam (app (t [ p ]) q) ≈ t
+
+{-
+record Scwf-Morphism : Set₁ where
+  field
+    src : Scwf
+    trg : Scwf
+  open Scwf src
+    renaming (Ctx to CtxS ; ⋄ to ⋄S ; Ty to TyS ; Tm to TmS
+             ; Sub to SubS ; <> to <>S ; <_,_> to <_,_>S ; _∘_ to _∘S_
+             ; _[_] to _[_]S ; q to qS ; p to pS ; id to idS ; _≈_ to _≈S_ ; _≋_ to _≋S_)
+  open Scwf trg
+    renaming (Ctx to CtxT ; ⋄ to ⋄T ; Ty to TyT ; Tm to TmT
+             ; Sub to SubT ; <> to <>T ; <_,_> to <_,_>T ;_∘_ to _∘T_
+             ; _[_] to _[_]T ; q to qT ; p to pT ; id to idT ; _≈_ to _≈T_ ; _≋_ to _≋T_)
+  field
+    to-ctx : CtxS → CtxT
+    to-ty  : TyS → TyT
+    ⟦_⟧  : ∀ {Γ α} → TmS Γ α → TmT (to-ctx Γ) (to-ty α)
+    ⟦_⟧' : ∀ {Δ Γ} → SubS Γ Δ → SubT (to-ctx Γ) (to-ctx Δ)
+
+    ⋄-preserved : ∀ {Γ α} → to-ctx (Γ ∙ α) 
+
+    id-preserved : ∀ {Γ} → ⟦ idS {Γ} ⟧' ≋T idT
+    
+    q-preserved : ∀ {Γ α} → ⟦ qS {Γ} {α}  ⟧ ≈T {!qT!}
+    
+    p-preserved : ∀ {Γ α} → ⟦ pS {Γ} {α} ⟧' ≋T {!!}
+    
+    ∘-preserved : ∀ {Δ Γ Θ} (σ₁ : SubS Θ Γ) (σ₂ : SubS Δ Θ)
+                  → ⟦ σ₁ ∘S σ₂ ⟧' ≋T ⟦ σ₁ ⟧' ∘T ⟦ σ₂ ⟧'
+
+    <>-preserved : ∀ {Γ} → ⟦ <>S {Γ} ⟧' ≋T {!<>T!}
+
+    <,>-preserved : ∀ {Γ Δ α} (t : TmS Γ α) (σ : SubS Γ Δ)
+                    → ⟦ < σ , t >S ⟧' ≋T {!!} --< ⟦ σ ⟧' , ⟦ t ⟧ >T
+
+    sub-preserved : ∀ {Γ Δ α} (t : TmS Γ α) (σ : SubS Δ Γ)
+                    → ⟦ t [ σ ]S ⟧ ≈T ⟦ t ⟧ [ ⟦ σ ⟧' ]T
+  
+-}      

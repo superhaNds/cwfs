@@ -69,17 +69,17 @@ join▹ (ρ ∘ σ , ⊢∘ ⊢ρ ⊢σ)        = join▹ (ρ , ⊢ρ) ∘ join�
 -- Isomorphism proof
 
 -- Inverse proof signatures
-joinstrip▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : Sub Δ Γ) →
-              join▹ (strip▹ ρ , typing▹ ρ) ≋ ρ
+joinstrip▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : Sub Δ Γ)
+             → join▹ (strip▹ ρ , typing▹ ρ) ≋ ρ
 
-joinstrip : ∀ {n α} {Γ : Ctx n} (t : Tm Γ α) →
-             join (strip t , typing t) ≈ t
+joinstrip : ∀ {n α} {Γ : Ctx n} (t : Tm Γ α)
+            → join (strip t , typing t) ≈ t
 
-stripjoin▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : RSub n m) (⊢ρ : Δ ▹ Γ ⊢ ρ) →
-              strip▹ (join▹ (ρ , ⊢ρ)) ≋' ρ
+stripjoin▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : RSub n m) (⊢ρ : Δ ▹ Γ ⊢ ρ)
+             → strip▹ (join▹ (ρ , ⊢ρ)) ≋' ρ
 
-stripjoin : ∀ {n α} {Γ : Ctx n} (t : RTm n) (t∈ : Γ ⊢ t ∈ α) →
-             strip (join (t , t∈)) ≈' t
+stripjoin : ∀ {n α} {Γ : Ctx n} (t : RTm n) (t∈ : Γ ⊢ t ∈ α)
+            → strip (join (t , t∈)) ≈' t
 
 joinstrip▹ <>        = refl≋
 joinstrip▹ id        = refl≋

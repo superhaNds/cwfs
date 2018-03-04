@@ -1,14 +1,16 @@
-# Categories with Families as a model of lambda calculus
+# Initial Categories with Families
 
 This repository contains the developments of a formalization of categories with
-families described as a generalized algebraic theory described in [Internal Type Theory](http://www.cse.chalmers.se/~peterd/papers/InternalTT.pdf)
-and the traditional notions of lambda calculus it models.
+families (CwFs) defined as a generalized algebraic theory described in [Internal Type Theory](http://www.cse.chalmers.se/~peterd/papers/InternalTT.pdf)
 
-We consider the category of CwFs starting with the unityped version where types are removed 
-and we define what it means to be an object in the category. After, we build two term models
-one with explicit substitutions and one with implicit with ordinary lambda terms and construct
-CwF morphisms between them and an isomorphism. This work is performed for untyped, simply
-typed (two parts), and some formulation of a full CwF.
+There are three versions of CwFs we work with, unityped, simply typed, and the full CwFs 
+that model dependent types. Extra structure is added to have a complete model of
+lambda calculus.
+
+We consider the category of CwFs for each version and define objects and morphisms.
+After, we build two term models: one with explicit substitutions and one with implicit.
+Morphisms are defined between those two term models and we construct an isomorphism. 
+This should be an isomorphism of initial CwFs.
 
 # Content
 
@@ -16,12 +18,16 @@ The structure is as follows:
 
 * __Unityped/__
 
-    Unityped CwFs and untyped lambda calculus.
+    Unityped CwFs with extra structure and untyped lambda calculus.
     
 * __SimpTyped/__
     
-    Intrinsically simply typed CwFs and lambda calculus.
+    Intrinsically simply typed CwFs with extra structure and simply typed lambda calculus.
     
 * __Ext-Typed/__
 
-    Extrinsically simply typed CwFs and lambda calculus, i.e., raw terms with external typing relations. And an extrinsic dependently typed lambda calculus and CwF with Pi and U ala Russel. 
+    Extrinsically simply typed CwFs with extra structure. 
+    And an extrinsically dependently typed lambda calculus with Pi and universe ala Russell.
+
+It is a work in progress, there are some unfinished definitions, especially for the dependently typed
+developments.     

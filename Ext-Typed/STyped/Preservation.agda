@@ -17,7 +17,7 @@ open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Ext-Typed.STyped.Syntax
 open import Ext-Typed.STyped.Raw
-open import Ext-Typed.STyped.ScwfObj
+open import Ext-Typed.STyped.ExtScwf
 open ≡-Reasoning
 
 -------------------------------------------------------------------------
@@ -114,9 +114,9 @@ data _▹_⊢_ {n} : ∀ {m} → Ctx m → Ctx n → Sub Tm m n → Set where
 
 module Var where
 
-  map-suc-preserv : ∀ {m n Γ Δ α} (ρ : Sub Fin m n) →
-                     Γ ▹ Δ ⊢ Vec.map var ρ →
-                     Γ ▹ Δ ∙ α ⊢ Vec.map var (Vec.map suc ρ)
+  map-suc-preserv : ∀ {m n Γ Δ α} (ρ : Sub Fin m n)
+                    → Γ ▹ Δ ⊢ Vec.map var ρ
+                    → Γ ▹ Δ ∙ α ⊢ Vec.map var (Vec.map suc ρ)
   map-suc-preserv []      []           = []
   map-suc-preserv (x ∷ ρ) (ext var ⊢ρ) = ext var (map-suc-preserv ρ ⊢ρ)
 
@@ -198,19 +198,19 @@ subst-lemma (t · u)   ⊢ρ = subst-lemma t ⊢ρ · subst-lemma u ⊢ρ
 -- cons preserves (by definition)
 
 ∙-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
-              {t : Tm n} {ρ : Sub Tm m n} {α} →
-             Γ ⊢ t ∈ α →
-             Δ ▹ Γ ⊢ ρ →
-             Δ ∙ α ▹ Γ ⊢ ρ , t
+              {t : Tm n} {ρ : Sub Tm m n} {α}
+            → Γ ⊢ t ∈ α
+            → Δ ▹ Γ ⊢ ρ
+            → Δ ∙ α ▹ Γ ⊢ ρ , t
 ∙-preserv t ⊢ρ = ext t ⊢ρ
 
 -- composition preserves
 
 ∘-preserv : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
-              {ρ : SubT n k} {σ : Sub Tm n m} →
-             Θ ▹ Γ ⊢ ρ →
-             Γ ▹ Δ ⊢ σ →
-             Θ ▹ Δ ⊢ ρ ∘ σ
+              {ρ : SubT n k} {σ : Sub Tm n m}
+            → Θ ▹ Γ ⊢ ρ
+            → Γ ▹ Δ ⊢ σ
+            → Θ ▹ Δ ⊢ ρ ∘ σ
 ∘-preserv [] _  = []
 ∘-preserv (ext x ⊢ρ) ⊢ρ' =
   ext (subst-lemma x ⊢ρ')
@@ -247,8 +247,10 @@ wk-[p] t = /-wk {t = t}
 
 -- substitution operation
 
-sub-ty : ∀ {m n α} {Δ : Ctx m} {Γ : Ctx n} → Σ (Tm n) (Γ ⊢_∈ α) →
-         Σ (Sub Tm n m) (Γ ▹ Δ ⊢_) → Σ (Tm m) (Δ ⊢_∈ α)             
+sub-ty : ∀ {m n α} {Δ : Ctx m} {Γ : Ctx n}
+         → Σ (Tm n) (Γ ⊢_∈ α)
+         → Σ (Sub Tm n m) (Γ ▹ Δ ⊢_)
+         → Σ (Tm m) (Δ ⊢_∈ α)             
 sub-ty (t Σ., t∈) (ρ Σ., ⊢ρ) = t [ ρ ] Σ., subst-lemma t∈ ⊢ρ
 
 -- identity
@@ -280,26 +282,3 @@ app-ty : ∀ {n} {Γ : Ctx n} {α β}
          → Σ (Tm n) (Γ ⊢_∈ α)
          → Σ (Tm n) (Γ ⊢_∈ β)
 app-ty (t Σ., t∈) (u Σ., u∈) = t · u Σ., t∈ · u∈
-
-private
-
-  ScwfInst : Scwf
-  ScwfInst = record
-               { RTm = Tm
-               ; RSub = Sub Tm
-               ; _≈_ = _≡_
-               ; _≋_ = _≡_
-               ; Ty = Ty
-               ; Ctx = Ctx
-               ; ε = []
-               ; _∙_ = _∙_
-               ; _⊢_∈_ = _⊢_∈_
-               ; _▹_⊢_ = _▹_⊢_
-               ; id-ty = id-ty
-               ; _∘_ = {!∘-ty!}  -- indices are inversed because the length is in the second position there but here in the first ..
-               ; q-ty = q-ty
-               ; p-ty = {!p-ty!}
-               ; <>-ty = {!<>-ty!}
-               ; <,>-ty = {!!}
-               ; sub-ty = {!sub-ty!}
-               }
