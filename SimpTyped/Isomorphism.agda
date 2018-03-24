@@ -29,13 +29,13 @@ varCwf : ∀ {Γ α} (φ : α ∈ Γ) → Tm-cwf Γ α
 varCwf here      = q
 varCwf (there φ) = varCwf φ [ p ]
 
+-- maps (morphisms)
+
 ⟦_⟧  : ∀ {Γ α} → Tm-λ Γ α → Tm-cwf Γ α
+⟦_⟧' : ∀ {Γ Δ} → Sub-λ Δ Γ → Sub-cwf Δ Γ
 
 ⟪_⟫  : ∀ {Γ α} → Tm-cwf Γ α → Tm-λ Γ α
-
 ⟪_⟫' : ∀ {Γ Δ} → Sub-cwf Δ Γ → Sub-λ Δ Γ
-
-⟦_⟧' : ∀ {Γ Δ} → Sub-λ Δ Γ → Sub-cwf Δ Γ
 
 ⟦ var ∈Γ ⟧  = varCwf ∈Γ
 ⟦ t · u ⟧   = app ⟦ t ⟧ ⟦ u ⟧
@@ -104,9 +104,9 @@ sub-preserves (t · u) ρ = begin
   where open EqR (TmSetoid {_})
   
 sub-preserves {Γ} (ƛ {α = α} t) ρ = begin
-  lam ⟦ t [ wk-sub Γ ⊆-∙ ρ , var here ]λ ⟧
-    ≈⟨ cong-lam (sub-preserves t (wk-sub Γ ⊆-∙ ρ , var here)) ⟩
-  lam (⟦ t ⟧ [ < ⟦ wk-sub Γ ⊆-∙ ρ ⟧' , q > ])
+  lam ⟦ t [ wk ρ , var here ]λ ⟧
+    ≈⟨ cong-lam (sub-preserves t (wk ρ , var here)) ⟩
+  lam (⟦ t ⟧ [ < ⟦ wk ρ ⟧' , q > ])
     ≈⟨ cong-lam (cong-sub refl≈ (help)) ⟩
   lam (⟦ t ⟧ [ < ⟦ ρ ∘λ p-λ ⟧' , q > ])
     ≈⟨ cong-lam (cong-sub refl≈ (cong-<,> refl≈ ({!!}))) ⟩
@@ -117,7 +117,7 @@ sub-preserves {Γ} (ƛ {α = α} t) ρ = begin
   lam ⟦ t ⟧ [ ⟦ ρ ⟧' ]
     ∎
   where open EqR (TmSetoid {_})
-        help : < ⟦ wk-sub Γ (⊆-∙ {a = α}) ρ ⟧' , q > ≋ < ⟦ ρ ∘λ p-λ ⟧' , q >
+        help : < ⟦ wk {α = α} ρ ⟧' , q > ≋ < ⟦ ρ ∘λ p-λ ⟧' , q >
         help rewrite wk-sub-∘-p {Γ} {α = α} ρ = refl≋
 
 -- composition distributes

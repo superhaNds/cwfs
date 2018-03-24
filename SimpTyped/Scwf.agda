@@ -66,7 +66,7 @@ record Scwf : Set₁ where
             
     subId : ∀ {Γ α} (t : Tm Γ α) → t [ id ] ≈ t
     
-    pCons : ∀ {Δ Θ α} (t : Tm Δ α) (γ : Sub Δ Θ) → p ∘ < γ , t > ≋ γ
+    pCons : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Sub Γ Δ) → p ∘ < γ , t > ≋ γ
     
     qCons : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Sub Γ Δ) → q [ < γ , t > ] ≈ t
     
@@ -122,22 +122,22 @@ record Lambda-scwf : Set₁ where
 
     -- substituting under apply and lambda
     
-    subApp : ∀ {Γ Δ α β} (t : Tm Γ (α `→ β)) (u : Tm Γ α) (γ : Sub Δ Γ) →
-              app (t [ γ ]) (u [ γ ]) ≈ (app t u) [ γ ] 
+    subApp : ∀ {Γ Δ α β} (t : Tm Γ (α `→ β)) (u : Tm Γ α) (γ : Sub Δ Γ)
+             → app (t [ γ ]) (u [ γ ]) ≈ (app t u) [ γ ] 
              
-    subLam : ∀ {Γ Δ α β} (t : Tm (Γ ∙ α) β) (γ : Sub Δ Γ) →
-              lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
+    subLam : ∀ {Γ Δ α β} (t : Tm (Γ ∙ α) β) (γ : Sub Δ Γ)
+             → lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
 
     -- congruence rules
     
-    cong-lam : ∀ {Γ α β} {t t' : Tm (Γ ∙ α) β} →
-                t ≈ t' →
-                lam t ≈ lam t'
+    cong-lam : ∀ {Γ α β} {t t' : Tm (Γ ∙ α) β}
+               → t ≈ t'
+               → lam t ≈ lam t'
              
-    cong-app : ∀ {Γ α β} {t t' : Tm Γ (α `→ β)} {u u'} →
-                t ≈ t' →
-                u ≈ u' →
-                app t u ≈ app t' u'
+    cong-app : ∀ {Γ α β} {t t' : Tm Γ (α `→ β)} {u u'}
+               → t ≈ t'
+               → u ≈ u'
+               → app t u ≈ app t' u'
 
 record Lambda-βη-scwf : Set₁ where
   field
@@ -148,9 +148,12 @@ record Lambda-βη-scwf : Set₁ where
 
    -- beta and eta equalities
   
-    β : ∀ {Γ α β} {t : Tm (Γ ∙ α) β} {u} → app (lam t) u ≈ t [ < id , u > ]
+    β : ∀ {Γ α β} {t : Tm (Γ ∙ α) β} {u}
+        → app (lam t) u ≈ t [ < id , u > ]
+        
+    η : ∀ {Γ α β} {t : Tm Γ (α `→ β)}
+        → lam (app (t [ p ]) q) ≈ t
 
-    η : ∀ {Γ α β} {t : Tm Γ (α `→ β)} → lam (app (t [ p ]) q) ≈ t
 
 {-
 record Scwf-Morphism : Set₁ where
@@ -171,7 +174,7 @@ record Scwf-Morphism : Set₁ where
     ⟦_⟧  : ∀ {Γ α} → TmS Γ α → TmT (to-ctx Γ) (to-ty α)
     ⟦_⟧' : ∀ {Δ Γ} → SubS Γ Δ → SubT (to-ctx Γ) (to-ctx Δ)
 
-    ⋄-preserved : ∀ {Γ α} → to-ctx (Γ ∙ α) 
+--     ⋄-preserved : ∀ {Γ α} → to-ctx (Γ ∙ α) 
 
     id-preserved : ∀ {Γ} → ⟦ idS {Γ} ⟧' ≋T idT
     
@@ -189,5 +192,4 @@ record Scwf-Morphism : Set₁ where
 
     sub-preserved : ∀ {Γ Δ α} (t : TmS Γ α) (σ : SubS Δ Γ)
                     → ⟦ t [ σ ]S ⟧ ≈T ⟦ t ⟧ [ ⟦ σ ⟧' ]T
-  
--}      
+-}

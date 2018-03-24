@@ -115,11 +115,14 @@ wk-sub : ({Δ} {Θ} Γ : Ctx) (φ : Δ ⊆ Θ) (ρ : Sub Δ Γ) → Sub Θ Γ
 wk-sub ε       φ ρ       = tt
 wk-sub (Γ ∙ x) φ (ρ , t) = wk-sub Γ φ ρ , weaken φ t
 
+wk : ∀ {Γ Δ α} → Sub Δ Γ → Sub (Δ ∙ α) Γ
+wk ρ = wk-sub _ ⊆-∙ ρ
+
 -- identity substitution
 
 id : ∀ {Γ} → Sub Γ Γ
 id {ε}     = tt
-id {Γ ∙ α} = wk-sub Γ ⊆-∙ id , var here
+id {Γ ∙ α} = wk id , var here
 
 -- lookup
 
@@ -132,7 +135,7 @@ tkVar (there ∈Γ) (ρ , t) = tkVar ∈Γ ρ
 _[_] : ∀ {Γ Δ α} → Tm Γ α → Sub Δ Γ → Tm Δ α
 var ∈Γ  [ ρ ] = tkVar ∈Γ ρ
 (t · u) [ ρ ] = t [ ρ ] · u [ ρ ]
-ƛ t     [ ρ ] = ƛ (t [ wk-sub _ ⊆-∙ ρ , var here ])
+ƛ t     [ ρ ] = ƛ (t [ wk ρ , var here ])
 
 -- traditional projection substitution
 

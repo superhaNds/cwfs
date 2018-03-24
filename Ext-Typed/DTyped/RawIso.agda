@@ -10,7 +10,7 @@ open import Function as F using (_$_)
 open import Ext-Typed.DTyped.Lambda
   renaming (Tm to Tm-λ ; Sub to Sub-λ ; q to q-λ ; id to id-λ
             ; p to p-λ ; _∘_ to _∘λ_ ; _[_] to _[_]λ) hiding (subComp ; cong-sub ; pCons)
-open import Ext-Typed.DTyped.ExpCwf renaming (Ctx to Ctx-cwf ; Tm to Tm-cwf ; Sub to Sub-cwf)
+open import Ext-Typed.DTyped.ExpSubCwf renaming (Ctx to Ctx-cwf ; Tm to Tm-cwf ; Sub to Sub-cwf)
 open import Data.Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_] ; cong-app)
 import Relation.Binary.EqReasoning as EqR

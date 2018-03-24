@@ -93,7 +93,7 @@ abstract
   wk-[] v (var ∈Γ) ρ = tk-in v ∈Γ ρ
   wk-[] v (t · u)  ρ = cong₂ _·_ (wk-[] v t ρ) (wk-[] v u ρ)
   wk-[] {Γ} {Δ} v (ƛ t) ρ = cong ƛ
-    (trans (wk-[] (pop! v) t (wk-sub Δ ⊆-∙ ρ , var here))
+    (trans (wk-[] (pop! v) t (wk ρ , var here))
            (cong (λ ρ → t [ ρ , var here ]) (sym (▹-wk-simp v ⊆-∙ ρ))))
 
   ∘-step : ∀ Γ {Δ} {Θ} {α} (ρ : Sub Δ Γ)
@@ -102,7 +102,7 @@ abstract
   ∘-step ε ρ σ t = refl
   ∘-step (Γ ∙ x) (ρ , u) σ t =
     cong₂ _,_ (∘-step Γ ρ σ t)
-              (trans (wk-[] (step ⊆-refl) u (σ , t))
+              (trans (wk-[] ⊆-∙ u (σ , t))
                      (cong (u [_]) (simp-refl _ σ)))
                
   ▹-wk-refl : ∀ Γ {Δ} (ρ : Sub Δ Γ) → wk-sub Γ ⊆-refl ρ ≡ ρ
@@ -179,22 +179,21 @@ abstract
 
   tkV-p-map : ∀ {Γ α} (v : α ∈ Γ) → tkVar v (▸-to-sub var (pV {α = α})) ≡ var (there v)
   tkV-p-map here = refl
-  tkV-p-map {Γ ∙ x} (there v)
-    = trans (sym (lim pV (there v))) (cong var (tk∈-pV-th (there v)))
+  tkV-p-map {Γ ∙ x} (there v) =
+    trans (sym (lim pV (there v))) (cong var (tk∈-pV-th (there v)))
 
   for-all-tk : ∀ {Γ Δ} (γ γ' : Sub Δ Γ)
                  (hyp : ∀ {α} (v : α ∈ Γ) → tkVar v γ ≡ tkVar v γ')
               → γ ≡ γ'
   for-all-tk {ε} tt tt hyp = refl
-  for-all-tk {Γ ∙ _} (γ , t) (γ' , t') hyp
-    = cong₂ _,_ (for-all-tk γ γ' (λ v → hyp (there v))) (hyp here)
- 
-  p-tk-same : ∀ {Γ α} (v : α ∈ Γ)
-              → tkVar v (▸-to-sub var (pV {α = α})) ≡ tkVar v p
-  p-tk-same v = sym (trans (tkVar-p v) (sym (tkV-p-map v)))
-  
-  postulate  pIsVarP : ∀ {Γ α} → ▸-to-sub var (pV {Γ} {α}) ≡ p {Γ} {α}
- -- pIsVarP {Γ} {α} = for-all-tk (▸-to-sub var (pV {Γ})) p {!p-tk-same!}
+  for-all-tk {Γ ∙ _} (γ , t) (γ' , t') hyp =
+    cong₂ _,_ (for-all-tk γ γ' (λ v → hyp (there v))) (hyp here)
+
+  postulate 
+    pIsVarP : ∀ {Γ α} → ▸-to-sub var (pV {Γ} {α}) ≡ p {Γ} {α}
+  --pIsVarP {Γ} {α} = for-all-tk (▸-to-sub var (pV {Γ})) p {!p-tk-same!}
+    --where p-tk-same : ∀ {β} (v : β ∈ Γ) → tkVar v (▸-to-sub var (pV {α = β})) ≡ tkVar v p
+      --    p-tk-same v = sym (trans (tkVar-p v) (sym (tkV-p-map v)))
   
   subId : ∀ {Γ α} (t : Tm Γ α) → t [ id ] ≡ t
   subId (var ∈Γ) = tkVar-id ∈Γ
@@ -221,9 +220,9 @@ abstract
   wk-sub-∘-p : ∀ {Γ Δ α} (ρ : Sub Δ Γ) → ρ ∘ p {α = α} ≡ wk-sub Γ ⊆-∙ ρ
   wk-sub-∘-p {ε} tt = refl
   wk-sub-∘-p {Γ ∙ α} (ρ , t) = begin
-    ρ ∘ p , t [ p ]                 ≡⟨ cong (ρ ∘ p ,_) (sub-p t) ⟩
-    ρ ∘ p , weaken ⊆-∙ t            ≡⟨ cong (_, weaken ⊆-∙ t )(wk-sub-∘-p ρ) ⟩
-    wk-sub Γ ⊆-∙ ρ , weaken ⊆-∙ t   ∎
+    ρ ∘ p , t [ p ]           ≡⟨ cong (ρ ∘ p ,_) (sub-p t) ⟩
+    ρ ∘ p , weaken ⊆-∙ t      ≡⟨ cong (_, weaken ⊆-∙ t )(wk-sub-∘-p ρ) ⟩
+    wk ρ , weaken ⊆-∙ t       ∎
     where open P.≡-Reasoning
 
   id₀ : id {ε} ≡ tt

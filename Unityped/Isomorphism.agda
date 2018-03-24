@@ -11,12 +11,12 @@ open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
 open import Data.Fin using (Fin ; zero ; suc)
 open import Function using (_$_ ; flip)
-open import Unityped.ExpSub.UcwfExpSub renaming (Sub to Sub-cwf ; Tm to Tm-cwf ; Tm-Ucwf to Ucwf-c)
+open import Unityped.ExpSub.UcwfExpSub renaming (Sub to Sub-cwf ; Tm to Tm-cwf ; Tm-Ucwf to Ucwf-c ; Tm-λ-ucwf to λ-ucwf-c)
 open import Unityped.ImpSub
   renaming (Tm to Tm-λ ; _∘_ to _∘λ_ ; Subst to Sub-λ ; p to p-λ ; _[_] to _[_]λ
             ; id to id-λ ; weaken to weaken-λ ; q to q-λ ; qCons to qCons-λ
             ; subComp to subComp-λ ; pCons to pCons-λ ; cong-∘ to cong-∘λ
-            ; compExt to compExt-λ ; id₀ to id₀-λ ; idExt to idExt-λ ; Tm-ucwf to Ucwf-λ)
+            ; compExt to compExt-λ ; id₀ to id₀-λ ; idExt to idExt-λ ; Tm-ucwf to Ucwf-λ ; Tm-λ-ucwf to λ-ucwf-λ)
   hiding (Sub)
 open import Unityped.ExpSub.Projection
 open import Unityped.ImpSub.Properties
@@ -31,6 +31,7 @@ import Relation.Binary.EqReasoning as EqR
 
 ⟦_⟧  : ∀ {n} → Tm-λ n → Tm-cwf n
 ⟦_⟧' : ∀ {m n} → Sub-λ m n → Sub-cwf m n
+
 ⟪_⟫  : ∀ {n} → Tm-cwf n → Tm-λ n
 ⟪_⟫' : ∀ {m n} → Sub-cwf m n → Sub-λ m n
 
@@ -63,18 +64,37 @@ import Relation.Binary.EqReasoning as EqR
 
 -- Ucwf morphism
 
-Cwf⇒λ-morphism : Ucwf-Morphism Ucwf-c Ucwf-λ
-Cwf⇒λ-morphism = record
-                   { ⟦_⟧  = ⟪_⟫
-                   ; ⟦_⟧' = ⟪_⟫'
-                   ; id-preserved  = refl
-                   ; q-preserved   = refl
-                   ; p-preserved   = refl
-                   ; ∘-preserved   = λ _ _ → refl
-                   ; <>-preserved  = refl
-                   ; <,>-preserved = λ _ _ → refl
-                   ; sub-preserved = λ _ _ → refl
-                   }
+Cwf⇒λ : Ucwf-Morphism Ucwf-c Ucwf-λ
+Cwf⇒λ = record
+          { ⟦_⟧  = ⟪_⟫
+          ; ⟦_⟧' = ⟪_⟫'
+          ; id-preserved  = refl
+          ; q-preserved   = refl
+          ; p-preserved   = refl
+          ; ∘-preserved   = λ _ _ → refl
+          ; <>-preserved  = refl
+          ; <,>-preserved = λ _ _ → refl
+          ; sub-preserved = λ _ _ → refl
+          }
+
+LamCwf⇒λ : Lambda-Ucwf-Morphism λ-ucwf-c λ-ucwf-λ
+LamCwf⇒λ = record { ucwf-arr = Cwf⇒λ
+                  ; lam-preserved = refl
+                  ; app-preserved = refl
+                  }
+
+λ⇒Cwf : Ucwf-Morphism Ucwf-λ Ucwf-c
+λ⇒Cwf = record
+          { ⟦_⟧  = ⟦_⟧
+          ; ⟦_⟧' = ⟦_⟧'
+          ; id-preserved  = {!!}
+          ; q-preserved   = refl≈
+          ; p-preserved   = {!!}
+          ; ∘-preserved   = {!!}
+          ; <>-preserved  = refl≋
+          ; <,>-preserved = λ _ _ → refl≋
+          ; sub-preserved = {!!}
+          }
 
 ---------------------------------------------------------------------------------------------------
 -- Proofs that the translation functions are inverses of each other
@@ -162,7 +182,7 @@ tm-cwf⇒λ : ∀ {n} (t : Tm-cwf n) → t ≈ ⟦ ⟪ t ⟫ ⟧
 
 -- A Sub mapped to a vector substitution returns the same
 
-sub-cwf⇒λ : ∀ {m n} (h : Sub-cwf m n) → h ≋ ⟦ ⟪ h ⟫' ⟧'
+sub-cwf⇒λ : ∀ {m n} (γ : Sub-cwf m n) → γ ≋ ⟦ ⟪ γ ⟫' ⟧'
 
 -- A vector substitution mapped to a hom returns the same
 

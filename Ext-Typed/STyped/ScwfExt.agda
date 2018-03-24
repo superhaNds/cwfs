@@ -9,7 +9,7 @@ open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product using (Σ)
 open import Data.Vec hiding ([_])
 open import Ext-Typed.STyped.CtxType
-open import Ext-Typed.STyped.ExtScwf
+open import Ext-Typed.STyped.Scwf
 -------------------------------------------------------------------------
 -- Raw terms substitutions
 
@@ -182,8 +182,8 @@ refl≋ {ρ = ρ} = trans≋ (sym≋ (idL ρ)) (idL ρ)
 {-
 ScwfInst : Scwf
 ScwfInst = record
-             { Tm    = RTm
-             ; Sub   = RSub
+             { RTm    = RTm
+             ; RSub   = RSub
              ; _≈_    = _≈_
              ; _≋_    = _≋_
              ; Ty     = Ty

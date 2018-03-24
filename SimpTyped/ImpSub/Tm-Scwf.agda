@@ -54,8 +54,8 @@ subComp (var here) γ δ = refl
 subComp (var (there ∈Γ)) (γ , u) δ = subComp (var ∈Γ) γ δ            
 subComp (t · u) γ δ = cong₂ _·_ (subComp t γ δ) (subComp u γ δ)
 subComp {Γ} {Δ} (ƛ t) γ δ = sym $ cong ƛ $ trans (
-     sym (subComp t (wk-sub Γ (step ⊆-refl) γ , q)
-                    (wk-sub Δ (step ⊆-refl) δ , q)))
+     sym (subComp t (wk γ , q)
+                    (wk δ , q)))
      ((cong (t [_] F.∘ (_, q))
             (trans (∘-step Γ γ (wk-sub Δ ⊆-∙ δ) q)
                    (wk-∘ Γ ⊆-∙ γ δ))))
@@ -115,7 +115,7 @@ TmScwf = record
 -- here we use the fact that γ ∘ p is the same as weakening γ
 
 subLam : ∀ {Γ Δ} {α β} (t : Tm (Γ ∙ α) β) (γ : Sub Δ Γ)
-         → ƛ (t [ wk-sub Γ ⊆-∙ γ , q ]) ≡ ƛ (t [ γ ∘ p , q ])
+         → ƛ (t [ wk γ , q ]) ≡ ƛ (t [ γ ∘ p , q ])
 subLam {α = α} t γ rewrite sym (wk-sub-∘-p {α = α} γ)= refl        
 
 TmLamScwf : Lambda-scwf

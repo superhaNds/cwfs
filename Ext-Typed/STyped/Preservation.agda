@@ -17,7 +17,6 @@ open import Data.Vec as Vec hiding ([_])
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Ext-Typed.STyped.Syntax
 open import Ext-Typed.STyped.Raw
-open import Ext-Typed.STyped.ExtScwf
 open ≡-Reasoning
 
 -------------------------------------------------------------------------

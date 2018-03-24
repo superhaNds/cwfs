@@ -12,18 +12,22 @@ open import Ext-Typed.STyped.CtxType
 open import Data.Product using (Σ ; _,_)
 
 -------------------------------------------------------------------------
--- Translation functions between scwfs
+-- Translation functions between scwfs of explicit substitutions
 
 -- Strips types from a typed term back to a raw term
+
 strip  : ∀ {n} {Γ : Ctx n} {α} → Tm Γ α → RTm n
 
 -- strip for substitutions
+
 strip▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} → Sub Δ Γ → RSub n m
 
 -- Given a typed term, returns an element of the typing relation on the raw term
+
 typing  : ∀ {n} {Γ : Ctx n} {α} (t : Tm Γ α) → Γ ⊢ strip t ∈ α
 
 -- typing for substitutions
+
 typing▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : Sub Δ Γ) → Δ ▹ Γ ⊢ strip▹ ρ
 
 strip q         = q
@@ -49,10 +53,12 @@ typing▹ (ρ ∘ σ)   = ⊢∘ (typing▹ ρ) (typing▹ σ)
 typing▹ < ρ , t > = ⊢<,> (typing t) (typing▹ ρ)
 
 -- Given a dependent pair of a raw term and its typing rule, we get a directly typed term
-join  : ∀ {n} {Γ : Ctx n} {α} → Σ (RTm n) (Γ ⊢_∈ α) → Tm Γ α
+
+join  : ∀ {n Γ α} → Σ (RTm n) (Γ ⊢_∈ α) → Tm Γ α
 
 -- join for substitutions
-join▹ : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} → Σ (RSub m n) (Δ ▹ Γ ⊢_) → Sub Δ Γ
+
+join▹ : ∀ {m n Γ Δ} → Σ (RSub m n) (Δ ▹ Γ ⊢_) → Sub Δ Γ
 
 join (q , q∈)               = q
 join (t [ ρ ] , sub∈ t∈ ⊢ρ) = join (t , t∈) [ join▹ (ρ , ⊢ρ) ]
@@ -75,10 +81,10 @@ joinstrip▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : Sub Δ Γ)
 joinstrip : ∀ {n α} {Γ : Ctx n} (t : Tm Γ α)
             → join (strip t , typing t) ≈ t
 
-stripjoin▹ : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} (ρ : RSub n m) (⊢ρ : Δ ▹ Γ ⊢ ρ)
+stripjoin▹ : ∀ {m n Γ Δ} (ρ : RSub n m) (⊢ρ : Δ ▹ Γ ⊢ ρ)
              → strip▹ (join▹ (ρ , ⊢ρ)) ≋' ρ
 
-stripjoin : ∀ {n α} {Γ : Ctx n} (t : RTm n) (t∈ : Γ ⊢ t ∈ α)
+stripjoin : ∀ {n Γ α} (t : RTm n) (t∈ : Γ ⊢ t ∈ α)
             → strip (join (t , t∈)) ≈' t
 
 joinstrip▹ <>        = refl≋

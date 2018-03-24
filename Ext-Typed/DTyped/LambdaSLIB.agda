@@ -1,4 +1,8 @@
-module Ext-Typed.DTyped.LamPiSub where
+-----------------------------------------------------------------------
+-- The raw grammar and substitutions using the standard library modules
+-- for substitutions
+-----------------------------------------------------------------------
+module Ext-Typed.DTyped.LambdaSLIB where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin; zero; suc)

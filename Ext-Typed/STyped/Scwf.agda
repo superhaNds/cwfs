@@ -1,4 +1,4 @@
-module Ext-Typed.STyped.ExtScwf where
+module Ext-Typed.STyped.Scwf where
 
 open import Data.Product
 open import Data.Nat renaming (ℕ to Nat)

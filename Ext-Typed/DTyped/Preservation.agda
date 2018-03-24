@@ -1,5 +1,6 @@
 -------------------------------------------------------------------------------------------
---
+-- A extrinsic ΠU-cwf with implicit substitutions. THe type system is added here and
+-- all the typing rules of a cwf must be shown here
 -------------------------------------------------------------------------------------------
 module Ext-Typed.DTyped.Preservation where
 
@@ -103,15 +104,6 @@ data _▹_⊢_ where
 cod-sub : ∀ {n m} {Γ : Ctx n} {Δ : Ctx m} {ρ} → Γ ▹ Δ ⊢ ρ → Ctx m
 cod-sub {Δ = Δ} _ = Δ
 
-{-
-lem : ∀ {m} {Γ : Ctx m} {x : Fin m} {n} {ρ : Vec (Fin m) n}
-        {A : Tm n} {B : Tm m} →
-      Γ ⊢ var x ∈ (A [ map var ρ ]) →
-      Γ ∙ B ⊢ var (suc x) ∈ (A [ map var (map suc ρ) ])
-lem varx∈ = {!!}       
--}
--- vr-wk-pr : ∀ {n} {Γ : Ctx n} {A}
-
 map-suc-pres : ∀ {m n Γ Δ A} (ρ : Ren m n) →
                Γ ⊢ A →
                Γ ▹ Δ ⊢ map var ρ →
@@ -171,13 +163,13 @@ p-preserv ⊢A = map-wk-preserves ⊢A (id-preserv (lemma-1 ⊢A))
 lookup-pres : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} i {ρ}
               → Δ ▹ Γ ⊢ ρ
               → Δ ⊢ lookup i ρ ∈ (lookup-ct i Γ [ ρ ])
-lookup-pres {Γ = Γ} {Δ} zero {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]) = lk1-h t∈A[ρ]
+lookup-pres {Γ = _ ∙ _} {Δ} zero {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]) = lk1-h t∈A[ρ]
   where lk1-h : Δ ⊢ t ∈ (getTy ⊢A [ γ ])
                 →  Δ ⊢ t ∈ (wk (getTy ⊢A) [ γ , t ])
         lk1-h hyp rewrite wk-sub-p {t = getTy ⊢A}
                         | sym $ subComp (getTy ⊢A) p (γ , t)
                         | pCons {t = t} γ = hyp
-lookup-pres  {Γ = Γ} {Δ} (suc i) {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]) = lk2-h (lookup-pres i ⊢ρ)
+lookup-pres  {Γ = _ ∙ _} {Δ} (suc i) {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]) = lk2-h (lookup-pres i ⊢ρ)
   where lk2-h : Δ ⊢ lookup i γ ∈ (lookup-ct i (cod-sub ⊢ρ) [ γ ])
                 → Δ ⊢ lookup i γ ∈ (wk (lookup-ct i (cod-sub ⊢ρ)) [ γ , t ])
         lk2-h hyp rewrite  wk-sub-p {t = lookup-ct i (cod-sub ⊢ρ)}
@@ -185,10 +177,10 @@ lookup-pres  {Γ = Γ} {Δ} (suc i) {ρ = t ∷ γ} (⊢<,> ⊢ρ ⊢A t∈A[ρ]
                          | pCons {t = t} γ = hyp
                     
 
+-- a long derivation
 postulate
   prop : ∀ {m n} {γ : Sub m n} {t B}
-         → B [ id , t ] [ γ ]
-         ≡ B [ ↑ γ ] [ id , (t [ γ ]) ]
+         → B [ id , t ] [ γ ] ≡ B [ ↑ γ ] [ id , (t [ γ ]) ]
 
 getTm : ∀ {n} {Γ : Ctx n} {t A} → Γ ⊢ t ∈ A → Tm n
 getTm {t = t} _ = t
@@ -204,17 +196,10 @@ subst-lemma : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {A t γ}
              → Γ ▹ Δ ⊢ γ
              → Γ ⊢ t [ γ ] ∈ A [ γ ]
 subst-lemma tm-var ⊢γ = {!!}
-subst-lemma {t = f·t} {γ = γ} (tm-app ⊢A ⊢B f∈Π t∈A) ⊢γ
-  rewrite (prop {γ = γ} {t = getTm t∈A} {B = getTy ⊢B}) = tm-app (ty-sub ⊢A ⊢γ) {!!} ((subst-lemma f∈Π ⊢γ)) (subst-lemma t∈A ⊢γ)
---tm-app _ _ (subst-lemma f∈Π ⊢γ) (subst-lemma t∈A ⊢γ)
+subst-lemma {γ = γ} (tm-app ⊢A ⊢B f∈Π t∈A) ⊢γ
+  rewrite (prop {γ = γ} {t = getTm t∈A} {B = getTy ⊢B}) =
+    tm-app (ty-sub ⊢A ⊢γ) {!!} ((subst-lemma f∈Π ⊢γ)) (subst-lemma t∈A ⊢γ)
 subst-lemma (tm-Π-I x x₁ t₁) ⊢γ = {!subst-lemma t₁!}
-
--- tm-app _ _ (lemma-tm f∈Π ⊢γ) (lemma-tm t∈A ⊢γ)
-
-{-
--}
--- B [ id , t ] [ γ ] ~ ƛ B · t
--- beta conversion?
 
 
 {-
