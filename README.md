@@ -22,12 +22,15 @@ The structure is as follows:
     
 * __SimpTyped/__
     
-    Intrinsically simply typed CwFs with extra structure and simply typed lambda calculus.
+    Intrinsic simply typed CwFs with extra structure and simply typed lambda calculus.
     
-* __Ext-Typed/__
+* __ExtSimpTyped/__
 
-    Extrinsically simply typed CwFs with extra structure. 
-    And an extrinsically dependently typed lambda calculus with Pi and universe ala Russell.
+    Extrinsic simply typed CwFs with extra structure.
+    
+* __ ExtDepTyped/__
+
+    Extrinsic full CwFs with Pi types and universe a la Russell.
 
 It is a work in progress, there are some unfinished definitions, especially for the dependently typed
 developments.     
