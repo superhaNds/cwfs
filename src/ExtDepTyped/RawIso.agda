@@ -3,11 +3,11 @@
 -- We show there is an isomorphism of base categories and a natural isomorphism between
 -- the functors. This is an extension, so we assume results proven in other versions.
 -----------------------------------------------------------------------------------------------
-module Ext-Typed.DTyped.RawIso where
+module ExtDepTyped.RawIso where
 
 open import Data.Fin
 open import Function as F using (_$_)
-open import Ext-Typed.DTyped.Lambda
+open import ExtDepTyped.Lambda
   renaming (Tm to Tm-λ ; Sub to Sub-λ ; q to q-λ ; id to id-λ
             ; p to p-λ ; _∘_ to _∘λ_ ; _[_] to _[_]λ) hiding (subComp ; cong-sub ; pCons)
 open import Ext-Typed.DTyped.ExpSubCwf renaming (Ctx to Ctx-cwf ; Tm to Tm-cwf ; Sub to Sub-cwf)

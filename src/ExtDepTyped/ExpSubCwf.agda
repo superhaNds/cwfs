@@ -3,7 +3,7 @@
 -- Untyped conversion with explicit typing rules for each
 -- construct. We a universe of small types ala russel and Π types.
 -----------------------------------------------------------------------------------------------
-module Ext-Typed.DTyped.ExpSubCwf where
+module ExtDepTyped.ExpSubCwf where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product renaming (proj₁ to π₁ ; proj₂ to π₂) hiding (<_,_>)
@@ -422,4 +422,3 @@ lemma-2 (tm-app ⊢A ⊢B _ t∈A) =
   in ty-sub ⊢B (⊢<,> ⊢id ⊢A
      (tm-conv (ty-sub ⊢A ⊢id) t∈A (subId _)))
 lemma-2 (tm-conv ⊢A' _ _) = ⊢A'
-

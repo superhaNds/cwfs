@@ -2,13 +2,13 @@
 -- The raw grammar and substitutions using the standard library modules
 -- for substitutions
 -----------------------------------------------------------------------
-module Ext-Typed.DTyped.LambdaSLIB where
+module ExtDepTyped.LambdaSLIB where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Fin.Substitution
 open import Data.Fin.Substitution.Lemmas
-open import Data.Product
+open import Data.Product hiding (_,_)
 open import Data.Star using (Star; ε; _◅_)
 open import Data.Unit
 open import Data.Vec as Vec hiding ([_])
@@ -114,3 +114,17 @@ tmLemmas = record
         ≡⟨ sym (TmApp.U-/✶-↑✶ _ k ρs₂) ⟩
       U /✶₂ ρs₂ ↑✶₂ k
         ∎
+
+p : ∀ {n} → Sub Tm n (suc n)
+p = wk
+
+_,_ : ∀ {m n} (ρ : Sub Tm n m) (t : Tm m) → Sub Tm (suc n) m
+ρ , t = t ∷ ρ
+
+_∘_ : ∀ {m n k} → Sub Tm m n → Sub Tm n k → Sub Tm m k
+_∘_ = _⊙_
+
+_[_] : ∀ {m n} → Tm m → Sub Tm m n → Tm n
+_[_] = _/_
+
+

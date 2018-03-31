@@ -1,7 +1,7 @@
 ---------------------------------------------------------
 -- Types and indexed contexts
 ---------------------------------------------------------
-module Ext-Typed.STyped.CtxType where
+module ExtSimpTyped.CtxType where
 
 open import Data.Nat
 

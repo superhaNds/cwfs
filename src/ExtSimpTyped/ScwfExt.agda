@@ -3,13 +3,13 @@
 -- appropriate explicit typing rules for substitutions and terms
 -- This contrasts the 'intrinsic' way of implementing types
 -------------------------------------------------------------------------
-module Ext-Typed.STyped.ScwfExt where
+module ExtSimpTyped.ScwfExt where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product using (Σ)
 open import Data.Vec hiding ([_])
-open import Ext-Typed.STyped.CtxType
-open import Ext-Typed.STyped.Scwf
+open import ExtSimpTyped.CtxType
+open import ExtSimpTyped.Scwf
 -------------------------------------------------------------------------
 -- Raw terms substitutions
 

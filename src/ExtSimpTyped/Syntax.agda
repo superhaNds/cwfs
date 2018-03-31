@@ -4,7 +4,7 @@
 -- by the number of free variables in a given term
 ------------------------------------------------------
 
-module Ext-Typed.STyped.Syntax where
+module ExtSimpTyped.Syntax where
 
 open import Data.Nat renaming (ℕ to Nat)
 import Data.Vec as Vec

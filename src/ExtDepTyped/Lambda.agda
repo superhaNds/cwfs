@@ -4,7 +4,7 @@
 -- and substitutions are vectors. Starting from raw syntax, we provide external typing
 -- relations.
 -----------------------------------------------------------------------------------------------
-module Ext-Typed.DTyped.Lambda where
+module ExtDepTyped.Lambda where
 
 open import Function as F using (_$_)
 open import Data.Nat renaming (ℕ to Nat)
