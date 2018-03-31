@@ -28,7 +28,7 @@ The structure is as follows:
 
     Extrinsic simply typed CwFs with extra structure.
     
-* __ ExtDepTyped/__
+* __ExtDepTyped/__
 
     Extrinsic full CwFs with Pi types and universe a la Russell.
 
