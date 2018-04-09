@@ -23,6 +23,9 @@ open import ExtDepTyped.LambdaSLIB
 
 -- Wellscoped contexts
 
+q : ∀ {n} → Tm (1 + n)
+q = var zero
+
 data Ctx : Nat → Set where
   ⋄   : Ctx 0
   _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
@@ -167,19 +170,20 @@ weaken-tm ⊢A ∈B = {!!}
 -}
 
 -- needed for ↑ and subsequently id and p
-map-wk-preserv : ∀ {m n Γ Δ A} {ρ : Sub Tm m n}
+map-wk-preserv : ∀ {m n Γ Δ A} {γ : Sub Tm m n}
                    → Γ ⊢ A
-                   → Γ ▹ Δ ⊢ ρ
-                   → Γ ∙ A ▹ Δ ⊢ map weaken ρ
-map-wk-preserv a b = {!!}
+                   → Γ ▹ Δ ⊢ γ
+                   → Γ ∙ A ▹ Δ ⊢ map weaken γ
+map-wk-preserv ⊢A  (⊢<> Γ⊢) = ⊢<> (c-ext Γ⊢ ⊢A)
+map-wk-preserv ⊢A₁ (⊢<,> ⊢γ ⊢A ∈A[γ]) = ⊢<,> (map-wk-preserv ⊢A₁ ⊢γ) ⊢A {!!} -- Γ ∙ A₁ ⊢ weaken t ∈ A [ map weaken γ ]
 
 -- goal: Γ ∙ A ⊢ var zero ∈ B [ map weaken ρ ]
 ↑-preserv : ∀ {m n Γ Δ A B} {ρ : Sub Tm m n}
-         → Γ ⊢ A
-         → Δ ⊢ B
-         → Γ ▹ Δ ⊢ ρ
-         → Γ ∙ A ▹ Δ ∙ B ⊢ ρ ↑
-↑-preserv {Γ = Γ} {A = A} {B = B} {ρ = ρ} a b ⊢ρ = ⊢<,> (map-wk-preserv a ⊢ρ) b {!!}
+            → Γ ⊢ A
+            → Δ ⊢ B
+            → Γ ▹ Δ ⊢ ρ
+            → Γ ∙ A ▹ Δ ∙ B ⊢ ρ ↑
+↑-preserv ⊢A ⊢B ⊢ρ = ⊢<,> (map-wk-preserv ⊢A ⊢ρ) ⊢B {!!}
 
 -- how
 
@@ -213,23 +217,24 @@ private
   lookup-map (suc i) f (x ∷ xs) = lookup-map i f xs
 
 -- unityped cwf axioms
-postulate p∘cons : ∀ {n m} {t : Tm n} {γ : Sub Tm m n} → p ∘ (γ , t) ≡ γ 
-
-postulate subComp : ∀ {m n k} t (γ : Sub Tm n m) (δ : Sub Tm m k) → t [ γ ∘ δ ] ≡ t [ γ ] [ δ ]
+postulate
+  p∘cons : ∀ {n m} {t : Tm n} {γ : Sub Tm m n} → p ∘ (γ , t) ≡ γ 
+  sub-p  : ∀ {n} {t : Tm n} → weaken t ≡ t [ p ]
+  subComp : ∀ {m n k} t (γ : Sub Tm n m) (δ : Sub Tm m k) → t [ γ ∘ δ ] ≡ t [ γ ] [ δ ]
 
 lookup-preserv : ∀ {m n} {Γ : Ctx m} {Δ : Ctx n} i {γ}
                  → Δ ▹ Γ ⊢ γ
                  → Δ ⊢ lookup i γ ∈ (lookup' i Γ [ γ ])
 lookup-preserv {Γ = Γ ∙ A} {Δ} zero {t ∷ γ} (⊢<,> ⊢γ ⊢A ∈A[γ]) = lk-base ∈A[γ]
   where lk-base : Δ ⊢ t ∈ (A [ γ ]) → Δ ⊢ t ∈ (weaken A [ γ , t ])
-        lk-base hyp rewrite sym (/-wk {t = A})
+        lk-base hyp rewrite sub-p {t = A}
                           | sym (subComp A p (γ , t)) --sym (/-⊙ {ρ₁ = p} {ρ₂ = (γ , t)} A)
                           | p∘cons {t = t} {γ = γ} = hyp
 lookup-preserv {Γ = Γ ∙ A} {Δ} (suc i) {t ∷ γ} (⊢<,> ⊢γ ⊢A ∈A[γ])
       rewrite lookup-map i weaken (toVec Γ) = lk-step (lookup-preserv i ⊢γ)
   where lk-step : Δ ⊢ lookup i γ ∈ (lookup' i Γ [ γ ])
                 → Δ ⊢ lookup i γ ∈ weaken (lookup' i Γ) [ γ , t ]
-        lk-step hyp rewrite sym (/-wk {t = lookup' i Γ})
+        lk-step hyp rewrite sub-p {t = lookup' i Γ}
                           | sym (subComp (lookup' i Γ) p (γ , t)) -- sym (/-⊙ {ρ₁ = p} {ρ₂ = (γ , t)} (lookup' i Γ))
                           | p∘cons {t = t} {γ = γ} = hyp
 
@@ -255,18 +260,15 @@ p-preserv : ∀ {n} {Γ : Ctx n} {A}
             → Γ ∙ A ▹ Γ ⊢ p
 p-preserv ⊢A = map-wk-preserv ⊢A (id-preserv (wfTy-wf ⊢A))
 
-tm-q : ∀ {n} {Γ : Ctx n} {A}
-       → Γ ⊢ A
-       → Γ ∙ A ⊢ var zero ∈ A [ p ]
-tm-q {Γ = Γ} {A} ⊢A = help (tm-var {i = zero} Γ∙A⊢)
+tm-q : ∀ {n} {Γ : Ctx n} {A} → Γ ⊢ A → Γ ∙ A ⊢ q ∈ A [ p ]
+tm-q {Γ = Γ} {A} ⊢A = help (tm-var Γ∙A⊢)
   where Γ∙A⊢ = c-ext (wfTy-wf ⊢A) ⊢A
-        help : (Γ ∙ A) ⊢ var zero ∈ weaken A
-             → (Γ ∙ A) ⊢ var zero ∈ A [ p ]
-        help hyp rewrite /-wk {t = A} = hyp
+        help : (Γ ∙ A) ⊢ q ∈ weaken A → (Γ ∙ A) ⊢ q ∈ A [ p ]
+        help hyp rewrite sub-p {t = A} = hyp
 
 wfTm-wf (tm-var Γ⊢)        = Γ⊢
 wfTm-wf (tm-app _ _ _ t∈A) = wfTm-wf t∈A
-wfTm-wf (tm-Π-I ⊢A ⊢B t∈B) = wf⁻¹ (wfTm-wf t∈B)
+wfTm-wf (tm-Π-I _ _ t∈B)   = wf⁻¹ (wfTm-wf t∈B)
 
 wfSub-wf₂ (⊢<> _)        = c-emp
 wfSub-wf₂ (⊢<,> ⊢γ ⊢A _) = c-ext (wfSub-wf₂ ⊢γ) ⊢A
@@ -296,15 +298,6 @@ ty-sub (ty-∈U A∈U) ⊢γ = ty-∈U (tm-sub A∈U ⊢γ)
 ty-sub (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (ty-sub ⊢A ⊢γ) {!!} -- goal : Γ ∙ A [ γ ] ⊢ B [ γ ↑ ] (appears often)
 
 {-
-tm-sub : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
-             {A t γ}
-           → Δ ⊢ t ∈ A
-           → Γ ▹ Δ ⊢ γ
-           → Γ ⊢ t [ γ ] ∈ A [ γ ]
--}
-
-
-{-
 prop:
 
   B [ γ ↑ ] [ id , (t [ γ ]) ]
@@ -322,10 +315,17 @@ postulate
   prop : ∀ {m n} {γ : Sub Tm m n} {t B}
          → B [ id , t ] [ γ ] ≡ B [ γ ↑ ] [ id , (t [ γ ]) ]
 
+
+{- tm-sub : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
+             {A t γ}
+           → Δ ⊢ t ∈ A
+           → Γ ▹ Δ ⊢ γ
+           → Γ ⊢ t [ γ ] ∈ A [ γ ] -}
+
 tm-sub (tm-var {i = i} _) ⊢γ = lookup-preserv i ⊢γ
 tm-sub {γ = γ} (tm-app ⊢A ⊢B ∈Π ∈A) ⊢γ
-  rewrite prop {γ = γ} {t = getTm ∈A} {B = getTy ⊢B}
-    = tm-app (ty-sub ⊢A ⊢γ) {!!} (tm-sub ∈Π ⊢γ) (tm-sub ∈A ⊢γ) -- goal : Γ ∙ A [ γ ] ⊢ B [ γ ↑ ] this appears below too
+  rewrite prop {γ = γ} {t = getTm ∈A} {B = getTy ⊢B} =
+    tm-app (ty-sub ⊢A ⊢γ) {!!} (tm-sub ∈Π ⊢γ) (tm-sub ∈A ⊢γ)   -- goal : Γ ∙ A [ γ ] ⊢ B [ γ ↑ ] this appears below too
 tm-sub (tm-Π-I ⊢A ⊢B ∈B) ⊢γ = tm-Π-I (ty-sub ⊢A ⊢γ) {!!} {!!}  -- second goal : Γ ∙ A [ γ ] ⊢ t [ γ ↑ ] ∈ B [ γ ↑ ]   
 
 comp-preserv : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m}
@@ -334,7 +334,7 @@ comp-preserv : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m}
                → Δ ▹ Γ ⊢ γ₂
                → Δ ▹ Θ ⊢ γ₁ ∘ γ₂
 comp-preserv (⊢<> _) ⊢γ₂ = ⊢<> (wfSub-wf₁ ⊢γ₂)
-comp-preserv {Γ = Γ} {Δ = Δ} {Θ = Θ ∙ A} {γ₁ = t ∷ γ₁} {γ₂}
+comp-preserv {Δ = Δ} {Θ = Θ ∙ A} {γ₁ = t ∷ γ₁} {γ₂}
              (⊢<,> ⊢γ₁ ⊢A ∈A[γ]) ⊢γ₂ = ⊢<,> (comp-preserv ⊢γ₁ ⊢γ₂) ⊢A (h (tm-sub ∈A[γ] ⊢γ₂))
   where h : Δ ⊢ t [ γ₂ ] ∈ (A [ γ₁ ] [ γ₂ ]) → Δ ⊢ t [ γ₂ ] ∈ (A [ γ₁ ∘ γ₂ ])               
         h hyp rewrite sym (subComp A γ₁ γ₂) = hyp
