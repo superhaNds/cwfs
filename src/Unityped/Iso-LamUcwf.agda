@@ -145,7 +145,7 @@ sub-preserved (var (suc i)) (t ∷ σ) = begin
   ⟪ lookup i σ ⟫                             ≈⟨ sub-preserved (var i) σ ⟩
   ⟪ var i ⟫ [ ⟪ σ ⟫' ]⋆                      ≈⟨ cong-sub₂ (sym≈ p-∘) ⟩
   ⟪ var i ⟫ [ p⋆ ∘⋆ < ⟪ σ ⟫' , ⟪ t ⟫ > ]⋆    ≈⟨ subComp ⟩
-  (⟪ var i ⟫ [ p⋆ ]⋆) [ < ⟪ σ ⟫' , ⟪ t ⟫ > ]⋆
+  ⟪ var i ⟫ [ p⋆ ]⋆ [ < ⟪ σ ⟫' , ⟪ t ⟫ > ]⋆
   ∎
   where open EqR (TmSetoid {_})
 sub-preserved (app f t) σ = begin

@@ -3,7 +3,7 @@
 -- untyped λ calculus up to beta and eta with variables represented by
 -- de Bruijn indices and substitutions as vectors.
 ----------------------------------------------------------------------------
-module ImpSubLam where
+module Unityped.ImpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin using (Fin ; suc ; zero)
@@ -14,45 +14,66 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Binary.PropositionalEquality.Core
 open import Relation.Binary using (Setoid ; IsEquivalence)
 import Relation.Binary.EqReasoning as EqR
-open import Ucwf
+open import Unityped.Ucwf
 open ≡-Reasoning
+open import Unityped.ImpSub as Ren using (Ren ; _∙_)
 
-open import ImpSub as Ren using (Ren ; _∙_)
+----------------------------------------------------------------------------
+-- lambda terms that are wellscoped, i.e., indexed by the maximum number
+-- of free variables they may contain
 
 data Tm (n : Nat) : Set where
-  var : (i : Fin n) → Tm n
-  app : Tm n → Tm n → Tm n
-  ƛ   : Tm (suc n)  → Tm n
+  var : (i : Fin n) → Tm n   -- variables as de Bruijn indices
+  app : Tm n → Tm n → Tm n   -- function application
+  ƛ   : Tm (suc n)  → Tm n   -- λ abstraction \Gl-
+
+-- The variable with index zero
 
 q : ∀ {n} → Tm (suc n)
 q = var zero
 
 infix 9 _/_
 
+-- Renaming operation
+
 _/_ : ∀ {m n} → Tm n → Ren m n → Tm m
 var i   / ρ = var (lookup i ρ)
 app f t / ρ = app (f / ρ) (t / ρ)
 ƛ t     / ρ = ƛ (t / Ren.↑ ρ)
+
+-- Substitutions as vectors of terms
 
 Sub : Nat → Nat → Set
 Sub m n = Vec (Tm m) n
 
 infix 10 _,_
 
+-- Cons synonym
+
 _,_ : ∀ {m n} → Sub m n → Tm m → Sub m (suc n)
 σ , t = t ∷ σ
+
+-- weakening a term is renaming it in the projection renaming
 
 weaken : ∀ {n} → Tm n → Tm (suc n)
 weaken t = t / Ren.p
 
+-- weakening and extending a substitution
+
 ↑ : ∀ {m n} → Sub m n → Sub (1 + m) (1 + n)
 ↑ σ = map weaken σ , q
+
+-- identity substitution
 
 id : ∀ {n} → Sub n n
 id = map var Ren.id
 
+-- projection substitution
+
 p : ∀ {n} → Sub (suc n) n
 p = map var Ren.p
+
+-- substitution operation
 
 _[_] : ∀ {m n} → Tm n → Sub m n → Tm m
 var i   [ σ ] = lookup i σ
@@ -61,8 +82,12 @@ app f t [ σ ] = app (f [ σ ]) (t [ σ ])
 
 infix 12 _∘_
 
+-- Substitution composition
+
 _∘_ : ∀ {k m n} → Sub m n → Sub k m → Sub k n
 σ₁ ∘ σ₂ = map (_[ σ₂ ]) σ₁
+
+-- Composing renamings and substitutions
 
 _r∘_ : ∀ {m n k} → Ren m n → Sub k m → Sub k n
 ρ r∘ σ = map (flip lookup σ) ρ
@@ -70,12 +95,16 @@ _r∘_ : ∀ {m n k} → Ren m n → Sub k m → Sub k n
 _∘r_ : ∀ {m n k} → Sub m n → Ren k m → Sub k n
 σ ∘r ρ = map (λ t → t / ρ) σ
 
+-- lookup in p returns the successor of the index wrapped in a var constructor
+
 lookup-p : ∀ {n} (i : Fin n) → lookup i p ≡ var (suc i)
 lookup-p i = begin
   lookup i (map var (map suc Ren.id)) ≡⟨ Ren.lookup-map i var _ ⟩
   var (lookup i (map suc Ren.id))     ≡⟨ cong var (Ren.lookup-p i) ⟩
   var (suc i)
   ∎
+
+-- weakening a var is lookup in p
 
 weaken-var : ∀ {n} (i : Fin n) → weaken (var i) ≡ var (suc i)
 weaken-var i = cong var (Ren.lookup-p i)
@@ -89,17 +118,25 @@ lam-refl refl = refl
 app-refl : ∀ {n} {t t' u u' : Tm n} → t ≡ t' → u ≡ u' → app t u ≡ app t' u'
 app-refl refl refl = refl
 
+-- weakening a renaming wrapped in vars is weakening the renaming and wrapping them in var
+
 map-var-weaken : ∀ {n m} (ρ : Ren m n) → map weaken (map var ρ) ≡ map var (map suc ρ)
 map-var-weaken [] = refl
 map-var-weaken (i ∷ ρ) =
   trans (cong (map weaken (map var ρ) ,_) (weaken-var i))
         (cong (_, var (suc i)) (map-var-weaken ρ))
 
+-- extended id is p with var zero
+
 idExt : ∀ {n} → id {1 + n} ≡ (p , q)
 idExt = refl
 
+-- lifting and adding var zero id is the extended id
+
 ↑-id : ∀ {n} → ↑ id ≡ id {1 + n}
 ↑-id = cong (_, q) (map-var-weaken Ren.id)
+
+-- lookup in id returns the input index wrapped in var
 
 lookup-id : ∀ {n} (i : Fin n) → lookup i id ≡ var i
 lookup-id zero    = refl
@@ -108,6 +145,8 @@ lookup-id (suc i) = begin
   var (lookup i Ren.p)     ≡⟨ cong var (Ren.lookup-p i) ⟩
   var (suc i)
   ∎
+
+-- id vanishes in substitution
 
 subId : ∀ {n} {t : Tm n} → t [ id ] ≡ t
 subId {t = var i}   = lookup-id i
@@ -118,6 +157,8 @@ subId {t = ƛ t}     = cong ƛ $ begin
   t
   ∎
 
+-- renaming is associative
+
 /-asso : ∀ {m n k} (ρ : Ren m n) (τ : Ren k m) t → t / (ρ ∙ τ) ≡ (t / ρ) / τ
 /-asso ρ τ (var i)   = cong var (Ren.lookup-map i _ ρ)
 /-asso ρ τ (app f t) = cong₂ app (/-asso ρ τ f) (/-asso ρ τ t)
@@ -126,6 +167,8 @@ subId {t = ƛ t}     = cong ƛ $ begin
   t / (Ren.↑ ρ ∙ Ren.↑ τ) ≡⟨ /-asso (Ren.↑ ρ) (Ren.↑ τ) t ⟩
   (t / Ren.↑ ρ) / Ren.↑ τ
   ∎
+
+-- A series of lemmas relating renamings and substitutions
   
 ↑-map-var : ∀ {m n} (ρ : Ren m n) → ↑ (map var ρ) ≡ map var (Ren.↑ ρ)
 ↑-map-var []      = refl
@@ -166,13 +209,19 @@ map-lookup-p (t ∷ σ) = begin
   σ
   ∎
 
+-- p on the left of composition drops the last term
+
 p-∘ : ∀ {m n} {t : Tm n} {σ : Sub n m} → p ∘ (σ , t) ≡ σ
 p-∘ {t = t} {σ} = trans (p-∘-lookup (σ , t)) (map-lookup-p (σ , t))
+
+-- weakening a term is substituting with p
 
 wk-sub-p : ∀ {n} {t : Tm n} → weaken t ≡ t [ p ]
 wk-sub-p {t = var i}   = trans (weaken-var i) (sym $ lookup-p i)
 wk-sub-p {t = app f t} = cong₂ app wk-sub-p wk-sub-p
 wk-sub-p {t = ƛ t}     = cong ƛ /-↑-[]
+
+-- hence, compositing with p is mapping weaken
 
 map-wk-p : ∀ {m n} {σ : Sub m n} → σ ∘ p ≡ map weaken σ
 map-wk-p {σ = []}    = refl
@@ -225,6 +274,8 @@ r∘-asso ρ σ (ƛ t)     = cong ƛ $ begin
                     (trans (cong (map (λ i → lookup (suc i) (↑ _))) Ren.id-allFin)
                            (map-lookup-allFin _))
 
+-- ↑ distributes over composition
+
 ↑-dist : ∀ {m n k} (σ₁ : Sub m n) (σ₂ : Sub k m) → ↑ (σ₁ ∘ σ₂) ≡ ↑ σ₁ ∘ ↑ σ₂
 ↑-dist σ₁ σ₂ = begin
   ↑ (σ₁ ∘ σ₂)                              ≡⟨⟩
@@ -237,6 +288,8 @@ r∘-asso ρ σ (ƛ t)     = cong ƛ $ begin
   ↑ σ₁ ∘ ↑ σ₂
   ∎
 
+-- substitution is associative
+
 subComp : ∀ {m n k} t {σ : Sub m n} {τ : Sub k m} → t [ σ ∘ τ ] ≡ t [ σ ] [ τ ]
 subComp (var zero)    {_ ∷ _} = refl
 subComp (var (suc i)) {_ ∷ _} = subComp (var i)
@@ -247,6 +300,8 @@ subComp (ƛ t)         {σ} {τ} = cong ƛ $ begin
   t [ ↑ σ ] [ ↑ τ ]
   ∎
 
+-- composition is associative
+
 ∘-asso : ∀ {m n k j} {σ₁ : Sub m n} {σ₂ : Sub k m} {σ₃ : Sub j k}
          → (σ₁ ∘ σ₂) ∘ σ₃ ≡ σ₁ ∘ (σ₂ ∘ σ₃)
 ∘-asso {σ₁ = []}     {_} {_}   = refl
@@ -256,9 +311,13 @@ subComp (ƛ t)         {σ} {τ} = cong ƛ $ begin
   σ₁ ∘ (σ₂ ∘ σ₃) , t [ σ₂ ∘ σ₃ ]
   ∎
 
+-- id is a left identity in composition
+
 idL : ∀ {m n} {σ : Sub m n} → id ∘ σ ≡ σ
 idL {σ = []}    = refl
 idL {σ = t ∷ σ} = cong (_, t) p-∘
+
+-- id is a right identity in composition
 
 idR : ∀ {m n} {σ : Sub m n} → σ ∘ id ≡ σ
 idR {σ = []} = refl
@@ -292,6 +351,9 @@ prop-η t σ = sym $ begin
   weaken (t [ σ ])
   ∎ 
 
+--------------------------------------------------------------------------------------------
+-- Beta-eta convertibility defined as an inductive relation over terms
+
 infix 5 _~βη_
 infix 5 _≈βη_
 
@@ -318,6 +380,8 @@ data _~βη_  {n} : (_ _ : Tm n) → Set where
              → t₁ ~βη t₂
              → t₂ ~βη t₃
              → t₁ ~βη t₃
+
+-- Relation for substitutions
 
 data _≈βη_ {m} : ∀ {n} (_ _ : Sub m n) → Set where
 
@@ -376,6 +440,9 @@ Sub-βη-Setoid {m} {n} = record { Carrier = Sub m n
 lookup-p~ : ∀ {n} (i : Fin n) → lookup i p ~βη var (suc i)
 lookup-p~ i = ≡-to~βη (lookup-p i)
 
+--------------------------------------------------------------------------------------------
+-- congruence rules for beta-eta
+
 lookup-sub : ∀ {m n} {ρ ρ' : Sub m n} i
              → ρ ≈βη ρ'
              → lookup i ρ ~βη lookup i ρ'
@@ -410,7 +477,7 @@ congSub-s : ∀ {m n} {t : Tm n} {σ σ' : Sub m n}
             → σ ≈βη σ'
             → t [ σ ] ~βη t [ σ' ]
 congSub-s {σ = []} {[]}     ⋄            = refl~βη
-congSub-s {t = var zero}    (ext x σ≈σ') = x
+congSub-s {t = var zero}    (ext x _)     = x
 congSub-s {t = var (suc i)} (ext x σ≈σ') = congSub-s {t = var i} σ≈σ'
 congSub-s {t = app f t}     (ext x σ≈σ') = apcong (congSub-s {t = f} (ext x σ≈σ')) (congSub-s {t = t} (ext x σ≈σ'))
 congSub-s {t = ƛ b}         (ext x σ≈σ') = ξ (congSub-s {t = b} (cong-↑ (ext x σ≈σ')))
@@ -428,6 +495,9 @@ cong-∘ : ∀ {m n k} {ρ σ : Sub m n} {ρ' σ' : Sub k m}
 cong-∘ ⋄           _             = ⋄
 cong-∘ (ext t ρ≈σ) ⋄             = ext (cong-sub t ⋄) (cong-∘ ρ≈σ ⋄)
 cong-∘ (ext t ρ≈σ) (ext u ρ'≈σ') = ext (cong-sub t (ext u ρ'≈σ')) (cong-∘ ρ≈σ (ext u ρ'≈σ'))
+
+--------------------------------------------------------------------------------------------
+-- ucwf instantiation
 
 ImpSubUcwf : Ucwf
 ImpSubUcwf = record
@@ -466,6 +536,8 @@ subLam {σ = σ} {t} rewrite sym $ map-wk-p {σ = σ} = refl~βη
 
 η' : ∀ {n} {t : Tm n} → ƛ (app (t [ p ]) q) ~βη t
 η' {t = t} rewrite sym $ wk-sub-p {t = t} = η
+
+-- λβη-ucwf instantiation
 
 ImpSubLamUcwf : λβη-ucwf
 ImpSubLamUcwf = record

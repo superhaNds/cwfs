@@ -4,7 +4,7 @@
 -- categories of ucwfs and λβη-ucwfs. The latter is contains the former
 -- and adds some extra structure.
 ---------------------------------------------------------------------------
-module Ucwf where
+module Unityped.Ucwf where
 
 open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)

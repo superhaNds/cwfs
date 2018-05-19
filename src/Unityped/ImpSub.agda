@@ -1,4 +1,8 @@
-module ImpSub where
+-------------------------------------------------------------------------------
+-- A Ucwf with implicit substitutions. Essentially a theory of n-place
+-- functions with substitution formalized as a meta-level operation.
+-------------------------------------------------------------------------------
+module Unityped.ImpSub where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin using (Fin ; suc ; zero)
@@ -6,39 +10,61 @@ open import Data.Vec hiding ([_])
 open import Data.Vec.Properties
 open import Function hiding (id)
 open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Ucwf
+open import Unityped.Ucwf
 open ≡-Reasoning
+
+-------------------------------------------------------------------------------
+-- Substitutions are vectors that contains Fin elements
+-- They are referred to as renamings (Ren)
+
+-- Renamings
 
 Ren : Nat → Nat → Set
 Ren m n = Vec (Fin m) n
 
+-- Lifts and extends a renaming
+
 ↑ : ∀ {m n} → Ren m n → Ren (1 + m) (1 + n)
 ↑ ρ = zero ∷ map suc ρ
+
+-- generalized ↑
 
 _↑⋆_ : ∀ {m n} (k : Nat) → Ren m n → Ren (k + m) (k + n)
 zero ↑⋆ ρ = ρ
 suc k ↑⋆ ρ = ↑ (k ↑⋆ ρ)
 
+-- identity renaming
+
 id : ∀ {n} → Ren n n
 id {zero}  = []
 id {suc n} = ↑ id
 
+-- generalized projection renaming (AKA weakening)
+
 p⋆ : ∀ k {n} → Ren (k + n) n
 p⋆ zero    = id
 p⋆ (suc k) = map suc (p⋆ k)
+
+-- projection renaming
 
 p : ∀ {n} → Ren (1 + n) n
 p = p⋆ 1
 
 infix 12 _∙_
 
+-- renaming composition
+
 _∙_ : ∀ {m n k} → Ren m n → Ren k m → Ren k n
 ρ₁ ∙ ρ₂ = map (flip lookup ρ₂) ρ₁
 
 infixl 5 _/_
 
+-- renaming substitution
+
 _/_ : ∀ {m n} → Fin n → Ren m n → Fin m
 i / ρ = lookup i ρ
+
+-- composition definition
 
 compExt : ∀ {m n k} (σ : Ren n m) (ρ : Ren k n) t
           → (t ∷ σ) ∙ ρ ≡ ((t / ρ) ∷ σ ∙ ρ )
@@ -49,22 +75,34 @@ lookup-map : ∀ {a b n} {A : Set a} {B : Set b}
 lookup-map zero    _ (_ ∷ _)  = refl
 lookup-map (suc i) f (x ∷ xs) = lookup-map i f xs
 
+-- lookup in id returns the input Fin
+
 lookup-id : ∀ {n} (i : Fin n) → lookup i id ≡ i
 lookup-id zero    = refl
 lookup-id (suc i) = trans (lookup-map i suc id) (cong suc (lookup-id i))
 
+-- lookup in p returns the successor of the input Fin
+
 lookup-p : ∀ {n} (i : Fin n) → lookup i p ≡ suc i
 lookup-p i = trans (lookup-map i suc id) (cong suc (lookup-id i))
+
+-- An extended id is the projection with zero
 
 idExt : ∀ {n} → id {1 + n} ≡ (zero ∷ p)
 idExt {zero}  = refl
 idExt {suc n} = cong ↑ idExt
 
+-- Empty vector is a left zero in composition
+
 left-zero : ∀ {n m} {ρ : Ren m n} → [] ∙ ρ ≡ []
 left-zero = refl
 
+-- id vanishes when substituted
+
 subId : ∀ {n} {i : Fin n} → i / id ≡ i
 subId {i = i} = lookup-id i
+
+-- substitution is associative
 
 subComp : ∀ {m n k} i (ρ : Ren m n) (σ : Ren k m) → i / (ρ ∙ σ) ≡ i / ρ / σ
 subComp zero    (_ ∷ _) _ = refl
@@ -78,9 +116,13 @@ map-suc-tab {zero } = refl
 map-suc-tab {suc n} = trans (cong (λ x → suc zero ∷ map suc x) map-suc-tab)
                             (cong (suc zero ∷_) (sym $ tabulate-∘ suc suc))
 
+-- id is the standard's library allFin equivalent
+
 id-allFin : ∀ {n} → id ≡ allFin n
 id-allFin {zero}  = refl
 id-allFin {suc _} = cong (zero ∷_) map-suc-tab
+
+-- mapping looking in p drops the head of the renaming
 
 map-lookup-p : ∀ {m n} (ρ : Ren m (1 + n)) → map (flip lookup ρ) p ≡ tail ρ
 map-lookup-p (x ∷ ρ) = begin
@@ -90,8 +132,12 @@ map-lookup-p (x ∷ ρ) = begin
   ρ
   ∎
 
+-- p left in composition drops the head of the renaming
+
 p-∙ : ∀ {m n} {ρ : Ren m n} {i} → p ∙ (i ∷ ρ) ≡ ρ
 p-∙ {ρ = ρ} {i} = map-lookup-p (i ∷ ρ)
+
+-- composition is associative
 
 ∙-asso : ∀ {m n k j} (ρ₁ : Ren n k) (ρ₂ : Ren m n) (ρ₃ : Ren j m)
          → (ρ₁ ∙ ρ₂) ∙ ρ₃ ≡ ρ₁ ∙ (ρ₂ ∙ ρ₃)
@@ -103,6 +149,8 @@ p-∙ {ρ = ρ} {i} = map-lookup-p (i ∷ ρ)
   (i / ρ₂ ∙ ρ₃) ∷ ρ₁ ∙ (ρ₂ ∙ ρ₃)
   ∎
 
+-- composing p with lifted renaming is weakening 
+
 p-∙-↑ : ∀ {m n} {ρ : Ren m n} → p ∙ (↑ ρ) ≡ map suc ρ
 p-∙-↑ {ρ = ρ} = begin
   map (λ i → lookup i (↑ ρ)) p                ≡⟨ sym $ map-∘ _ suc id ⟩
@@ -111,17 +159,25 @@ p-∙-↑ {ρ = ρ} = begin
   map suc ρ
   ∎
 
+-- composing with p is weakening
+
 ∙-p : ∀ {m n} {ρ : Ren m n} → ρ ∙ p ≡ p ∙ (↑ ρ)
 ∙-p = trans (map-cong lookup-p _) (sym p-∙-↑)
+
+-- id is a left identity in composition
 
 idL : ∀ {m n} {ρ : Ren m n} → id ∙ ρ ≡ ρ
 idL {ρ = []} = refl
 idL {ρ = i ∷ ρ} rewrite p-∙ {ρ = ρ} {i} = refl
 
+-- id is a right identity in composition
+
 idR : ∀ {m n} {ρ : Ren m n} → ρ ∙ id ≡ ρ
 idR {ρ = []} = refl
 idR {ρ = i ∷ ρ} rewrite subId {i = i}
                       | idR {ρ = ρ} = refl
+
+-- congruence rules
 
 cong-, : ∀ {m n} {σ₁ σ₂ : Ren m n} {t₁ t₂}
            → t₁ ≡ t₂
@@ -145,6 +201,8 @@ suc-lookup-↑ : ∀ {m n} (ρ : Ren m n) (i : Fin n) → suc (lookup i ρ) ≡ 
 suc-lookup-↑ (_ ∷ _) zero    = refl
 suc-lookup-↑ (j ∷ ρ) (suc i) = sym (lookup-map i suc ρ)
 
+-- ↑ distributes over composition
+
 ↑-dist : ∀ {m n k} (ρ₁ : Ren m n) (ρ₂ : Ren k m) → ↑ (ρ₁ ∙ ρ₂) ≡ ↑ ρ₁ ∙ ↑ ρ₂
 ↑-dist ρ₁ ρ₂ = begin
   ↑ (ρ₁ ∙ ρ₂)                                     ≡⟨⟩
@@ -154,6 +212,8 @@ suc-lookup-↑ (j ∷ ρ) (suc i) = sym (lookup-map i suc ρ)
   zero ∷ map (λ i → lookup i (↑ ρ₂)) (map suc ρ₁) ≡⟨⟩
   ↑ ρ₁ ∙ ↑ ρ₂
   ∎
+
+-- Renamings form a ucwf with propositional equality
 
 ImpSubUcwf : Ucwf
 ImpSubUcwf = record
