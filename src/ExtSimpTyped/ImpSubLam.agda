@@ -6,6 +6,7 @@ open import Data.Fin
 open import Data.Product using (Σ)
 open import Unityped.ImpSubLam
 open import Unityped.ImpSub as Ren using (Ren)
+open import ExtSimpTyped.Scwf
 
 infixr 20 _⇒_
 
@@ -41,7 +42,7 @@ infix 4 _⊢_∈s_
 data _⊢_∈s_ : ∀ {n m} → Ctx n → Sub m n → Ctx m → Set where
   ⊢[] : ∀ {m} {Δ : Ctx m} → [] ⊢ [] ∈s Δ
   
-  ⊢,  : ∀ {m n} {Γ Δ α} {σ : Sub m n} {t : Tm m}
+  ⊢,  : ∀ {m n Γ Δ α t} {σ : Sub m n}
         → Γ ⊢ σ ∈s Δ
         → Δ ⊢ t ∈ α
         → Γ ∙ α ⊢ σ , t ∈s Δ
@@ -68,12 +69,12 @@ module Var where
   p-preserv = map-suc-preserv Ren.id id-preserv
 
   lookup-preserv : ∀ {m n Γ Δ} i (ρ : Ren m n)
-                 → Γ ⊢ map var ρ ∈s Δ
-                 → Δ ⊢ var (lookup i ρ) ∈ lookup i Γ
+                   → Γ ⊢ map var ρ ∈s Δ
+                   → Δ ⊢ var (lookup i ρ) ∈ lookup i Γ
   lookup-preserv zero    (_ ∷ _) (⊢, _ ∈α) = ∈α
   lookup-preserv (suc i) (_ ∷ ρ) (⊢, ⊢ρ _) = lookup-preserv i ρ ⊢ρ
 
-  /-preserv : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {t ρ α}
+  /-preserv : ∀ {m n t ρ α} {Γ : Ctx n} {Δ : Ctx m}
               → Γ ⊢ t ∈ α
               → Γ ⊢ map var ρ ∈s Δ
               → Δ ⊢ t / ρ ∈ α
@@ -142,9 +143,9 @@ private
   Σ-∘ (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) = (ρ ∘ σ) Σ., (∘-preserv ⊢ρ ⊢σ)      
 
   Σ-sub : ∀ {m n α} {Γ : Ctx n} {Δ : Ctx m}
-        → Σ (Tm m) (Δ ⊢_∈ α)
-        → Σ (Sub n m) (Δ ⊢_∈s Γ)
-        → Σ (Tm n) (Γ ⊢_∈ α)
+          → Σ (Tm m) (Δ ⊢_∈ α)
+          → Σ (Sub n m) (Δ ⊢_∈s Γ)
+          → Σ (Tm n) (Γ ⊢_∈ α)
   Σ-sub (t Σ., ⊢t) (ρ Σ., ⊢ρ) = (t [ ρ ]) Σ., (sub-preserves ⊢t ⊢ρ)      
 
   Σ-id : ∀ {n} {Γ : Ctx n} → Σ (Sub n n) (Γ ⊢_∈s Γ)
@@ -166,3 +167,23 @@ private
           → Σ (Tm n) (Γ ⊢_∈ α)
           → Σ (Tm n) (Γ ⊢_∈ β)
   Σ-app (t Σ., ⊢t) (u Σ., ⊢u) = (app t u) Σ., (⊢app ⊢t ⊢u)
+
+  ImpSubLamScwf : λβη-scwf
+  ImpSubLamScwf = record
+                 { λucwf  = ImpSubLamUcwf
+                 ; Ty     = Ty
+                 ; Ctx    = Ctx
+                 ; ε      = []
+                 ; _∙_    = _∙_
+                 ; _⊢_∈_  = _⊢_∈_
+                 ; _⊢_∈s_ = _⊢_∈s_
+                 ; Σ-<>   = Σ-[]
+                 ; Σ-<,>  = Σ-,
+                 ; Σ-∘    = Σ-∘
+                 ; Σ-sub  = Σ-sub
+                 ; Σ-id   = Σ-id
+                 ; Σ-p    = Σ-p
+                 ; Σ-q    = Σ-q
+                 ; Σ-lam  = Σ-ƛ
+                 ; Σ-app  = Σ-app
+                 }

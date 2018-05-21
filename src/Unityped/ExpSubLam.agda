@@ -1,11 +1,9 @@
-module ExpSubLam where
-
-module ExpSub where
+module Unityped.ExpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Relation.Binary using (Setoid ; IsEquivalence)
 import Relation.Binary.EqReasoning as EqR
-open import Ucwf
+open import Unityped.Ucwf
 
 data Tm : Nat → Set
 data Sub : Nat → Nat → Set
@@ -192,7 +190,7 @@ ExpSubLamUcwf = record
                   ; cong-app = cong-app
                   }
 
-open Ucwf.Ucwf ExpSubUcwf using (setoidTm ; setoidSub)
+open Ucwf ExpSubUcwf using (setoidTm ; setoidSub)
 
 TmSetoid : ∀ {n} → Setoid _ _
 TmSetoid {n} = setoidTm {n}

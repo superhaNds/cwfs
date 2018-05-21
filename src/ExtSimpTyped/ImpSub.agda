@@ -5,6 +5,7 @@ open import Data.Vec hiding ([_])
 open import Data.Fin
 open import Data.Product using (Σ)
 open import Unityped.ImpSub renaming (_∙_ to _∘_)
+open import ExtSimpTyped.Scwf
 
 postulate Ty : Set
 
@@ -22,6 +23,7 @@ data _⊢_∈_ {n} : Ctx n → Fin n → Ty → Set where
 
 data _⊢_∈s_ : ∀ {n m} → Ctx n → Ren m n → Ctx m → Set where
   ⊢[] : ∀ {m} {Δ : Ctx m} → [] ⊢ [] ∈s Δ
+  
   ⊢,  : ∀ {m n} {Γ Δ α} {ρ : Ren m n} {i : Fin m}
         → Γ ⊢ ρ ∈s Δ
         → Δ ⊢ i ∈ α
@@ -97,3 +99,21 @@ private
 
   Σ-q : ∀ {n α} {Γ : Ctx n} → Σ (Fin (suc n)) (Γ ∙ α ⊢_∈ α)
   Σ-q = zero Σ., ⊢q
+
+  ImpSubScwf : Scwf
+  ImpSubScwf = record
+                 { ucwf   = ImpSubUcwf
+                 ; Ty     = Ty
+                 ; Ctx    = Ctx
+                 ; ε      = []
+                 ; _∙_    = _∙_
+                 ; _⊢_∈_  = _⊢_∈_
+                 ; _⊢_∈s_ = _⊢_∈s_
+                 ; Σ-<>   = Σ-[]
+                 ; Σ-<,>  = Σ-,
+                 ; Σ-∘    = Σ-∘
+                 ; Σ-sub  = Σ-/
+                 ; Σ-id   = Σ-id
+                 ; Σ-p    = Σ-p
+                 ; Σ-q    = Σ-q
+                 }
