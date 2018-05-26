@@ -1,4 +1,4 @@
-module Iso-LamUcwf where
+module Unityped.Iso-LamUcwf where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; zero ; suc)
@@ -8,10 +8,10 @@ open import Function using (_$_)
 open import Relation.Binary.PropositionalEquality as P hiding ([_] ; cong-app)
 import Relation.Binary.EqReasoning as EqR
 
-open import Ucwf
-open import ExpSubLam renaming (Tm to Tm-cwf ; Sub to Sub-cwf ; q to q⋆ ; p to p⋆ ; id to id⋆ ; _∘_ to _∘⋆_ ; _[_] to _[_]⋆)
-open import ImpSubLam renaming (Tm to Tm-λ ; Sub to Sub-λ) hiding (subComp ; idExt ; p-∘ ; cong-∘₁ ; subLam)
-open import ImpSub as Ren using (Ren)
+open import Unityped.Ucwf
+open import Unityped.ExpSubLam renaming (Tm to Tm-cwf ; Sub to Sub-cwf ; q to q⋆ ; p to p⋆ ; id to id⋆ ; _∘_ to _∘⋆_ ; _[_] to _[_]⋆)
+open import Unityped.ImpSubLam renaming (Tm to Tm-λ ; Sub to Sub-λ) hiding (subComp ; idExt ; p-∘ ; cong-∘₁ ; subLam)
+open import Unityped.ImpSub as Ren using (Ren)
 
 ⟦_⟧  : ∀ {n} → Tm-cwf n → Tm-λ n
 ⟦_⟧' : ∀ {m n} → Sub-cwf m n → Sub-λ m n
@@ -60,43 +60,44 @@ ExpSubUcwf⇒ = record
                       ; app-preserved = refl~βη
                       }
 
-module Proj where
+varsExp : ∀ {m n} → Ren m n → Sub-cwf m n
+varsExp []      = <>
+varsExp (i ∷ ρ) = < varsExp ρ , varExp i >
 
-  varsExp : ∀ {m n} → Ren m n → Sub-cwf m n
-  varsExp []      = <>
-  varsExp (i ∷ ρ) = < varsExp ρ , varExp i >
+var-lemma : ∀ {m n} (ρ : Ren m n) → varsExp ρ ∘⋆ p⋆ ≈ varsExp (map suc ρ)
+var-lemma []      = left-zero
+var-lemma (i ∷ ρ) = begin
+  < varsExp ρ , varExp i > ∘⋆ p⋆              ≈⟨ compExt ⟩
+  < varsExp ρ ∘⋆ p⋆ , varExp i [ p⋆ ]⋆ >      ≈⟨ cong-<, (var-lemma ρ) ⟩
+  < varsExp (map suc ρ) , varExp i [ p⋆ ]⋆ >
+  ∎
+  where open EqR (SubSetoid {_} {_})
 
-  var-lemma : ∀ {m n} (ρ : Ren m n) → varsExp ρ ∘⋆ p⋆ ≈ varsExp (map suc ρ)
-  var-lemma []      = left-zero
-  var-lemma (i ∷ ρ) = begin
-    < varsExp ρ , varExp i > ∘⋆ p⋆              ≈⟨ compExt ⟩
-    < varsExp ρ ∘⋆ p⋆ , varExp i [ p⋆ ]⋆ >      ≈⟨ cong-<, (var-lemma ρ) ⟩
-    < varsExp (map suc ρ) , varExp i [ p⋆ ]⋆ >
-    ∎
-    where open EqR (SubSetoid {_} {_})
+p⋆-norm : ∀ {n} → Sub-cwf (suc n) n
+p⋆-norm {n} = varsExp Ren.p
 
-  p⋆-norm : ∀ {n} → Sub-cwf (suc n) n
-  p⋆-norm {n} = varsExp Ren.p
+p⋆≈p⋆-norm : ∀ {n} → p⋆ {n} ≈ varsExp (Ren.p)
+p⋆≈p⋆-norm {zero}  = emptySub _
+p⋆≈p⋆-norm {suc n} = begin
+  p⋆                                        ≈⟨ surj-<,> p⋆ ⟩
+  < p⋆ ∘⋆ p⋆ , q⋆ [ p⋆ ]⋆ >                 ≈⟨ cong-<, (cong-∘₁ p⋆≈p⋆-norm) ⟩
+  < varsExp Ren.p ∘⋆ p⋆ , q⋆ [ p⋆ ]⋆ >      ≈⟨ cong-<, (var-lemma Ren.p) ⟩
+  < varsExp (map suc Ren.p) , q⋆ [ p⋆ ]⋆ > 
+  ∎
+  where open EqR (SubSetoid {_} {_})
 
-  p⋆≈p⋆-norm : ∀ {n} → p⋆ {n} ≈ varsExp (Ren.p)
-  p⋆≈p⋆-norm {zero}  = emptySub _
-  p⋆≈p⋆-norm {suc n} = begin
-    p⋆                                        ≈⟨ surj-<,> p⋆ ⟩
-    < p⋆ ∘⋆ p⋆ , q⋆ [ p⋆ ]⋆ >                 ≈⟨ cong-<, (cong-∘₁ p⋆≈p⋆-norm) ⟩
-    < varsExp Ren.p ∘⋆ p⋆ , q⋆ [ p⋆ ]⋆ >      ≈⟨ cong-<, (var-lemma Ren.p) ⟩
-    < varsExp (map suc Ren.p) , q⋆ [ p⋆ ]⋆ > 
-    ∎
-    where open EqR (SubSetoid {_} {_})
+↑-var : ∀ {m n} (ρ : Ren m n) → varsExp (Ren.↑ ρ) ≈ < varsExp ρ ∘⋆ p⋆ , q⋆ >
+↑-var ρ = cong-<, (sym≈ (var-lemma ρ))
 
-  vars-any : ∀ {m n} (ρ : Ren m n) → ⟪ map var ρ ⟫' ≈ varsExp ρ
-  vars-any []      = refl≈
-  vars-any (_ ∷ ρ) = cong-<, (vars-any ρ)
+vars-any : ∀ {m n} (ρ : Ren m n) → ⟪ map var ρ ⟫' ≈ varsExp ρ
+vars-any []      = refl≈
+vars-any (_ ∷ ρ) = cong-<, (vars-any ρ)
 
-  vars-p : ∀ {n} → ⟪ p {n} ⟫' ≈ varsExp Ren.p
-  vars-p = vars-any Ren.p
+vars-p : ∀ {n} → ⟪ p {n} ⟫' ≈ varsExp Ren.p
+vars-p = vars-any Ren.p
 
 p-preserved : ∀ {n} → ⟪ p {n} ⟫' ≈ p⋆
-p-preserved = trans≈ Proj.vars-p (sym≈ Proj.p⋆≈p⋆-norm)
+p-preserved = trans≈ vars-p (sym≈ p⋆≈p⋆-norm)
 
 id-preserved : ∀ {n} → ⟪ id {n} ⟫' ≈ id⋆
 id-preserved {zero}  = sym≈ id-zero
@@ -107,6 +108,28 @@ id-preserved {suc n} = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
+ren-preserves : ∀ {m n} {ρ : Ren m n} {t} → ⟪ t / ρ ⟫ ~ ⟪ t ⟫ [ varsExp ρ ]⋆
+ren-preserves {ρ = []}    {var ()}
+ren-preserves {ρ = x ∷ ρ} {var zero}    = sym~ q-sub
+ren-preserves {ρ = x ∷ ρ} {var (suc i)} = begin  
+  varExp (lookup i ρ)                               ≈⟨ ren-preserves {ρ = ρ} {t = var i} ⟩
+  varExp i [ varsExp ρ ]⋆                           ≈⟨ cong-sub₂ (sym≈ p-∘) ⟩
+  varExp i [ p⋆ ∘⋆ < varsExp ρ , varExp x > ]⋆      ≈⟨ subComp ⟩ 
+  (varExp i [ p⋆ ]⋆) [ < varsExp ρ , varExp x > ]⋆
+  ∎
+  where open EqR (TmSetoid {_})
+ren-preserves {ρ = ρ} {app t u} =
+  trans~ (cong-app (ren-preserves {t = t})
+                   (ren-preserves {t = u}))
+         (sym~ subApp)
+ren-preserves {ρ = ρ} {ƛ t} = begin
+  ƛ ⟪ t / Ren.↑ ρ ⟫                           ≈⟨ cong-lam $ ren-preserves {ρ = Ren.↑ ρ} {t = t} ⟩
+  ƛ (⟪ t ⟫ [ < varsExp (map suc ρ) , q⋆ > ]⋆) ≈⟨ cong-lam $ cong-sub₂ $ cong-<, $ sym≈ $ var-lemma ρ ⟩
+  ƛ (⟪ t ⟫ [ < varsExp ρ ∘⋆ p⋆ , q⋆ > ]⋆)     ≈⟨ sym~ subLam ⟩
+  ƛ ⟪ t ⟫ [ varsExp ρ ]⋆
+  ∎
+  where open EqR (TmSetoid {_})
+  
 wk-⟦⟧ : ∀ {n} (t : Tm-cwf n) → ⟦ t [ p⋆ ]⋆ ⟧ ~βη weaken ⟦ t ⟧
 wk-⟦⟧ q⋆ = varcong (suc zero)
 wk-⟦⟧ (app f t) rewrite sym (wk-sub-p {t = ⟦ f ⟧})
@@ -123,9 +146,12 @@ wk-⟪⟫ (app f t) = begin
   app ⟪ f ⟫ ⟪ t ⟫ [ p⋆ ]⋆
   ∎
   where open EqR (TmSetoid {_})
-wk-⟪⟫ (ƛ t) rewrite /-↑-[] {t = t} = begin
-  ƛ ⟪ t [ ↑ p ] ⟫       ≈⟨ {!!} ⟩
-  (ƛ ⟪ t ⟫) [ p⋆ ]⋆
+wk-⟪⟫ (ƛ t) = begin
+  ƛ ⟪ t / Ren.↑ Ren.p ⟫                       ≈⟨ cong-lam $ ren-preserves {ρ = Ren.↑ Ren.p} {t = t} ⟩
+  ƛ (⟪ t ⟫ [ varsExp (Ren.↑ Ren.p) ]⋆)        ≈⟨ cong-lam $ cong-sub₂ $ cong-<, $ sym≈ $ var-lemma _ ⟩
+  ƛ (⟪ t ⟫ [ < varsExp Ren.p ∘⋆ p⋆ , q⋆ > ]⋆) ≈⟨ cong-lam $ cong-sub₂ $ cong-<, $ cong-∘₁ $ sym≈ p⋆≈p⋆-norm ⟩
+  ƛ (⟪ t ⟫ [ < p⋆ ∘⋆ p⋆ , q⋆ > ]⋆)            ≈⟨ sym~ subLam ⟩
+  ƛ ⟪ t ⟫ [ p⋆ ]⋆
   ∎
   where open EqR (TmSetoid {_})
 
@@ -156,7 +182,7 @@ sub-preserved (app f t) σ = begin
   where open EqR (TmSetoid {_})
 sub-preserved (ƛ t) σ = begin
   ƛ ⟪ t [ ↑ σ ] ⟫                           ≈⟨ cong-lam $ sub-preserved t (↑ σ) ⟩
-  ƛ (⟪ t ⟫ [ < ⟪ map weaken σ ⟫' , q⋆ > ]⋆) ≈⟨ cong-lam (cong-sub₂ (cong-<, (map-wk-⟪⟫ σ))) ⟩
+  ƛ (⟪ t ⟫ [ < ⟪ map weaken σ ⟫' , q⋆ > ]⋆) ≈⟨ cong-lam $ cong-sub₂ (cong-<, (map-wk-⟪⟫ σ)) ⟩
   ƛ (⟪ t ⟫ [ < ⟪ σ ⟫' ∘⋆ p⋆ , q⋆ > ]⋆)      ≈⟨ sym~ subLam ⟩
   ƛ ⟪ t ⟫ [ ⟪ σ ⟫' ]⋆
   ∎
@@ -193,8 +219,8 @@ ImpSubUcwf⇒ = record
                       }
 
 left-inv-tm : ∀ {n} (t : Tm-cwf n) → ⟪ ⟦ t ⟧ ⟫ ~ t
-
 left-inv-sub : ∀ {m n} (σ : Sub-cwf m n) → ⟪ ⟦ σ ⟧' ⟫' ≈ σ
+
 left-inv-sub id⋆        = id-preserved
 left-inv-sub p⋆         = p-preserved
 left-inv-sub <>         = refl≈
