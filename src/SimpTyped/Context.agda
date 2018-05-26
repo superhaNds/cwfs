@@ -54,6 +54,11 @@ there-eq : {A : Set} {Γ : Ctxt A} {a x : A} {φ ψ : a ∈ Γ} →
            there {α′ = x} φ ≡ there {α′ = x} ψ → φ ≡ ψ
 there-eq refl = refl           
 
+mapWith∈ : ∀ {A B : Set}
+           (Γ : Ctxt A) → (∀ {x} → x ∈ Γ → B) → Ctxt B
+mapWith∈ ε       _ = ε
+mapWith∈ (Γ ∙ _) f = mapWith∈ Γ (f ∘ there) ∙ (f here)           
+
 ∈-dec : {A : Set} {Γ : Ctxt A} {a : A} (φ ψ : a ∈ Γ) → Dec (φ ≡ ψ)
 ∈-dec here here      = yes refl
 ∈-dec here (there ψ) = no (λ ())
