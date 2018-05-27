@@ -48,8 +48,10 @@ data _~_ where
   subLam : ∀ {m n} {t} {δ : Sub m n}
            → (ƛ t) [ δ ] ~ ƛ (t [ < δ ∘ p , q > ])
             
-  subΠ : ∀ {n m} (γ : Sub m n) A B
+  subΠ : ∀ {n m} {γ : Sub m n} {A B}
          → (Π A B) [ γ ] ~ Π (A [ γ ]) (B [ ⇑ γ ])
+
+  subU : ∀ {m n} {γ : Sub m n} → U [ γ ] ~ U
 
   β : ∀ {n} {t : Tm (suc n)} {u} → app (ƛ t) u ~ t [ < id , u > ]
 
@@ -153,6 +155,12 @@ cong-appl f~g = cong-app f~g refl~
 cong-appr : ∀ {n} {f t u : Tm n} → t ~ u → app f t ~ app f u
 cong-appr t~u = cong-app refl~ t~u
 
+cong-Πl : ∀ {n} {A A' : Tm n} {B} → A ~ A' → Π A B ~ Π A' B
+cong-Πl A~A' = cong-Π A~A' refl~
+
+cong-Πr : ∀ {n} {B B' : Tm (suc n)} {A} → B ~ B' → Π A B ~ Π A B'
+cong-Πr B~B' = cong-Π refl~ B~B'
+
 TmSetoid : ∀ {n} → Setoid _ _
 TmSetoid {n} =
   record { Carrier = Tm n
@@ -190,9 +198,6 @@ surj-<,> γ = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
------------------------------------------------------------------------------------------------
--- A few theorems based on the raw axiomatization
-
 -- there is a unique terminal arrow for any object with codomain 0
 
 ter-arrow : ∀ {m} (γ : Sub m 0) → γ ≈ <>
@@ -218,174 +223,3 @@ ter-arrow γ = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
-data Ctx : Nat → Set
-data Ctx where
-  ⋄   : Ctx 0
-  _∙_ : ∀ {n} → Ctx n → Tm n → Ctx (1 + n)
-
-{-
-infix 5 _⊢
-infix 5 _⊢_
-infix 5 _⊢_∈_
-infix 5 _▹_⊢_
-
--- Well-formed context
-
-data _⊢    : ∀ {n} (Γ : Ctx n) → Set
-
--- Well-formed type
-
-data _⊢_   : ∀ {n} (Γ : Ctx n) (A : Tm n) → Set
-
--- Well-formed term
-
-data _⊢_∈_ : ∀ {n} (Γ : Ctx n) (t : Tm n) (A : Tm n) → Set
-
--- Well-formed substitution
-
-data _▹_⊢_ : ∀ {m n} (Δ : Ctx m) (Γ : Ctx n) (γ : Sub m n) → Set
-
-data _⊢ where
-
- c-emp : ⋄ ⊢
-  
- c-ext : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢
-         → Γ ⊢ A
-         → Γ ∙ A ⊢
-
-data _⊢_ where
-
-  ty-U : ∀ {n} {Γ : Ctx n}
-         → Γ ⊢
-         → Γ ⊢ U         
-
-  ty-∈U : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢ A ∈ U
-         → Γ ⊢ A
-
-  ty-sub : ∀ {m n} {Δ : Ctx m}
-             {Γ : Ctx n} {A γ}
-           → Δ ⊢ A
-           → Γ ▹ Δ ⊢ γ
-           → Γ ⊢ A [ γ ]
-
-  ty-Π-F : ∀ {n} {Γ : Ctx n} {A B}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ⊢ Π A B
-
-data _⊢_∈_ where
-
-  tm-q : ∀ {n} {Γ : Ctx n} {A}
-         → Γ ⊢ A
-         → Γ ∙ A ⊢ q ∈ A [ p ]
-
-  tm-sub : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m}
-             {A t γ}
-           → Δ ⊢ t ∈ A
-           → Γ ▹ Δ ⊢ γ
-           → Γ ⊢ t [ γ ] ∈ A [ γ ]
-
-  tm-app : ∀ {n} {Γ : Ctx n} {f t A B}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ⊢ f ∈ Π A B
-           → Γ ⊢ t ∈ A
-           → Γ ⊢ app f t ∈ B [ < id , t > ]
-           
-  tm-Π-I : ∀ {n} {Γ : Ctx n}
-             {A B t}
-           → Γ ⊢ A
-           → Γ ∙ A ⊢ B
-           → Γ ∙ A ⊢ t ∈ B
-           → Γ ⊢ lam t ∈ Π A B
-
-  tm-conv : ∀ {n} {Γ : Ctx n} {t A A'}
-            → Γ ⊢ A'
-            → Γ ⊢ t ∈ A
-            → A' ≈ A
-            → Γ ⊢ t ∈ A'
-
-data _▹_⊢_ where
-
-  ⊢id : ∀ {n} {Γ : Ctx n}
-        → Γ ⊢
-        → Γ ▹ Γ ⊢ id
-
-  ⊢∘ : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m}
-         {Θ : Ctx k} {γ₁ γ₂}
-       → Γ ▹ Θ ⊢ γ₁
-       → Δ ▹ Γ ⊢ γ₂
-       → Δ ▹ Θ ⊢ γ₁ ∘ γ₂
-       
-  ⊢p : ∀ {n} {Γ : Ctx n} {A}
-       → Γ ⊢ A
-       → Γ ∙ A ▹ Γ ⊢ p
-
-  ⊢<> : ∀ {n} {Γ : Ctx n}
-        → Γ ⊢
-        → Γ ▹ ⋄ ⊢ <>
-
-  ⊢<,> : ∀ {m n} {Γ : Ctx n}
-           {Δ : Ctx m} {A t γ}
-         → Γ ▹ Δ ⊢ γ
-         → Δ ⊢ A
-         → Γ ⊢ t ∈ A [ γ ]
-         → Γ ▹ Δ ∙ A ⊢ < γ , t >
-
--- Basic properties
-
-
--- Given a well-formed type in some context, the context must be well-formed
-
-lemma-1 : ∀ {n} {Γ : Ctx n} {A}
-          → Γ ⊢ A
-          → Γ ⊢
-
--- Given a well-formed term of some type, the type must be well-formed
-
-lemma-2 : ∀ {n} {Γ : Ctx n} {A t}
-          → Γ ⊢ t ∈ A
-          → Γ ⊢ A
-
--- And the context
-
-lemma-2B : ∀ {n} {Γ : Ctx n} {A t}
-           → Γ ⊢ t ∈ A
-           → Γ ⊢
-           
--- Given a well-formed substitution between two contexts, the contexts must be well-formed
-
-lemma-3 : ∀ {m n} {Γ : Ctx n}
-            {Δ : Ctx m} {γ}
-          → Δ ▹ Γ ⊢ γ
-          → Γ ⊢ × Δ ⊢
-
-lemma-3 (⊢id Γ⊢)       = Γ⊢ , Γ⊢
-lemma-3 (⊢∘ ⊢γ₁ ⊢γ₂)   = π₁ (lemma-3 ⊢γ₁) , π₂ (lemma-3 ⊢γ₂) 
-lemma-3 (⊢p ⊢A)        = lemma-1 ⊢A , c-ext (lemma-1 ⊢A) ⊢A
-lemma-3 (⊢<> Δ⊢)       = c-emp , Δ⊢ 
-lemma-3 (⊢<,> ⊢γ ⊢A _) = c-ext (lemma-1 ⊢A) ⊢A , π₂ (lemma-3 ⊢γ)
-
-lemma-1 (ty-U Γ⊢)     = Γ⊢
-lemma-1 (ty-∈U A∈U)   = lemma-2B A∈U
-lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
-lemma-1 (ty-sub _ ⊢γ) = π₂ (lemma-3 ⊢γ)
-
-lemma-2B (tm-q ⊢A)          = c-ext (lemma-1 ⊢A) ⊢A
-lemma-2B (tm-sub t∈A ⊢γ)    = π₂ (lemma-3 ⊢γ)
-lemma-2B (tm-app _ _ _ t∈A) = lemma-2B t∈A
-lemma-2B (tm-conv x t∈A x₁) = lemma-2B t∈A
-lemma-2B (tm-Π-I _ _ t∈A) with lemma-2B t∈A
-... | c-ext Γ⊢ _ = Γ⊢
-
-lemma-2 (tm-q ⊢A)            = ty-sub ⊢A (⊢p ⊢A)
-lemma-2 (tm-sub t∈A ⊢γ)      = ty-sub (lemma-2 t∈A) ⊢γ
-lemma-2 (tm-Π-I ⊢A ⊢B _)     = ty-Π-F ⊢A ⊢B
-lemma-2 (tm-app ⊢A ⊢B _ t∈A) =
-  let ⊢id = ⊢id (lemma-1 ⊢A)
-  in ty-sub ⊢B (⊢<,> ⊢id ⊢A
-     (tm-conv (ty-sub ⊢A ⊢id) t∈A (subId _)))
-lemma-2 (tm-conv ⊢A' _ _) = ⊢A'
--}

@@ -36,7 +36,8 @@ map-suc-preserv : ∀ {m n Γ Δ α} (ρ : Ren m n)
                   → Γ ⊢ ρ ∈s Δ
                   → Γ ⊢ map suc ρ ∈s Δ ∙ α
 map-suc-preserv [] ⊢[] = ⊢[]
-map-suc-preserv (x ∷ ρ) (⊢, ⊢ρ ⊢var) = ⊢, (map-suc-preserv ρ ⊢ρ) ⊢var                  
+map-suc-preserv (x ∷ ρ) (⊢, ⊢ρ ⊢var) = ⊢, (map-suc-preserv ρ ⊢ρ) ⊢var
+
 ↑-preserv : ∀ {m n Γ Δ α} {ρ : Ren m n}
             → Γ ⊢ ρ ∈s Δ
             → Γ ∙ α ⊢ ↑ ρ ∈s Δ ∙ α
