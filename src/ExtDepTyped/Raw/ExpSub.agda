@@ -3,9 +3,11 @@ module ExtDepTyped.Raw.ExpSub where
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Product renaming (proj₁ to π₁ ; proj₂ to π₂) hiding (<_,_>)
 open import Relation.Binary
+open import Unityped.Ucwf
+open import ExtDepTyped.Raw.PiUcwf
 import Relation.Binary.EqReasoning as EqR
 
-data Tm : Nat → Set
+data Tm  : Nat → Set
 data Sub : Nat → Nat → Set
 
 infix 8 _∘_
@@ -198,8 +200,6 @@ surj-<,> γ = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
--- there is a unique terminal arrow for any object with codomain 0
-
 ter-arrow : ∀ {m} (γ : Sub m 0) → γ ≈ <>
 ter-arrow γ = begin
   γ           ≈⟨ sym≈ idL ⟩
@@ -209,7 +209,7 @@ ter-arrow γ = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
--- lifting and extending a substitution distributes over composition
+-- lifting distributes over composition
 
 ⇑-dist : ∀ {m n k} (γ : Sub m n) (γ' : Sub k m) → ⇑ γ ∘ ⇑ γ' ≈ ⇑ (γ ∘ γ')
 ⇑-dist γ γ' = begin
@@ -223,3 +223,62 @@ ter-arrow γ = begin
   ∎
   where open EqR (SubSetoid {_} {_})
 
+ExpSubUcwf : Ucwf
+ExpSubUcwf = record
+               { Tm       = Tm
+               ; Sub      = Sub
+               ; _~_      = _~_
+               ; _≈_      = _≈_
+               ; IsEquivT =
+                   record { refl  = refl~
+                          ; sym   = sym~
+                          ; trans = trans~ }
+               ; IsEquivS =
+                   record { refl  = refl≈
+                          ; sym   = sym≈
+                          ; trans = trans≈ }
+               ; id        = id
+               ; _∘_       = _∘_
+               ; _[_]      = _[_]
+               ; <>        = <>
+               ; <_,_>     = <_,_>
+               ; p         = p
+               ; q         = q
+               ; id-zero   = id-zero
+               ; left-zero = left-zero
+               ; idExt     = idExt
+               ; idL       = idL
+               ; idR       = idR
+               ; assoc     = ∘-asso
+               ; subId     = subId
+               ; pCons     = p-∘
+               ; qCons     = q-sub
+               ; subComp   = subComp
+               ; compExt   = compExt
+               ; cong-<,>  = cong-<,>
+               ; cong-sub  = cong-sub
+               ; cong-∘    = cong-∘
+               }
+
+ExpSubLamUcwf : λβη-ucwf
+ExpSubLamUcwf = record
+                  { ucwf     = ExpSubUcwf
+                  ; lam      = ƛ
+                  ; app      = app
+                  ; subApp   = subApp
+                  ; subLam   = subLam
+                  ; β        = β
+                  ; η        = η
+                  ; cong-lam = cong-lam
+                  ; cong-app = cong-app
+                  }
+
+ExpSubΠUcwf : Π-λβη-ucwf
+ExpSubΠUcwf = record
+                { λucwf  = ExpSubLamUcwf
+                ; Π      = Π
+                ; U      = U
+                ; subU   = subU
+                ; subΠ   = subΠ
+                ; cong-Π = cong-Π
+                }

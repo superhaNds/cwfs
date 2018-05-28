@@ -4,8 +4,11 @@ open import Function as F using (_$_ ; flip)
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; zero ; suc)
 open import Data.Vec hiding ([_] ; _∈_)
+open import Data.Vec.All as All using (All; []; _∷_)
+open import Data.Vec.All.Properties using (gmap)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import ExtDepTyped.Raw.ImpSub
+open import Unityped.ImpSub as Ren using (Ren)
 
 data Ctx : Nat → Set where
   ⋄   : Ctx 0
@@ -103,3 +106,43 @@ wf⁻¹ (c-ext Γ⊢ _) = Γ⊢
 
 wf⁻² : ∀ {n} {Γ : Ctx n} {A} → Γ ∙ A ⊢ → Γ ⊢ A
 wf⁻² (c-ext _ ⊢A) = ⊢A
+
+wfTm-wf : ∀ {n} {Γ : Ctx n} {t A} → Γ ⊢ t ∈ A → Γ ⊢
+wfTm-wf (tm-var Γ⊢)       = Γ⊢
+wfTm-wf (tm-app _ _ _ ⊢t) = wfTm-wf ⊢t
+wfTm-wf (tm-Π-I ⊢A _ ⊢t)  = wf⁻¹ $ wfTm-wf ⊢t
+
+wfSub-wf₁ : ∀ {m n Γ Δ} {γ : Sub m n} → Γ ⊢ γ ∈s Δ → Δ ⊢
+wfSub-wf₁ (⊢<> Δ⊢)      = Δ⊢
+wfSub-wf₁ (⊢<,> ⊢γ _ _) = wfSub-wf₁ ⊢γ
+
+wfSub-wf₂ : ∀ {m n Γ Δ} {γ : Sub m n} → Γ ⊢ γ ∈s Δ → Γ ⊢
+wfSub-wf₂ (⊢<> _)        = c-emp
+wfSub-wf₂ (⊢<,> ⊢γ ⊢A _) = c-ext (wfSub-wf₂ ⊢γ) ⊢A
+
+wfTy-wf : ∀ {n} {Γ : Ctx n} {A}
+          → Γ ⊢ A
+          → Γ ⊢
+            
+wfTm-wfTy : ∀ {n} {Γ : Ctx n} {t A}
+            → Γ ⊢ t ∈ A
+            → Γ ⊢ A
+
+wfTy-wf (ty-U Γ⊢)     = Γ⊢
+wfTy-wf (ty-∈U ⊢A)    = wfTm-wf ⊢A
+wfTy-wf (ty-Π-F ⊢A _) = wfTy-wf ⊢A
+
+module Var where
+
+  map-suc-preserv : ∀ {m n Γ Δ A} (ρ : Ren m n)
+                    → Δ ⊢ A
+                    → Γ ⊢ map var ρ ∈s Δ
+                    → Γ ⊢ map var (map suc ρ) ∈s Δ ∙ A
+  map-suc-preserv []      ⊢A  (⊢<> Γ⊢)       = ⊢<> (c-ext Γ⊢ ⊢A)
+  map-suc-preserv (_ ∷ ρ) ⊢A' (⊢<,> ⊢ρ ⊢A _) = ⊢<,> (map-suc-preserv ρ ⊢A' ⊢ρ) ⊢A {!!}
+
+wfTm-wfTy (tm-var Γ⊢)          = {!!}
+wfTm-wfTy (tm-app ⊢A ⊢B ⊢f ⊢t) = {!!}
+wfTm-wfTy (tm-Π-I ⊢A ⊢B _)     = ty-Π-F ⊢A ⊢B
+
+  
