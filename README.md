@@ -1,6 +1,6 @@
 # Initial Categories with Families
 
-This repository contains the developments of a formalization of categories with families (CwFs) defined as a generalized algebraic theory described in [Internal Type Theory](http://www.cse.chalmers.se/~peterd/papers/InternalTT.pdf). This was a master's thesis and the final report is also available.
+This repository contains the developments of a formalization of categories with families (CwFs) defined as a generalized algebraic theory described in [Internal Type Theory](http://www.cse.chalmers.se/~peterd/papers/InternalTT.pdf). This was a master's thesis and the final report is also available [here](https://superhands.github.io/assets/documents/thesis.pdf).
 
 There are three different CwFs implemented so far; those are: unityped, simply typed, and the full CwFs that model dependent types. Extra structure is added to acquire models of the corresponding lambda calculus.
 
