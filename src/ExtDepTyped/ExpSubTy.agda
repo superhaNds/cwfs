@@ -30,6 +30,12 @@ data _⊢ where
          → Γ ⊢ A
          → Γ ∙ A ⊢
 
+wf⁻¹ : ∀ {n} {Γ : Ctx n} {A} → Γ ∙ A ⊢ → Γ ⊢
+wf⁻¹ (c-ext Γ⊢ _) = Γ⊢
+
+wf⁻² : ∀ {n} {Γ : Ctx n} {A} → Γ ∙ A ⊢ → Γ ⊢ A
+wf⁻² (c-ext _ ⊢A) = ⊢A
+
 data _⊢_ where
 
   ty-U : ∀ {n} {Γ : Ctx n}
@@ -138,18 +144,17 @@ lemma-1 (ty-∈U A∈U)   = lemma-2C A∈U
 lemma-1 (ty-Π-F ⊢A _) = lemma-1 ⊢A
 lemma-1 (ty-sub _ ⊢γ) = π₂ (lemma-3 ⊢γ)
 
-lemma-2C (tm-q ⊢A)          = c-ext (lemma-1 ⊢A) ⊢A
-lemma-2C (tm-sub t∈A ⊢γ)    = π₂ (lemma-3 ⊢γ)
-lemma-2C (tm-app _ _ _ t∈A) = lemma-2C t∈A
-lemma-2C (tm-conv _ t∈A _)  = lemma-2C t∈A
-lemma-2C (tm-Π-I _ _ t∈A) with lemma-2C t∈A
-... | c-ext Γ⊢ _ = Γ⊢
+lemma-2C (tm-q ⊢A)         = c-ext (lemma-1 ⊢A) ⊢A
+lemma-2C (tm-sub ⊢t ⊢γ)    = π₂ (lemma-3 ⊢γ)
+lemma-2C (tm-app _ _ _ ⊢t) = lemma-2C ⊢t
+lemma-2C (tm-conv _ ⊢t _)  = lemma-2C ⊢t
+lemma-2C (tm-Π-I _ _ ⊢t)   = wf⁻¹ (lemma-2C ⊢t)
 
-lemma-2T (tm-q ⊢A)            = ty-sub ⊢A (⊢p ⊢A)
-lemma-2T (tm-sub t∈A ⊢γ)      = ty-sub (lemma-2T t∈A) ⊢γ
-lemma-2T (tm-Π-I ⊢A ⊢B _)     = ty-Π-F ⊢A ⊢B
-lemma-2T (tm-app ⊢A ⊢B _ t∈A) =
+lemma-2T (tm-conv ⊢A' _ _)   = ⊢A'
+lemma-2T (tm-q ⊢A)           = ty-sub ⊢A (⊢p ⊢A)
+lemma-2T (tm-sub ⊢t ⊢γ)      = ty-sub (lemma-2T ⊢t) ⊢γ
+lemma-2T (tm-Π-I ⊢A ⊢B _)    = ty-Π-F ⊢A ⊢B
+lemma-2T (tm-app ⊢A ⊢B _ ⊢t) =
   let ⊢id = ⊢id (lemma-1 ⊢A)
   in ty-sub ⊢B (⊢<,> ⊢id ⊢A
-     (tm-conv (ty-sub ⊢A ⊢id) t∈A subId))
-lemma-2T (tm-conv ⊢A' _ _) = ⊢A'
+     (tm-conv (ty-sub ⊢A ⊢id) ⊢t subId))

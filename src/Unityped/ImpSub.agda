@@ -20,7 +20,7 @@ open ≡-Reasoning
 -- Renamings
 
 Ren : Nat → Nat → Set
-Ren m n = Vec (Fin m) n
+Ren m = Vec (Fin m)
 
 -- Lifts and extends a renaming
 
@@ -30,7 +30,7 @@ Ren m n = Vec (Fin m) n
 -- generalized ↑
 
 _↑⋆_ : ∀ {m n} (k : Nat) → Ren m n → Ren (k + m) (k + n)
-zero ↑⋆ ρ = ρ
+zero  ↑⋆ ρ = ρ
 suc k ↑⋆ ρ = ↑ (k ↑⋆ ρ)
 
 -- identity renaming
@@ -159,6 +159,12 @@ p-∙-↑ {ρ = ρ} = begin
   map suc ρ
   ∎
 
+map-suc-p : ∀ {m n} {ρ : Ren m n} → ρ ∙ p ≡ map suc ρ
+map-suc-p {ρ = []}    = refl
+map-suc-p {ρ = x ∷ ρ} =
+  trans (cong (_∷ map (flip lookup p) ρ) (lookup-p x))
+        (cong (suc x ∷_) map-suc-p)
+
 -- composing with p is weakening
 
 ∙-p : ∀ {m n} {ρ : Ren m n} → ρ ∙ p ≡ p ∙ (↑ ρ)
@@ -176,6 +182,11 @@ idR : ∀ {m n} {ρ : Ren m n} → ρ ∙ id ≡ ρ
 idR {ρ = []} = refl
 idR {ρ = i ∷ ρ} rewrite subId {i = i}
                       | idR {ρ = ρ} = refl
+
+suc-mapsuc : ∀ {m n} (ρ : Ren m n) i → i / (map suc ρ) ≡ suc (i / ρ)
+suc-mapsuc []      ()
+suc-mapsuc (_ ∷ _) zero    = refl
+suc-mapsuc (_ ∷ ρ) (suc i) = suc-mapsuc ρ i
 
 -- congruence rules
 

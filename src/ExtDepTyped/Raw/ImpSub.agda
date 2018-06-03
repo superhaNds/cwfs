@@ -390,6 +390,46 @@ prop-η t σ = sym $ begin
   weaken (t [ σ ])
   ∎ 
 
+map-var-∘ : ∀ {m n k} (ρ : Ren m n) (ρ' : Ren k m) → map var ρ ∘ map var ρ' ≡ map var (ρ ∙ ρ')
+map-var-∘ ρ ρ' =
+ let map-ρ  = map var ρ
+     map-ρ' = map var ρ'
+ in begin
+   map-ρ ∘ map-ρ'                       ≡⟨⟩
+   map (_[ map-ρ' ]) map-ρ              ≡⟨ sym $ map-∘ (_[ map-ρ' ]) var ρ ⟩
+   map (λ x → var x [ map-ρ' ]) ρ       ≡⟨ map-cong (λ x → Ren.lookup-map x var ρ') ρ ⟩
+   map (λ x → var x / ρ') ρ             ≡⟨⟩
+   map (λ x → var (lookup x ρ')) ρ      ≡⟨ map-∘ var (λ z → lookup z ρ') ρ ⟩
+   map var (map (λ i → i Ren./ ρ') ρ)   ≡⟨⟩
+   map var (ρ ∙ ρ')
+   ∎
+
+weaken-map-var : ∀ {m n} t (ρ : Ren m n) → weaken (t [ map var ρ ]) ≡ t [ map var $ map suc ρ ]
+weaken-map-var t ρ = begin
+  weaken (t [ map var ρ ])  ≡⟨ wk-sub-p {t = t [ map var ρ ]} ⟩
+  (t [ map var ρ ]) [ p ]   ≡⟨ sym $ subComp t ⟩
+  t [ map var ρ ∘ p ]       ≡⟨ cong (t [_]) (map-var-∘ ρ Ren.p) ⟩
+  t [ map var (ρ ∙ Ren.p) ] ≡⟨ cong (λ x → t [ map var x ]) Ren.map-suc-p ⟩
+  t [ map var $ map suc ρ ]
+  ∎
+
+weaken-sub-ext : ∀ {n m} t A (γ : Sub m n) → weaken A [ γ , t ] ≡ A [ γ ]
+weaken-sub-ext t A γ = begin
+    (weaken A) [ γ , t ]  ≡⟨ cong (_[ γ , t ]) (wk-sub-p {t = A}) ⟩
+    A [ p ] [ γ , t ]     ≡⟨ sym $ subComp A ⟩
+    A [ p ∘ (γ , t) ]     ≡⟨ cong (A [_]) p-∘ ⟩
+    A [ γ ]     
+    ∎
+
+weaken-map-wk : ∀ {m n} t (γ : Sub m n) → weaken (t [ γ ]) ≡ t [ map weaken γ ]
+weaken-map-wk t γ = begin
+  weaken (t [ γ ])    ≡⟨⟩
+  (t [ γ ]) / Ren.p   ≡⟨ /-map-var Ren.p (t [ γ ]) ⟩
+  t [ γ ] [ p ]       ≡⟨ sym $ subComp t ⟩
+  t [ γ ∘ p ]         ≡⟨ cong (t [_]) map-wk-p ⟩
+  t [ map weaken γ ]
+  ∎
+  
 -- Beta-eta convertibility defined as an inductive relation over lambda terms
 
 infix 5 _~βη_
