@@ -23,7 +23,7 @@ data _⊢ : ∀ {n} (Γ : Ctx n) → Set
 
 data _⊢_ : ∀ {n} (Γ : Ctx n) (A : Tm n) → Set
 
-data _⊢_∈_ : ∀ {n} (Γ : Ctx n) (t : Tm n) (A : Tm n) → Set
+data _⊢_∈_ : ∀ {n} (Γ : Ctx n) (t A : Tm n) → Set
 
 data _⊢_∈s_ : ∀ {m n} → Ctx n → Sub m n → Ctx m → Set
 
@@ -126,10 +126,6 @@ wfSub-wf₂ : ∀ {m n Γ Δ} {γ : Sub m n} → Γ ⊢ γ ∈s Δ → Γ ⊢
 wfSub-wf₂ (⊢<> _)        = c-emp
 wfSub-wf₂ (⊢<,> ⊢γ ⊢A _) = c-ext (wfSub-wf₂ ⊢γ) ⊢A
 
-wfTm-wfTy : ∀ {n} {Γ : Ctx n} {t A}
-            → Γ ⊢ t ∈ A
-            → Γ ⊢ A
-
 wfTy-wf (ty-U Γ⊢)     = Γ⊢
 wfTy-wf (ty-∈U ⊢A)    = wfTm-wf ⊢A
 wfTy-wf (ty-Π-F ⊢A _) = wfTy-wf ⊢A
@@ -139,8 +135,8 @@ ty-q : ∀ {n} {Γ : Ctx n} {A}
        → (Γ ∙ A) ⊢ q ∈ (A [ p ])
 ty-q {A = A} ⊢A rewrite sym $ wk-sub-p {t = A} = ty-var₀ ⊢A
 
-subst' : {A : Set} {a a' : A} {C : A → Set} → (a ≡ a') → C a → C a'
-subst' refl c = c
+subst' : ∀ {A : Set} {a a'} {C : A → Set} → a ≡ a' → C a → C a'
+subst' refl C = C
 
 module Var where
 
@@ -181,17 +177,17 @@ module Var where
     rewrite weaken-sub-ext (var i) A (map var ρ) = hyp
 
   sub-ty-pr' : ∀ {m n Γ Δ A} {ρ : Ren m n}
-           → Γ ⊢ A
-           → Γ ⊢ map var ρ ∈s Δ
-           → Δ ⊢ A [ map var ρ ]
+               → Γ ⊢ A
+               → Γ ⊢ map var ρ ∈s Δ
+               → Δ ⊢ A [ map var ρ ]
   
   sub-tm-pr' : ∀ {m n Γ Δ A t} {ρ : Ren m n}
-                  → Γ ⊢ t ∈ A
-                  → Γ ⊢ map var ρ ∈s Δ
-                  → Δ ⊢ t [ map var ρ ] ∈ (A [ map var ρ ])
+               → Γ ⊢ t ∈ A
+               → Γ ⊢ map var ρ ∈s Δ
+               → Δ ⊢ t [ map var ρ ] ∈ A [ map var ρ ]
 
-  sub-ty-pr' (ty-U _)       ⊢ρ = ty-U (wfSub-wf₁ ⊢ρ)
-  sub-ty-pr' (ty-∈U ⊢A)     ⊢ρ = ty-∈U (sub-tm-pr' ⊢A ⊢ρ)
+  sub-ty-pr' (ty-U _)   ⊢ρ = ty-U (wfSub-wf₁ ⊢ρ)
+  sub-ty-pr' (ty-∈U ⊢A) ⊢ρ = ty-∈U (sub-tm-pr' ⊢A ⊢ρ)
   sub-ty-pr' {m = m} {n} {Δ = Δ} {ρ = ρ} (ty-Π-F {A = A} {B} ⊢A ⊢B) ⊢ρ
     = ty-Π-F (sub-ty-pr' ⊢A ⊢ρ) (subst' {a = map var (Ren.↑ ρ)} {↑ (map var ρ)}
                                         {λ x → (Δ ∙ (A [ map var ρ ])) ⊢ (B [ x ])}
@@ -271,17 +267,17 @@ map-wk-preserv {Δ = Δ} {γ = x ∷ γ} Δ⊢A' (⊢<,> {A = A} ⊢γ Γ⊢A �
               → Δ ⊢ B
               → Γ ⊢ γ ∈s Δ
               → Γ ∙ A ⊢ ↑ γ ∈s (Δ ∙ B)
-↑-preserves ⊢A ⊢B ⊢γ = ⊢<,> (map-wk-preserv ⊢B ⊢γ) ⊢A {!!}              
+↑-preserves ⊢A ⊢B ⊢γ = ⊢<,> (map-wk-preserv ⊢B ⊢γ) ⊢A {!!}
 
-subst-tm : ∀ {m n Γ Δ A t} {γ : Sub m n}
-           → Γ ⊢ t ∈ A
-           → Γ ⊢ γ ∈s Δ
-           → Δ ⊢ t [ γ ] ∈ A [ γ ]
-     
 subst-ty : ∀ {m n Γ Δ A} {γ : Sub m n}
            → Γ ⊢ A
            → Γ ⊢ γ ∈s Δ
            → Δ ⊢ A [ γ ]
+
+subst-tm : ∀ {m n Γ Δ A t} {γ : Sub m n}
+           → Γ ⊢ t ∈ A
+           → Γ ⊢ γ ∈s Δ
+           → Δ ⊢ t [ γ ] ∈ A [ γ ]    
 
 subst-tm {γ = x ∷ γ} (ty-var₀ {A = A} ⊢A) (⊢<,> ⊢γ _ ⊢x)
   rewrite weaken-sub-ext x A γ = ⊢x 
@@ -315,6 +311,9 @@ subst-ty (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (subst-ty ⊢A ⊢γ) (subst-ty ⊢
                  (sym $ subComp B)
                  (subst-tm ⊢t ⊢γ₂))               
 
+wfTm-wfTy : ∀ {n} {Γ : Ctx n} {t A}
+            → Γ ⊢ t ∈ A
+            → Γ ⊢ A
 wfTm-wfTy (ty-var₀ ⊢A)     = weaken-ty-preserv ⊢A ⊢A
 wfTm-wfTy (ty-varₙ ⊢B ⊢t)  = weaken-ty-preserv ⊢B (wfTm-wfTy ⊢t)
 wfTm-wfTy (ty-Π-I ⊢A ⊢B _) = ty-Π-F ⊢A ⊢B
@@ -322,5 +321,3 @@ wfTm-wfTy {Γ = Γ} (ty-app {t = t} {A = A} ⊢A ⊢B ⊢f ⊢t) =
   let ⊢id = Var.id-preserv (wfTy-wf ⊢A)
   in subst-ty ⊢B (⊢<,> (Var.id-preserv (wfSub-wf₁ ⊢id)) ⊢A
                        (subst' {a = A} {A [ id ]} {Γ ⊢ t ∈_} (sym $ subId) ⊢t))
-
-
