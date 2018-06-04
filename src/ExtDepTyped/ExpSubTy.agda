@@ -3,6 +3,7 @@ module ExtDepTyped.ExpSubTy where
 open import Data.Nat renaming (ℕ to Nat)
 open import ExtDepTyped.Raw.ExpSub
 open import Data.Product renaming (proj₁ to π₁ ; proj₂ to π₂) hiding (<_,_>)
+open import Function using (_$_)
 
 data Ctx : Nat → Set where
   ⋄   : Ctx 0
@@ -158,3 +159,12 @@ lemma-2T (tm-app ⊢A ⊢B _ ⊢t) =
   let ⊢id = ⊢id (lemma-1 ⊢A)
   in ty-sub ⊢B (⊢<,> ⊢id ⊢A
      (tm-conv (ty-sub ⊢A ⊢id) ⊢t subId))
+
+ty-⇑ : ∀ {n m Γ Δ} {A} {γ : Sub m n}
+       → Γ ⊢ A
+       → Δ ⊢ A [ γ ]
+       → Γ ⊢ γ ∈s Δ
+       → (Γ ∙ A) ⊢ ⇑ γ ∈s (Δ ∙ (A [ γ ]))
+ty-⇑ ⊢A ⊢A[γ] ⊢γ = ⊢<,> (⊢∘ ⊢γ (⊢p ⊢A[γ])) ⊢A
+                        (tm-conv (ty-sub ⊢A (⊢∘ ⊢γ (⊢p ⊢A[γ])))
+                        (tm-q ⊢A[γ]) subComp)       

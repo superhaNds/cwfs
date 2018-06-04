@@ -19,11 +19,11 @@ infix 5 _⊢_
 infix 5 _⊢_∈_
 infix 5 _⊢_∈s_
 
-data _⊢ : ∀ {n} (Γ : Ctx n) → Set
+data _⊢     : ∀ {n} (Γ : Ctx n) → Set
 
-data _⊢_ : ∀ {n} (Γ : Ctx n) (A : Tm n) → Set
+data _⊢_    : ∀ {n} (Γ : Ctx n) (A : Tm n) → Set
 
-data _⊢_∈_ : ∀ {n} (Γ : Ctx n) (t A : Tm n) → Set
+data _⊢_∈_  : ∀ {n} (Γ : Ctx n) (t A : Tm n) → Set
 
 data _⊢_∈s_ : ∀ {m n} → Ctx n → Sub m n → Ctx m → Set
 
@@ -163,12 +163,18 @@ module Var where
               → Γ ⊢ p ∈s (Γ ∙ A)
   p-preserv ⊢A = map-suc-preserv Ren.id ⊢A (id-preserv (wfTy-wf ⊢A))  
 
-  ↑-preserv : ∀ {m n Γ Δ A B} {ρ : Ren m n}
+  ↑-preserv : ∀ {m n Γ Δ A} {ρ : Ren m n}
               → Γ ⊢ A
-              → Δ ⊢ B
+              → Δ ⊢ A [ map var ρ ]
               → Γ ⊢ map var ρ ∈s Δ
-              → Γ ∙ A ⊢ map var (Ren.↑ ρ) ∈s Δ ∙ B
-  ↑-preserv {Δ = Δ} {A} {B} {ρ = ρ} ⊢A ⊢B ⊢ρ = ⊢<,> (map-suc-preserv _ ⊢B ⊢ρ) ⊢A ({!!})
+              → Γ ∙ A ⊢ map var (Ren.↑ ρ) ∈s Δ ∙ (A [ map var ρ ])
+  ↑-preserv {Δ = Δ} {A} {ρ = ρ} ⊢A ⊢A[ρ] ⊢ρ
+    = ⊢<,> (map-suc-preserv ρ ⊢A[ρ] ⊢ρ) ⊢A (subst' {a = weaken (A [ map var ρ ])}
+                                                   {A [ map var (map suc ρ) ]}
+                                                   {Δ ∙ (A [ map var ρ ]) ⊢ q ∈_}
+                                                   (trans (weaken-map-wk A (map var ρ))
+                                                          (cong (A [_]) (map-var-weaken ρ)))
+                                                   (ty-var₀ ⊢A[ρ]))
 
   var-ty-lemma : ∀ {m n x i A Δ} {ρ : Ren m n}
                  → Δ ⊢ x ∈ A [ map var ρ ]
@@ -262,12 +268,17 @@ map-wk-preserv {Δ = Δ} {γ = x ∷ γ} Δ⊢A' (⊢<,> {A = A} ⊢γ Γ⊢A �
                                               (weaken-map-wk A γ)
                                               (weaken-tm-preserv Δ⊢A' ⊢x))
 
-↑-preserves : ∀ {m n Γ Δ A B} {γ : Sub m n}
+↑-preserves : ∀ {m n Γ Δ A} {γ : Sub m n}
               → Γ ⊢ A
-              → Δ ⊢ B
+              → Δ ⊢ A [ γ ]
               → Γ ⊢ γ ∈s Δ
-              → Γ ∙ A ⊢ ↑ γ ∈s (Δ ∙ B)
-↑-preserves ⊢A ⊢B ⊢γ = ⊢<,> (map-wk-preserv ⊢B ⊢γ) ⊢A {!!}
+              → Γ ∙ A ⊢ ↑ γ ∈s (Δ ∙ (A [ γ ]))
+↑-preserves {Δ = Δ} {A} {γ} ⊢A ⊢A[γ] ⊢γ
+  = ⊢<,> (map-wk-preserv ⊢A[γ] ⊢γ) ⊢A (subst' {a = weaken (A [ γ ])}
+                                              {A [ map weaken γ ]}
+                                              {Δ ∙ (A [ γ ]) ⊢ q ∈_}
+                                              (weaken-map-wk A γ)
+                                              (ty-var₀ ⊢A[γ]))
 
 subst-ty : ∀ {m n Γ Δ A} {γ : Sub m n}
            → Γ ⊢ A
@@ -286,7 +297,7 @@ subst-tm {γ = x ∷ γ} (ty-varₙ {i = i} {A} ⊢B ⊢t) (⊢<,> ⊢γ _ _)
 subst-tm {Δ = Δ} {γ = γ} (ty-app {f = f} {t} {A} {B} ⊢A ⊢B ⊢f ⊢t) ⊢γ
   rewrite prop-β {σ = γ} {t} {B}
     = ty-app (subst-ty ⊢A ⊢γ)
-             (subst-ty ⊢B $ ↑-preserves ⊢A (subst-ty ⊢A ⊢γ) ⊢γ)
+             (subst-ty ⊢B $ ↑-preserves ⊢A (subst-ty ⊢A ⊢γ) ⊢γ) 
              (subst-tm ⊢f ⊢γ)
              (subst-tm ⊢t ⊢γ)
 subst-tm (ty-Π-I ⊢A ⊢B ⊢t) ⊢γ
@@ -296,14 +307,14 @@ subst-tm (ty-Π-I ⊢A ⊢B ⊢t) ⊢γ
 
 subst-ty (ty-U Γ⊢)      ⊢γ = ty-U (wfSub-wf₁ ⊢γ)
 subst-ty (ty-∈U ⊢A)     ⊢γ = ty-∈U (subst-tm ⊢A ⊢γ)
-subst-ty (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (subst-ty ⊢A ⊢γ) (subst-ty ⊢B (↑-preserves ⊢A (subst-ty ⊢A ⊢γ) ⊢γ))
+subst-ty (ty-Π-F ⊢A ⊢B) ⊢γ = ty-Π-F (subst-ty ⊢A ⊢γ) (subst-ty ⊢B $ ↑-preserves ⊢A (subst-ty ⊢A ⊢γ) ⊢γ)
 
 ∘-preserv : ∀ {m n k Γ Δ Θ} {γ₁ : Sub n k} {γ₂ : Sub m n}
             → Θ ⊢ γ₁ ∈s Δ
             → Δ ⊢ γ₂ ∈s Γ
             → Θ ⊢ γ₁ ∘ γ₂ ∈s Γ
 ∘-preserv (⊢<> _) ⊢γ₂ = ⊢<> (wfSub-wf₁ ⊢γ₂)
-∘-preserv {Γ = Γ} {Δ} {Θ = Θ ∙ B} {x ∷ γ₁} {γ₂} (⊢<,> {A = A} ⊢γ₁ ⊢A ⊢t) ⊢γ₂
+∘-preserv {Γ = Γ} {Δ} {Θ = Θ ∙ B} {x ∷ γ₁} {γ₂} (⊢<,> ⊢γ₁ ⊢A ⊢t) ⊢γ₂
   = ⊢<,> (∘-preserv ⊢γ₁ ⊢γ₂) ⊢A
          (subst' {a = B [ γ₁ ] [ γ₂ ]}
                  {B [ γ₁ ∘ γ₂ ]}
