@@ -1,9 +1,9 @@
-----------------------------------------------------------------------------
--- The notion of an intrinsically typed simply typed category with families
--- as a generalized algebraic theory. An extension includes lambda and apply
--- In this formulation, contexts are just list of types, so the length
--- is not kept.
-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-- The notions of simply typed categories with families as records. The base Scwf which
+-- essentially represents a theory of simply typed n-place functions. And second, the
+-- λβη-scwf encapsulates a simply typed lambda calculus up to beta and eta.
+-- The formulation is well-scoped, i.e., contexts are indexed by length.
+-----------------------------------------------------------------------------------------
 module SimpTyped.Scwf where
 
 open import Agda.Primitive
@@ -11,99 +11,117 @@ open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
 open import Relation.Binary
-----------------------------------------------------------------------------
--- pure scwf that is directly typed
 
 record Scwf : Set₁ where
+  infix 4 _~_
   infix 4 _≈_
-  infix 4 _≋_
   infix 8 _∘_
   field
 
-    -- sorts i.e., types, contexts, terms, and substitutions
-    
     Ty  : Set
-    Ctx : Set
-    Tm  : Ctx → Ty → Set
-    Sub : Ctx → Ctx → Set
+    Ctx : Nat → Set
+    Tm  : ∀ {n} → Ctx n → Ty → Set
+    Sub : ∀ {m n} → Ctx m → Ctx n → Set
 
-    -- empty context and context extension
-    -- ε is the terminal object of the base category
+    ⋄   : Ctx zero
+    _∙_ : ∀ {n} → Ctx n → Ty → Ctx (suc n)
     
-    ⋄   : Ctx
-    _∙_ : Ctx → Ty → Ctx
-    
-    _≈_  : ∀ {Γ α} → Rel (Tm Γ α) lzero
-    _≋_ : ∀ {Γ Δ} → Rel (Sub Γ Δ) lzero
+    _~_ : ∀ {n A} {Γ : Ctx n}             (_ _ : Tm Γ A)  → Set
+    _≈_ : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} (_ _ : Sub Γ Δ) → Set
 
-    IsEquivT : ∀ {Γ α} → IsEquivalence (_≈_ {Γ} {α})
-    IsEquivS : ∀ {Γ Δ} → IsEquivalence (_≋_ {Γ} {Δ})
+    IsEquiv~ : ∀ {n A} {Γ : Ctx n}             → IsEquivalence (_~_ {A = A} {Γ})
+    IsEquiv≈ : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} → IsEquivalence (_≈_ {Δ = Δ} {Γ})
 
-    -- operators    
+    -- cwf operators
+
+    id : ∀ {n} {Γ : Ctx n} → Sub Γ Γ
     
-    id    : ∀ {Γ}     → Sub Γ Γ
-    _∘_   : ∀ {Γ Δ Θ} → Sub Γ Θ → Sub Δ Γ → Sub Δ Θ
-    _[_]  : ∀ {Γ Δ α} → Tm Γ α  → Sub Δ Γ → Tm Δ α
-    <>    : ∀ {Γ}     → Sub Γ ⋄
-    <_,_> : ∀ {Γ Δ α} → Sub Γ Δ → Tm Γ α  → Sub Γ (Δ ∙ α)
-    p     : ∀ {Γ α}   → Sub (Γ ∙ α) Γ
-    q     : ∀ {Γ α}   → Tm (Γ ∙ α) α
-   
-    -- cwf laws
-    
-    id₀ : id {⋄} ≋ <>
-    
-    left-zero : ∀ {Γ Δ} (γ : Sub Γ Δ) → <> ∘ γ ≋ <>
-    
-    idExt : ∀ {Γ α} → id {Γ ∙ α} ≋ < p , q >
-    
-    idL : ∀ {Γ Δ} (γ : Sub Δ Γ) → id ∘ γ ≋ γ
-    
-    idR : ∀ {Γ Δ} (γ : Sub Γ Δ) → γ ∘ id ≋ γ
-    
-    assoc : ∀ {Γ Δ Θ Λ} (γ : Sub Δ Θ) (δ : Sub Γ Δ) (ζ : Sub Λ Γ)
-            → (γ ∘ δ) ∘ ζ ≋ γ ∘ (δ ∘ ζ)
+    _∘_ : ∀ {k m n} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+          → Sub Γ Θ
+          → Sub Δ Γ
+          → Sub Δ Θ
             
-    subId : ∀ {Γ α} (t : Tm Γ α) → t [ id ] ≈ t
+    _[_] : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n}
+           → Tm Γ A
+           → Sub Δ Γ
+           → Tm Δ A
     
-    pCons : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Sub Γ Δ) → p ∘ < γ , t > ≋ γ
+    <> : ∀ {n} {Γ : Ctx n} → Sub Γ ⋄
     
-    qCons : ∀ {Γ Δ α} (t : Tm Γ α) (γ : Sub Γ Δ) → q [ < γ , t > ] ≈ t
+    <_,_> : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n}
+            → Sub Γ Δ
+            → Tm Γ A
+            → Sub Γ (Δ ∙ A)
     
-    subComp : ∀ {Γ Δ Θ α} (t : Tm Δ α) (γ : Sub Γ Δ) (δ : Sub Θ Γ)
-              → t [ γ ∘ δ ] ≈ t [ γ ] [ δ ]
-            
-    compExt : ∀ {Γ Δ α} (t : Tm Δ α) (γ : Sub Δ Γ) (δ : Sub Γ Δ)
-              →  < γ , t > ∘ δ ≋ < γ ∘ δ , t [ δ ] >
-            
-    cong-sub : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Δ Γ}
-               → t ≈ t'
-               → γ ≋ γ'
-               →  t [ γ ] ≈ t' [ γ' ]
+    p : ∀ {n A} {Γ : Ctx n} → Sub (Γ ∙ A) Γ
+    q : ∀ {n A} {Γ : Ctx n} → Tm (Γ ∙ A) A
+
+    -- cwf axioms
+ 
+    id-zero : id {Γ = ⋄} ≈ <>
+
+    left-zero : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} {γ : Sub Δ Γ} → <> ∘ γ ≈ <>
+
+    idExt : ∀ {n A} {Γ : Ctx n} → id {Γ = Γ ∙ A} ≈ < p , q >
+
+    idL : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} {γ : Sub Δ Γ} → id ∘ γ ≈ γ
+    
+    idR : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} {γ : Sub Γ Δ} → γ ∘ id ≈ γ
+
+    assoc : ∀ {j k m n} {Λ : Ctx j} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+              (γ : Sub Γ Θ) (δ : Sub Δ Γ) (ζ : Sub Λ Δ)
+            → (γ ∘ δ) ∘ ζ ≈ γ ∘ (δ ∘ ζ)
+
+    subId : ∀ {n A} {Γ : Ctx n} {t : Tm Γ A} → t [ id ] ~ t
+
+    pCons : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} (γ : Sub Γ Δ) → p ∘ < γ , t > ≈ γ
+
+    qCons : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} (γ : Sub Γ Δ) → q [ < γ , t > ] ~ t
+
+    subComp : ∀ {k m n A} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+                (t : Tm Θ A) {γ : Sub Γ Θ} {δ : Sub Δ Γ}
+              → t [ γ ∘ δ ] ~ t [ γ ] [ δ ]
+                      
+    compExt : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Δ A} {γ : Sub Δ Γ} {δ : Sub Γ Δ}
+              →  < γ , t > ∘ δ ≈ < γ ∘ δ , t [ δ ] >
+
+    -- closed under congruence
+
+    cong-sub : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Γ A} {γ γ' : Sub Δ Γ}
+               → t ~ t'
+               → γ ≈ γ'
+               →  t [ γ ] ~ t' [ γ' ]
                
-    cong-<,> : ∀ {Γ Δ α} {t t' : Tm Γ α} {γ γ' : Sub Γ Δ}
-               → t ≈ t'
-               → γ ≋ γ'
-               → < γ , t > ≋ < γ' , t' >
+    cong-<,> : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Δ A} {γ γ' : Sub Δ Γ}
+               → t ~ t'
+               → γ ≈ γ'
+               → < γ , t > ≈ < γ' , t' >
                
-    cong-∘ : ∀ {Γ Δ Θ} {γ δ : Sub Δ Θ} {γ' δ' : Sub Γ Δ}
-             → γ ≋ δ
-             → γ' ≋ δ'
-             → γ ∘ γ' ≋ δ ∘ δ'
+    cong-∘ : ∀ {k m n} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+               {γ δ : Sub Γ Θ} {γ' δ' : Sub Δ Γ}
+             → γ ≈ δ
+             → γ' ≈ δ'
+             → γ ∘ γ' ≈ δ ∘ δ'
 
-  setoidT : ∀ {Γ α} → Setoid _ _
-  setoidT {Γ} {α} = record { isEquivalence = IsEquivT {Γ} {α} }
+  setoid~ : ∀ {n A} {Γ : Ctx n} → Setoid _ _
+  setoid~ {A = A} {Γ} = record { isEquivalence = IsEquiv~ {A = A} {Γ} }
 
-  setoidS : ∀ {Γ Δ} → Setoid _ _
-  setoidS {Γ} {Δ} = record { isEquivalence = IsEquivS {Δ} {Γ} }
+  setoid≈ : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} → Setoid _ _
+  setoid≈ {Δ = Δ} {Γ} = record { isEquivalence = IsEquiv≈ {Δ = Δ} {Γ} }
 
-  ⇑ : ∀ {Γ Δ α} (γ : Sub Δ Γ) → Sub (Δ ∙ α) (Γ ∙ α)
+  -- lifting
+
+  ⇑ : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} (γ : Sub Δ Γ) → Sub (Δ ∙ A) (Γ ∙ A)
   ⇑ γ = < γ ∘ p , q >
 
-  weaken : ∀ {Γ α} → Tm Γ α → Tm (Γ ∙ α) α
-  weaken = _[ p ]
+  -- weakening a term
 
-record Lambda-scwf : Set₁ where
+  ⁺_ : ∀ {n A B} {Γ : Ctx n} → Tm Γ A → Tm (Γ ∙ B) A
+  ⁺_ = _[ p ]
+
+-- Extra structure is added: lambdas, application, function type.
+
+record λβη-Scwf : Set₁ where
   field
     scwf : Scwf
     
@@ -111,85 +129,48 @@ record Lambda-scwf : Set₁ where
 
   field
 
-    -- Function type
+    -- function type
     
     _`→_ : Ty → Ty → Ty
-
-    -- lambda terms and apply
     
-    lam : ∀ {Γ α β} → Tm (Γ ∙ α) β → Tm Γ (α `→ β)
-    app : ∀ {Γ α β} → Tm Γ (α `→ β) → Tm Γ α → Tm Γ β
-
-    -- substituting under apply and lambda
+    -- lambda abstractions and application
     
-    subApp : ∀ {Γ Δ α β} (t : Tm Γ (α `→ β)) (u : Tm Γ α) (γ : Sub Δ Γ)
-             → app (t [ γ ]) (u [ γ ]) ≈ (app t u) [ γ ] 
+    lam : ∀ {n A B} {Γ : Ctx n}
+          → Tm (Γ ∙ A) B
+          → Tm Γ (A `→ B)
+          
+    app : ∀ {n A B} {Γ : Ctx n}
+          → Tm Γ (A `→ B)
+          → Tm Γ A
+          → Tm Γ B
+
+    -- substituting under application and lambda
+    
+    subApp : ∀ {m n A B} {Δ : Ctx m} {Γ : Ctx n}
+               {t : Tm Γ (A `→ B)} {u : Tm Γ A} {γ : Sub Δ Γ}
+             → app (t [ γ ]) (u [ γ ]) ~ (app t u) [ γ ] 
              
-    subLam : ∀ {Γ Δ α β} (t : Tm (Γ ∙ α) β) (γ : Sub Δ Γ)
-             → lam t [ γ ] ≈ lam (t [ < γ ∘ p , q > ])
+    subLam : ∀ {m n A B} {Δ : Ctx m} {Γ : Ctx n}
+               {t : Tm (Γ ∙ A) B} {γ : Sub Δ Γ}
+             → lam t [ γ ] ~ lam (t [ < γ ∘ p , q > ])
+
+    -- beta and eta equalities
+
+    beta : ∀ {n A B} {Γ : Ctx n} {t : Tm (Γ ∙ A) B} {u}
+           → app (lam t) u ~ t [ < id , u > ]
+        
+    eta : ∀ {n A B} {Γ : Ctx n} {t : Tm Γ (A `→ B)}
+          → lam (app (t [ p ]) q) ~ t 
 
     -- congruence rules
     
-    cong-lam : ∀ {Γ α β} {t t' : Tm (Γ ∙ α) β}
-               → t ≈ t'
-               → lam t ≈ lam t'
+    cong-lam : ∀ {n A B} {Γ : Ctx n} {t t' : Tm (Γ ∙ A) B}
+               → t ~ t'
+               → lam t ~ lam t'
              
-    cong-app : ∀ {Γ α β} {t t' : Tm Γ (α `→ β)} {u u'}
-               → t ≈ t'
-               → u ≈ u'
-               → app t u ≈ app t' u'
-
-record Lambda-βη-scwf : Set₁ where
-  field
-    lambda-scwf : Lambda-scwf
-  open Lambda-scwf lambda-scwf public
-
-  field
-
-   -- beta and eta equalities
-  
-    β : ∀ {Γ α β} {t : Tm (Γ ∙ α) β} {u}
-        → app (lam t) u ≈ t [ < id , u > ]
-        
-    η : ∀ {Γ α β} {t : Tm Γ (α `→ β)}
-        → lam (app (t [ p ]) q) ≈ t
+    cong-app : ∀ {n A B} {Γ : Ctx n} {t t' : Tm Γ (A `→ B)} {u u'}
+               → t ~ t'
+               → u ~ u'
+               → app t u ~ app t' u'
 
 
-{-
-record Scwf-Morphism : Set₁ where
-  field
-    src : Scwf
-    trg : Scwf
-  open Scwf src
-    renaming (Ctx to CtxS ; ⋄ to ⋄S ; Ty to TyS ; Tm to TmS
-             ; Sub to SubS ; <> to <>S ; <_,_> to <_,_>S ; _∘_ to _∘S_
-             ; _[_] to _[_]S ; q to qS ; p to pS ; id to idS ; _≈_ to _≈S_ ; _≋_ to _≋S_)
-  open Scwf trg
-    renaming (Ctx to CtxT ; ⋄ to ⋄T ; Ty to TyT ; Tm to TmT
-             ; Sub to SubT ; <> to <>T ; <_,_> to <_,_>T ;_∘_ to _∘T_
-             ; _[_] to _[_]T ; q to qT ; p to pT ; id to idT ; _≈_ to _≈T_ ; _≋_ to _≋T_)
-  field
-    to-ctx : CtxS → CtxT
-    to-ty  : TyS → TyT
-    ⟦_⟧  : ∀ {Γ α} → TmS Γ α → TmT (to-ctx Γ) (to-ty α)
-    ⟦_⟧' : ∀ {Δ Γ} → SubS Γ Δ → SubT (to-ctx Γ) (to-ctx Δ)
-
---     ⋄-preserved : ∀ {Γ α} → to-ctx (Γ ∙ α) 
-
-    id-preserved : ∀ {Γ} → ⟦ idS {Γ} ⟧' ≋T idT
-    
-    q-preserved : ∀ {Γ α} → ⟦ qS {Γ} {α}  ⟧ ≈T {!qT!}
-    
-    p-preserved : ∀ {Γ α} → ⟦ pS {Γ} {α} ⟧' ≋T {!!}
-    
-    ∘-preserved : ∀ {Δ Γ Θ} (σ₁ : SubS Θ Γ) (σ₂ : SubS Δ Θ)
-                  → ⟦ σ₁ ∘S σ₂ ⟧' ≋T ⟦ σ₁ ⟧' ∘T ⟦ σ₂ ⟧'
-
-    <>-preserved : ∀ {Γ} → ⟦ <>S {Γ} ⟧' ≋T {!<>T!}
-
-    <,>-preserved : ∀ {Γ Δ α} (t : TmS Γ α) (σ : SubS Γ Δ)
-                    → ⟦ < σ , t >S ⟧' ≋T {!!} --< ⟦ σ ⟧' , ⟦ t ⟧ >T
-
-    sub-preserved : ∀ {Γ Δ α} (t : TmS Γ α) (σ : SubS Δ Γ)
-                    → ⟦ t [ σ ]S ⟧ ≈T ⟦ t ⟧ [ ⟦ σ ⟧' ]T
--}

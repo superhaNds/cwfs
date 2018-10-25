@@ -71,6 +71,8 @@ stripjoin▹ : ∀ {m n Γ Δ} (γ : RSub m n) (⊢γ : Γ ⊢ γ ∈s Δ)
 stripjoin : ∀ {n Γ α} (t : RTm n) (⊢t : Γ ⊢ t ∈ α)
             → strip (join (t , ⊢t)) ~' t
 
+--joineq : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} (t t' : Tm Γ α) → t ~' t' → join (strip t , typing t) ~ join 
+
 joinstrip q         = refl~
 joinstrip (t [ γ ]) = cong-sub (joinstrip t) (joinstrip▹ γ)
 joinstrip (app t u) = cong-app (joinstrip t) (joinstrip u)
@@ -92,3 +94,62 @@ stripjoin▹ (γ₁ ∘ γ₂) (⊢∘ ⊢γ₁ ⊢γ₂) = cong-∘ (stripjoin�
 stripjoin▹ p         ⊢p           = refl≈'
 stripjoin▹ <>        ⊢<>          = refl≈'
 stripjoin▹ < γ , t > (⊢<,> ⊢t ⊢γ) = cong-<,> (stripjoin t ⊢t) (stripjoin▹ γ ⊢γ)
+
+stripeq : ∀ {n} {Γ : Ctx n} {α} {t t' : Tm Γ α} → t ~ t' → strip t ~' strip t'
+
+strip▹eq : ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {γ γ' : Sub Δ Γ} → γ ≈ γ' → strip▹ γ ≈' strip▹ γ'
+
+stripeq (subId t)         = subId
+stripeq (qCons t ρ)       = q-sub
+stripeq (subComp t ρ σ)   = subComp
+stripeq (subApp t u ρ)    = sym~ subApp
+stripeq (subLam t ρ)      = subLam
+stripeq (cong-sub eq γ≈γ) = cong-sub (stripeq eq) (strip▹eq γ≈γ)
+stripeq (cong-app eq eq₁) = cong-app (stripeq eq) (stripeq eq₁)
+stripeq (cong-lam eq)     = cong-lam (stripeq eq)
+stripeq (sym~ eq)         = sym~ (stripeq eq)
+stripeq (trans~ eq₁ eq₂)  = trans~ (stripeq eq₁) (stripeq eq₂)
+
+strip▹eq id-zero          = id-zero
+strip▹eq (left-zero ρ)    = left-zero
+strip▹eq idExt            = idExt
+strip▹eq (idL ρ)          = idL
+strip▹eq (idR ρ)          = idR
+strip▹eq (assoc ρ σ τ)    = ∘-asso
+strip▹eq (pCons t ρ)      = p-∘
+strip▹eq (compExt t ρ σ)  = compExt
+strip▹eq (cong-<,> x eq)  = cong-<,> (stripeq x) (strip▹eq eq)
+strip▹eq (cong-∘ eq₁ eq₂) = cong-∘ (strip▹eq eq₁) (strip▹eq eq₂)
+strip▹eq (sym≈ eq)        = sym≈ (strip▹eq eq)
+strip▹eq (trans≈ eq₁ eq₂) = trans≈ (strip▹eq eq₁) (strip▹eq eq₂)
+
+prop : ∀ {n} {Γ : Ctx n} {α} {t t'} → t ~' t' → Γ ⊢ t ∈ α → Γ ⊢ t' ∈ α
+prop q-sub ⊢t = {!!}
+prop subId ⊢t = {!!}
+prop subComp ⊢t = {!!}
+prop subApp ⊢t = {!!}
+prop subLam ⊢t = {!!}
+prop β ⊢t = {!!}
+prop η ⊢t = {!!}
+prop (cong-sub eq x) ⊢t = {!!}
+prop (cong-app eq eq₁) ⊢t = {!!}
+prop (cong-lam eq) ⊢t = {!!}
+prop (sym~ eq) ⊢t = {!!}
+prop (trans~ eq eq₁) ⊢t = {!!}
+
+e : ∀ {n} {Γ : Ctx n} {α} {t t'}
+    (eq : t ~' t')
+    (⊢t : Γ ⊢ t ∈ α)
+    (⊢t' : Γ ⊢ t' ∈ α) → join (t , ⊢t) ~ join (t' , ⊢t')
+e q-sub ⊢t ⊢t' = {!qCons!}
+e subId ⊢t ⊢t' = {!!}
+e subComp ⊢t ⊢t' = {!!}
+e subApp ⊢t ⊢t' = {!!}
+e subLam ⊢t ⊢t' = {!!}
+e β ⊢t ⊢t' = {!!}
+e η ⊢t ⊢t' = {!!}
+e (cong-sub eq x) ⊢t ⊢t' = {!cong-sub!}
+e (cong-app eq eq₁) ⊢t ⊢t' = {!!}
+e (cong-lam eq) ⊢t ⊢t' = {!!}
+e (sym~ eq) ⊢t ⊢t' = sym~ (e eq ⊢t' ⊢t)
+e (trans~ eq eq₁) ⊢t ⊢t' = {!!}

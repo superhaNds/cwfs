@@ -7,7 +7,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_ ; refl)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤)
 open import Function using (_∘_ ; _$_)
-open import SimpTyped.Context
+open import Data.Vec
+open import Data.Nat using (ℕ)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -39,7 +40,8 @@ _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
 ⟦ ♭ ⟧ᵀ       = ⊤
 ⟦ α₁ ⇒ α₂ ⟧ᵀ = ⟦ α₁ ⟧ᵀ → ⟦ α₂ ⟧ᵀ
 
--- Instantiation of polymorphic context to type
+----------------------------------------------------------------------------------
+-- Contexts are well-scoped
 
-Ctx : Set
-Ctx = Ctxt Ty
+Ctx : ℕ → Set
+Ctx = Vec Ty
