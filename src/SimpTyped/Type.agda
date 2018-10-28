@@ -8,7 +8,7 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤)
 open import Function using (_∘_ ; _$_)
 open import Data.Vec
-open import Data.Nat using (ℕ)
+open import Data.Nat using (ℕ ; zero ; suc)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -41,7 +41,13 @@ _≟_ : ∀ (α β : Ty) → Dec (α ≡ β)
 ⟦ α₁ ⇒ α₂ ⟧ᵀ = ⟦ α₁ ⟧ᵀ → ⟦ α₂ ⟧ᵀ
 
 ----------------------------------------------------------------------------------
--- Contexts are well-scoped
+-- Contexts are well-scoped implemented as 
 
 Ctx : ℕ → Set
 Ctx = Vec Ty
+
+⋄ : Ctx 0
+⋄ = []
+
+_∙_ : ∀ {n} (Γ : Ctx n) (A : Ty) → Ctx (suc n)
+Γ ∙ A = A ∷ Γ

@@ -2,20 +2,24 @@
 -- The notions of simply typed categories with families as records. The base Scwf which
 -- essentially represents a theory of simply typed n-place functions. And second, the
 -- λβη-scwf encapsulates a simply typed lambda calculus up to beta and eta.
--- The formulation is well-scoped, i.e., contexts are indexed by length.
+-- The formulation is intrinsically typed, there are no raw terms (AKA preterms).
+-- Moreover, it is well-scoped, i.e., contexts are indexed by length.
 -----------------------------------------------------------------------------------------
 module SimpTyped.Scwf where
 
-open import Agda.Primitive
 open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
-open import Relation.Binary
+open import Relation.Binary using (Setoid ; IsEquivalence)
+import Relation.Binary.EqReasoning as EqR
+
+-- The notion of Scwf as a record. A theory of n-place simply typed functions.
 
 record Scwf : Set₁ where
-  infix 4 _~_
-  infix 4 _≈_
-  infix 8 _∘_
+  infix  4  _~_
+  infix  4  _≈_
+  infixr 8  _∘_
+  infixl 20 _[_]
   field
 
     Ty  : Set
@@ -54,6 +58,7 @@ record Scwf : Set₁ where
             → Sub Γ (Δ ∙ A)
     
     p : ∀ {n A} {Γ : Ctx n} → Sub (Γ ∙ A) Γ
+    
     q : ∀ {n A} {Γ : Ctx n} → Tm (Γ ∙ A) A
 
     -- cwf axioms
@@ -76,13 +81,14 @@ record Scwf : Set₁ where
 
     pCons : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} (γ : Sub Γ Δ) → p ∘ < γ , t > ≈ γ
 
-    qCons : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} (γ : Sub Γ Δ) → q [ < γ , t > ] ~ t
+    qCons : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} {γ : Sub Γ Δ} → q [ < γ , t > ] ~ t
 
     subComp : ∀ {k m n A} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
                 (t : Tm Θ A) {γ : Sub Γ Θ} {δ : Sub Δ Γ}
               → t [ γ ∘ δ ] ~ t [ γ ] [ δ ]
                       
-    compExt : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Δ A} {γ : Sub Δ Γ} {δ : Sub Γ Δ}
+    compExt : ∀ {k m n A} {Δ : Ctx m} {Γ : Ctx n} {Θ : Ctx k}
+                {t : Tm Γ A} {γ : Sub Γ Θ} {δ : Sub Δ Γ}
               →  < γ , t > ∘ δ ≈ < γ ∘ δ , t [ δ ] >
 
     -- closed under congruence
@@ -90,7 +96,7 @@ record Scwf : Set₁ where
     cong-sub : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Γ A} {γ γ' : Sub Δ Γ}
                → t ~ t'
                → γ ≈ γ'
-               →  t [ γ ] ~ t' [ γ' ]
+               → t [ γ ] ~ t' [ γ' ]
                
     cong-<,> : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Δ A} {γ γ' : Sub Δ Γ}
                → t ~ t'
@@ -103,11 +109,11 @@ record Scwf : Set₁ where
              → γ' ≈ δ'
              → γ ∘ γ' ≈ δ ∘ δ'
 
-  setoid~ : ∀ {n A} {Γ : Ctx n} → Setoid _ _
-  setoid~ {A = A} {Γ} = record { isEquivalence = IsEquiv~ {A = A} {Γ} }
+  Setoid~ : ∀ {n A} {Γ : Ctx n} → Setoid _ _
+  Setoid~ {A = A} {Γ} = record { isEquivalence = IsEquiv~ {A = A} {Γ} }
 
-  setoid≈ : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} → Setoid _ _
-  setoid≈ {Δ = Δ} {Γ} = record { isEquivalence = IsEquiv≈ {Δ = Δ} {Γ} }
+  Setoid≈ : ∀ {m n} {Δ : Ctx m} {Γ : Ctx n} → Setoid _ _
+  Setoid≈ {Δ = Δ} {Γ} = record { isEquivalence = IsEquiv≈ {Δ = Δ} {Γ} }
 
   -- lifting
 
@@ -116,9 +122,77 @@ record Scwf : Set₁ where
 
   -- weakening a term
 
-  ⁺_ : ∀ {n A B} {Γ : Ctx n} → Tm Γ A → Tm (Γ ∙ B) A
-  ⁺_ = _[ p ]
+  ⁺ : ∀ {n A B} {Γ : Ctx n} → Tm Γ A → Tm (Γ ∙ B) A
+  ⁺ = _[ p ]
 
+  -- one sided congruences
+
+  cong-sub₁ : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Γ A} {γ : Sub Δ Γ}
+              → t ~ t'
+              → t [ γ ] ~ t' [ γ ]
+  cong-sub₁ t~t' = cong-sub t~t' (IsEquivalence.refl IsEquiv≈)
+
+  cong-sub₂ : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Γ A} {γ γ' : Sub Δ Γ}
+              → γ ≈ γ'
+              → t [ γ ] ~ t [ γ' ]
+  cong-sub₂ γ≈γ' = cong-sub (IsEquivalence.refl IsEquiv~) γ≈γ'
+
+  cong-<, : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t : Tm Δ A} {γ γ' : Sub Δ Γ}
+            → γ ≈ γ'
+            → < γ , t > ≈ < γ' , t >
+  cong-<, γ≈γ' = cong-<,> (IsEquivalence.refl IsEquiv~) γ≈γ'
+
+  cong-,> : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {t t' : Tm Δ A} {γ : Sub Δ Γ}
+            → t ~ t'
+            → < γ , t > ≈ < γ , t' >
+  cong-,> t~t' = cong-<,> t~t' (IsEquivalence.refl IsEquiv≈)
+
+  cong-∘l : ∀ {k m n} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+              {γ γ' : Sub Γ Θ} {δ : Sub Δ Γ}
+            → γ ≈ γ'
+            → γ ∘ δ ≈ γ' ∘ δ
+  cong-∘l γ≈γ' = cong-∘ γ≈γ' (IsEquivalence.refl IsEquiv≈)
+
+  cong-∘r : ∀ {k m n} {Θ : Ctx k} {Δ : Ctx m} {Γ : Ctx n}
+              {δ : Sub Γ Θ} {γ γ' : Sub Δ Γ}
+            → γ ≈ γ'
+            → δ ∘ γ ≈ δ ∘ γ'
+  cong-∘r γ≈γ' = cong-∘ (IsEquivalence.refl IsEquiv≈) γ≈γ'
+
+  -- substituting a weakened term drops the last variable
+
+  wk-ext : ∀ {m n A B} {Δ : Ctx m} {Γ : Ctx n}
+             {t : Tm Γ A} {u} {γ : Sub Δ Γ} → (⁺ {B = B} t) [ < γ , u > ] ~ t [ γ ]
+  wk-ext {t = t} {u} {γ} = begin
+    (⁺ t) [ < γ , u > ]      ≈⟨ IsEquivalence.refl IsEquiv~ ⟩
+    (t [ p ]) [ < γ , u > ]  ≈⟨ IsEquivalence.sym IsEquiv~ (subComp t) ⟩
+    t [ p ∘ < γ , u > ]      ≈⟨ cong-sub (IsEquivalence.refl IsEquiv~) (pCons γ) ⟩
+    t [ γ ]
+    ∎
+    where open EqR (Setoid~ {_})
+
+  -- A substitution of zero length is convertible to the empty one
+
+  empty-sub : ∀ {m} {Δ : Ctx m} {γ : Sub Δ ⋄} → γ ≈ <>
+  empty-sub {γ = γ} = begin
+    γ       ≈⟨ IsEquivalence.sym IsEquiv≈ idL ⟩
+    id ∘ γ  ≈⟨ cong-∘ id-zero (IsEquivalence.refl IsEquiv≈) ⟩
+    <> ∘ γ  ≈⟨ left-zero ⟩
+    <>
+    ∎
+    where open EqR (Setoid≈ {_} {_})
+
+  -- surjective pairing
+
+  surj-pair : ∀ {m n A} {Δ : Ctx m} {Γ : Ctx n} {γ : Sub Δ (Γ ∙ A)} → γ ≈ < p ∘ γ , q [ γ ] >
+  surj-pair {γ = γ} = begin
+    γ                    ≈⟨ IsEquivalence.sym IsEquiv≈ idL ⟩
+    id ∘ γ               ≈⟨ cong-∘ idExt (IsEquivalence.refl IsEquiv≈) ⟩
+    < p , q > ∘ γ        ≈⟨ compExt ⟩
+    < p ∘ γ , q [ γ ] >
+    ∎
+    where open EqR (Setoid≈ {_} {_})
+  
 -- Extra structure is added: lambdas, application, function type.
 
 record λβη-Scwf : Set₁ where
@@ -127,13 +201,14 @@ record λβη-Scwf : Set₁ where
     
   open Scwf scwf public
 
+  infixr 30 _`→_
   field
 
     -- function type
     
     _`→_ : Ty → Ty → Ty
     
-    -- lambda abstractions and application
+    -- lambda abstraction and application
     
     lam : ∀ {n A B} {Γ : Ctx n}
           → Tm (Γ ∙ A) B
@@ -173,4 +248,15 @@ record λβη-Scwf : Set₁ where
                → u ~ u'
                → app t u ~ app t' u'
 
+  -- one sided congruences
 
+  cong-appl : ∀ {n A B} {Γ : Ctx n} {t t' : Tm Γ (A `→ B)} {u}
+              → t ~ t'
+              → app t u ~ app t' u
+  cong-appl t~t' = cong-app t~t' (IsEquivalence.refl IsEquiv~)
+
+  cong-appr : ∀ {n A B} {Γ : Ctx n} {t : Tm Γ (A `→ B)} {u u'}
+              → u ~ u'
+              → app t u ~ app t u'
+  cong-appr u~u' = cong-app (IsEquivalence.refl IsEquiv~) u~u'
+  
