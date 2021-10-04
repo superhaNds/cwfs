@@ -123,33 +123,3 @@ strip▹eq (cong-∘ eq₁ eq₂) = cong-∘ (strip▹eq eq₁) (strip▹eq eq�
 strip▹eq (sym≈ eq)        = sym≈ (strip▹eq eq)
 strip▹eq (trans≈ eq₁ eq₂) = trans≈ (strip▹eq eq₁) (strip▹eq eq₂)
 
-prop : ∀ {n} {Γ : Ctx n} {α} {t t'} → t ~' t' → Γ ⊢ t ∈ α → Γ ⊢ t' ∈ α
-prop q-sub ⊢t = {!!}
-prop subId ⊢t = {!!}
-prop subComp ⊢t = {!!}
-prop subApp ⊢t = {!!}
-prop subLam ⊢t = {!!}
-prop β ⊢t = {!!}
-prop η ⊢t = {!!}
-prop (cong-sub eq x) ⊢t = {!!}
-prop (cong-app eq eq₁) ⊢t = {!!}
-prop (cong-lam eq) ⊢t = {!!}
-prop (sym~ eq) ⊢t = {!!}
-prop (trans~ eq eq₁) ⊢t = {!!}
-
-e : ∀ {n} {Γ : Ctx n} {α} {t t'}
-    (eq : t ~' t')
-    (⊢t : Γ ⊢ t ∈ α)
-    (⊢t' : Γ ⊢ t' ∈ α) → join (t , ⊢t) ~ join (t' , ⊢t')
-e q-sub ⊢t ⊢t' = {!qCons!}
-e subId ⊢t ⊢t' = {!!}
-e subComp ⊢t ⊢t' = {!!}
-e subApp ⊢t ⊢t' = {!!}
-e subLam ⊢t ⊢t' = {!!}
-e β ⊢t ⊢t' = {!!}
-e η ⊢t ⊢t' = {!!}
-e (cong-sub eq x) ⊢t ⊢t' = {!cong-sub!}
-e (cong-app eq eq₁) ⊢t ⊢t' = {!!}
-e (cong-lam eq) ⊢t ⊢t' = {!!}
-e (sym~ eq) ⊢t ⊢t' = sym~ (e eq ⊢t' ⊢t)
-e (trans~ eq eq₁) ⊢t ⊢t' = {!!}

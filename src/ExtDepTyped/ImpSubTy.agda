@@ -3,12 +3,12 @@ module ExtDepTyped.ImpSubTy where
 open import Function as F using (_$_ ; flip)
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Data.Vec hiding ([_] ; _∈_)
-open import Data.Vec.All as All using (All; []; _∷_)
-open import Data.Vec.All.Properties using (gmap)
+open import Data.Vec hiding ([_] ; lookup)
+open import Data.Vec.Relation.Unary.All.Properties using (gmap)
+open import Data.Vec.Relation.Unary.All as All using (All; []; _∷_)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import ExtDepTyped.Raw.ImpSub
-open import Unityped.ImpSub as Ren using (Ren)
+open import Unityped.ImpSub as Ren using (Ren ; lookup)
 
 data Ctx : Nat → Set where
   ⋄   : Ctx 0

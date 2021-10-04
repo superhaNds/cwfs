@@ -7,16 +7,16 @@ module Unityped.ImpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin using (Fin ; suc ; zero)
-open import Data.Vec hiding ([_])
-open import Data.Vec.Properties
+open import Data.Vec hiding ([_] ; lookup)
+open import Data.Vec.Properties hiding (map-lookup-allFin)
 open import Function hiding (id ; _∘_)
-open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_] ; cong-∘)
 open import Relation.Binary.PropositionalEquality.Core
 open import Relation.Binary using (Setoid ; IsEquivalence)
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 open import Unityped.Ucwf
 open ≡-Reasoning
-open import Unityped.ImpSub as Ren using (Ren ; _∙_)
+open import Unityped.ImpSub as Ren using (Ren ; _∙_ ; lookup ; map-lookup-allFin)
 
 ----------------------------------------------------------------------------
 -- lambda terms that are wellscoped, i.e., indexed by the maximum number
@@ -146,11 +146,18 @@ lookup-id (suc i) = begin
   var (suc i)
   ∎
 
+-- id vanishes in renaming
+
+renId : ∀ {n} {t : Tm n} → t / Ren.id ≡ t
+renId {t = var i}   = cong var (Ren.lookup-id i)
+renId {t = app f t} = cong₂ app renId renId
+renId {t = ƛ t}     = cong ƛ renId
+
 -- id vanishes in substitution
 
 subId : ∀ {n} {t : Tm n} → t [ id ] ≡ t
 subId {t = var i}   = lookup-id i
-subId {t = app t f} = cong₂ app subId subId
+subId {t = app f t} = cong₂ app subId subId
 subId {t = ƛ t}     = cong ƛ $ begin
   t [ ↑ id ] ≡⟨ cong (t [_]) ↑-id ⟩
   t [ id ]   ≡⟨ subId ⟩
@@ -272,9 +279,9 @@ r∘-asso ρ σ (ƛ t)     = cong ƛ $ begin
 ∘r-r∘ : ∀ {m n} {σ : Sub m n} → σ ∘r Ren.p ≡ Ren.p r∘ (↑ σ)
 ∘r-r∘ = sym $ trans (sym (map-∘ _ _ Ren.id))
                     (trans (cong (map (λ i → lookup (suc i) (↑ _))) Ren.id-allFin)
-                           (map-lookup-allFin _))
+                           (map-lookup-allFin (map (_/ map suc Ren.id) _)))
 
--- ↑ distributes over composition
+--lifting, i.e., ↑ distributes over composition
 
 ↑-dist : ∀ {m n k} (σ₁ : Sub m n) (σ₂ : Sub k m) → ↑ (σ₁ ∘ σ₂) ≡ ↑ σ₁ ∘ ↑ σ₂
 ↑-dist σ₁ σ₂ = begin

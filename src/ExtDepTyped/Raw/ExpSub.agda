@@ -5,7 +5,7 @@ open import Data.Product renaming (proj₁ to π₁ ; proj₂ to π₂) hiding (
 open import Relation.Binary
 open import Unityped.Ucwf
 open import ExtDepTyped.Raw.PiUcwf
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 
 data Tm  : Nat → Set
 data Sub : Nat → Nat → Set

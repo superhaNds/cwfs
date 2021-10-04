@@ -11,7 +11,7 @@ open import Data.Nat renaming (ℕ to Nat) using (zero ; suc)
 open import Data.Vec using (Vec)
 open import Data.Fin using (Fin)
 open import Relation.Binary using (Setoid ; IsEquivalence)
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 
 -- The notion of Scwf as a record. A theory of n-place simply typed functions.
 

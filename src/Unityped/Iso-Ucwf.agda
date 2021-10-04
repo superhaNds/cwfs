@@ -1,16 +1,16 @@
-module Iso-Ucwf where
+module Unityped.Iso-Ucwf where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Data.Vec hiding ([_])
+open import Data.Vec hiding ([_] ; lookup)
 open import Relation.Binary
 open import Function using (_$_ ; _∘_)
 open import Relation.Binary.PropositionalEquality as P hiding ([_])
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 
-open import Ucwf
-open import ExpSub renaming (q to q⋆ ; p to p⋆ ; id to id⋆ ; _∙_ to _∙⋆_)
-open import ImpSub hiding (p⋆ ; subComp ; compExt ; left-zero ; idExt ; p-∙)
+open import Unityped.Ucwf
+open import Unityped.ExpSub renaming (q to q⋆ ; p to p⋆ ; id to id⋆ ; _∙_ to _∙⋆_)
+open import Unityped.ImpSub hiding (p⋆ ; subComp ; compExt ; left-zero ; idExt ; p-∙ ; lookup)
 
 ⟦_⟧  : ∀ {n} → Tm n → Fin n
 ⟦_⟧' : ∀ {m n} → Sub m n → Ren m n

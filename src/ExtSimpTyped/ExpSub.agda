@@ -2,7 +2,7 @@ module ExtSimpTyped.ExpSub where
 
 open import Unityped.ExpSub renaming (_∙_ to _∘_ ; Tm to RTm ; Sub to RSub)
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Product using (Σ)
+open import Data.Product using (Σ ; _,_)
 open import ExtSimpTyped.Scwf
 
 postulate Ty : Set
@@ -48,34 +48,34 @@ data _⊢_∈s_ where
 private
 
   Σ-<> : ∀ {m} {Δ : Ctx m} → Σ (RSub m 0) (ε ⊢_∈s Δ)
-  Σ-<> = <> Σ., ⊢<>
+  Σ-<> = <> , ⊢<>
 
   Σ-<,> : ∀ {m n α} {Γ : Ctx n} {Δ : Ctx m}
           → Σ (RSub m n) (Γ ⊢_∈s Δ)
           → Σ (RTm m) (Δ ⊢_∈ α)
           → Σ (RSub m (suc n)) (Γ ∙ α ⊢_∈s Δ)
-  Σ-<,> (ρ Σ., ⊢ρ) (t Σ., ⊢t) = < ρ , t > Σ., ⊢<,> ⊢t ⊢ρ
+  Σ-<,> (ρ , ⊢ρ) (t , ⊢t) = < ρ , t > , ⊢<,> ⊢t ⊢ρ
 
   Σ-∘ : ∀ {m n k} {Γ : Ctx n} {Δ : Ctx m} {Θ : Ctx k}
         → Σ (RSub m n) (Γ ⊢_∈s Δ)
         → Σ (RSub k m) (Δ ⊢_∈s Θ)
         → Σ (RSub k n) (Γ ⊢_∈s Θ)
-  Σ-∘ (ρ Σ., ⊢ρ) (σ Σ., ⊢σ) = (ρ ∘ σ) Σ., ⊢∘ ⊢ρ ⊢σ
+  Σ-∘ (ρ , ⊢ρ) (σ , ⊢σ) = (ρ ∘ σ) , ⊢∘ ⊢ρ ⊢σ
 
   Σ-sub : ∀ {m n α} {Γ : Ctx n} {Δ : Ctx m}
           → Σ (RTm m) (Δ ⊢_∈ α)
           → Σ (RSub n m) (Δ ⊢_∈s Γ)
           → Σ (RTm n) (Γ ⊢_∈ α)
-  Σ-sub (t Σ., ⊢t) (ρ Σ., ⊢ρ) = (t [ ρ ]) Σ., ⊢sub ⊢t ⊢ρ
+  Σ-sub (t , ⊢t) (ρ , ⊢ρ) = (t [ ρ ]) , ⊢sub ⊢t ⊢ρ
 
   Σ-id : ∀ {n} {Γ : Ctx n} → Σ (RSub n n) (Γ ⊢_∈s Γ)
-  Σ-id = id Σ., ⊢id
+  Σ-id = id , ⊢id
 
   Σ-p : ∀ {n α} {Γ : Ctx n} → Σ (RSub (suc n) n) (Γ ⊢_∈s Γ ∙ α)
-  Σ-p = p Σ., ⊢p
+  Σ-p = p , ⊢p
 
   Σ-q : ∀ {n α} {Γ : Ctx n} → Σ (RTm (suc n)) (Γ ∙ α ⊢_∈ α)
-  Σ-q = q Σ., ⊢q
+  Σ-q = q , ⊢q
 
   ExpSubScwf : Scwf
   ExpSubScwf = record
@@ -86,11 +86,11 @@ private
                  ; _∙_    = _∙_
                  ; _⊢_∈_  = _⊢_∈_
                  ; _⊢_∈s_ = _⊢_∈s_
-                 ; Σ-<>   = <> Σ., ⊢<>
+                 ; Σ-<>   = <> , ⊢<>
                  ; Σ-<,>  = Σ-<,>
                  ; Σ-∘    = Σ-∘
                  ; Σ-sub  = Σ-sub
-                 ; Σ-id   = id Σ., ⊢id
-                 ; Σ-p    = p Σ., ⊢p
-                 ; Σ-q    = q Σ., ⊢q
+                 ; Σ-id   = id , ⊢id
+                 ; Σ-p    = p , ⊢p
+                 ; Σ-q    = q , ⊢q
                  }

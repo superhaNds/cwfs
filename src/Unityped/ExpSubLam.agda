@@ -2,7 +2,7 @@ module Unityped.ExpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Relation.Binary using (Setoid ; IsEquivalence)
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 open import Unityped.Ucwf
 
 data Tm : Nat → Set

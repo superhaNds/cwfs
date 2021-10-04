@@ -2,9 +2,10 @@ module ExtDepTyped.Pure where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin as Fin using (Fin ; suc ; zero)
-open import Data.Vec hiding ([_] ; _∈_)
+open import Data.Vec hiding ([_] ; lookup)
 open import Data.Vec.Properties
-open import Data.Vec.All as All using (All)
+--open import Data.Vec.All as All using (All)
+open import Data.Vec.Relation.Unary.All using (All)
 open import Data.Vec.All.Properties using (gmap)
 open import Function hiding (id ; _∘_)
 open import Relation.Binary.PropositionalEquality hiding ([_])

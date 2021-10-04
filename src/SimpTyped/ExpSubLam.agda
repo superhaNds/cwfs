@@ -8,8 +8,9 @@ module SimpTyped.ExpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Vec hiding ([_])
+--open import Relation.Binary.Reasoning.Setoid
+import Relation.Binary.Reasoning.Setoid as EqR
 open import Relation.Binary using (IsEquivalence ; Setoid)
-
 open import SimpTyped.Type
 open import SimpTyped.Scwf
 
@@ -186,7 +187,6 @@ SubSetoid {Δ = Δ} {Γ} = record
   }
 
 
-{-
 ExpSubScwf : Scwf
 ExpSubScwf = record
                { Ty = Ty
@@ -222,5 +222,22 @@ ExpSubScwf = record
                ; cong-∘ = cong-∘
                }
 
+emptySub : ∀ {n} {Γ : Ctx n} (γ : Sub Γ ⋄) → γ ≈ <>
+emptySub γ = begin
+  γ              ≈⟨ sym≈ idL ⟩
+  id {Γ = ⋄} ∘ γ ≈⟨ cong-∘ id-zero refl≈ ⟩
+  <> ∘ γ         ≈⟨ left-zero ⟩
+  <>
+  ∎
+  where open EqR (SubSetoid {_} {_})
 
--}
+
+surj-<,> : ∀ {n m A} {Δ : Ctx m} {Γ : Ctx n}
+             (γ : Sub Δ (Γ ∙ A)) → γ ≈ < p {A = A} ∘ γ , q [ γ ] >
+surj-<,> γ = begin
+  γ                    ≈⟨ sym≈ idL ⟩
+  id ∘ γ               ≈⟨ cong-∘ idExt refl≈  ⟩
+  < p , q > ∘ γ        ≈⟨ compExt ⟩
+  < p ∘ γ , q [ γ ] >
+  ∎
+  where open EqR (SubSetoid {_} {_})

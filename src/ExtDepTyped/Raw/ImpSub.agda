@@ -2,16 +2,16 @@ module ExtDepTyped.Raw.ImpSub where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin using (Fin ; suc ; zero)
-open import Data.Vec hiding ([_])
-open import Data.Vec.Properties
+open import Data.Vec hiding ([_] ; lookup)
+open import Data.Vec.Properties hiding (map-lookup-allFin)
 open import Function hiding (id ; _∘_)
-open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_] ; cong-∘)
 open import Relation.Binary.PropositionalEquality.Core
 open import Relation.Binary using (Setoid ; IsEquivalence)
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 open import Unityped.Ucwf
 open ≡-Reasoning
-open import Unityped.ImpSub as Ren using (Ren ; _∙_)
+open import Unityped.ImpSub as Ren using (Ren ; _∙_ ; lookup ; map-lookup-allFin)
 
 data Tm (n : Nat) : Set where
   var : (i : Fin n)       → Tm n   -- variables as de Bruijn indices

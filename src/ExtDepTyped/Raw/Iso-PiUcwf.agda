@@ -2,18 +2,18 @@ module ExtDepTyped.Raw.Iso-PiUcwf where
 
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Fin using (Fin ; zero ; suc)
-open import Data.Vec hiding ([_])
+open import Data.Vec hiding ([_] ; lookup)
 open import Relation.Binary
 open import Function using (_$_)
 open import Relation.Binary.PropositionalEquality as P hiding ([_] ; cong-app)
-import Relation.Binary.EqReasoning as EqR
+import Relation.Binary.Reasoning.Setoid as EqR
 open import Unityped.Ucwf
 open import ExtDepTyped.Raw.PiUcwf
 open import ExtDepTyped.Raw.ExpSub
   renaming (Tm to Tm-cwf ; Sub to Sub-cwf ; q to q⋆ ; p to p⋆ ; id to id⋆ ; _∘_ to _∘⋆_ ; _[_] to _[_]⋆)
 open import ExtDepTyped.Raw.ImpSub
   renaming (Tm to Tm-λ ; Sub to Sub-λ) hiding (subComp ; idExt ; p-∘ ; cong-∘₁ ; subLam ; subΠ)
-open import Unityped.ImpSub as Ren using (Ren)
+open import Unityped.ImpSub as Ren using (Ren ; lookup)
 
 ⟦_⟧  : ∀ {n}   → Tm-cwf n    → Tm-λ n
 ⟦_⟧' : ∀ {m n} → Sub-cwf m n → Sub-λ m n

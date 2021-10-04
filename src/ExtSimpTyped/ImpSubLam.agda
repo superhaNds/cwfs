@@ -1,11 +1,11 @@
 module ExtSimpTyped.ImpSubLam where
 
 open import Data.Nat renaming (ℕ to Nat)
-open import Data.Vec hiding ([_])
+open import Data.Vec hiding ([_] ; lookup)
 open import Data.Fin
-open import Data.Product using (Σ)
+open import Data.Product as Σ using (Σ)
 open import Unityped.ImpSubLam
-open import Unityped.ImpSub as Ren using (Ren)
+open import Unityped.ImpSub as Ren using (Ren ; lookup)
 open import ExtSimpTyped.Scwf
 
 infixr 20 _⇒_
@@ -45,7 +45,7 @@ data _⊢_∈s_ : ∀ {n m} → Ctx n → Sub m n → Ctx m → Set where
   ⊢,  : ∀ {m n Γ Δ α t} {σ : Sub m n}
         → Γ ⊢ σ ∈s Δ
         → Δ ⊢ t ∈ α
-        → Γ ∙ α ⊢ σ , t ∈s Δ
+        → Γ ∙ α ⊢ (σ , t) ∈s Δ
 
 module Var where
 

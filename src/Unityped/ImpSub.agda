@@ -6,8 +6,8 @@ module Unityped.ImpSub where
 
 open import Data.Nat renaming (ℕ to Nat) using (_+_ ; suc ; zero)
 open import Data.Fin using (Fin ; suc ; zero)
-open import Data.Vec hiding ([_])
-open import Data.Vec.Properties
+open import Data.Vec hiding ([_] ; lookup)
+open import Data.Vec.Properties hiding (lookup-map ; map-lookup-allFin ; tabulate∘lookup)
 open import Function hiding (id)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Unityped.Ucwf
@@ -51,6 +51,11 @@ p : ∀ {n} → Ren (1 + n) n
 p = p⋆ 1
 
 infix 12 _∙_
+
+
+lookup : ∀ {a} {A : Set a} {n} → Fin n → Vec A n → A
+lookup zero    (x ∷ _)  = x
+lookup (suc i) (x ∷ xs) = lookup i xs
 
 -- renaming composition
 
@@ -122,6 +127,18 @@ id-allFin : ∀ {n} → id ≡ allFin n
 id-allFin {zero}  = refl
 id-allFin {suc _} = cong (zero ∷_) map-suc-tab
 
+
+tabulate∘lookup : ∀ {a n} {A : Set a} (xs : Vec A n) → tabulate (flip lookup xs) ≡ xs
+tabulate∘lookup []       = refl
+tabulate∘lookup (x ∷ xs) = cong (x ∷_) (tabulate∘lookup xs)
+
+map-lookup-allFin : ∀ {a} {A : Set a} {n} (xs : Vec A n) → map (flip lookup xs) (allFin n) ≡ xs
+map-lookup-allFin {n = n} xs = trans (sym $ tabulate-∘ (flip lookup xs) (λ x → x)) (tabulate∘lookup xs)
+  --map (λ x → lookup x xs) (allFin n) ≡⟨ P.sym $ tabulate-∘ (λ x → lookup x xs) id ⟩
+  --tabulate (λ x → lookup x xs)       ≡⟨ tabulate∘lookup xs ⟩
+  --xs                                 ∎
+  --where open P.≡-Reasoning
+
 -- mapping looking in p drops the head of the renaming
 
 map-lookup-p : ∀ {m n} (ρ : Ren m (1 + n)) → map (flip lookup ρ) p ≡ tail ρ
@@ -155,7 +172,7 @@ p-∙-↑ : ∀ {m n} {ρ : Ren m n} → p ∙ (↑ ρ) ≡ map suc ρ
 p-∙-↑ {ρ = ρ} = begin
   map (λ i → lookup i (↑ ρ)) p                ≡⟨ sym $ map-∘ _ suc id ⟩
   map (λ i → lookup i (map suc ρ)) id         ≡⟨ cong (map (λ i → lookup i (map suc ρ))) id-allFin ⟩
-  map (λ i → lookup i (map suc ρ)) (allFin _) ≡⟨ map-lookup-allFin _ ⟩
+  map (λ i → lookup i (map suc ρ)) (allFin _) ≡⟨ map-lookup-allFin (map suc ρ) ⟩
   map suc ρ
   ∎
 
@@ -256,3 +273,5 @@ ImpSubUcwf = record
                ; cong-sub  = cong-sub
                ; cong-∘    = cong-∙
                }
+
+
